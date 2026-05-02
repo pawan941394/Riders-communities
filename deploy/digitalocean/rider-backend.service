@@ -1,0 +1,22 @@
+# Install: sudo cp rider-backend.service /etc/systemd/system/
+# Edit User, Group, paths, and EnvironmentFile, then:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now rider-backend
+
+[Unit]
+Description=Rider community ASGI (Django + FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/rider-community/backend
+EnvironmentFile=/var/www/rider-community/backend/.env
+Environment=PATH=/var/www/rider-community/backend/.venv/bin
+ExecStart=/var/www/rider-community/backend/.venv/bin/uvicorn config.asgi:application --host 127.0.0.1 --port 8000 --workers 2
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

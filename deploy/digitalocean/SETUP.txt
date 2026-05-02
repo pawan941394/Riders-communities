@@ -1,0 +1,77 @@
+DigitalOcean Droplet — Ubuntu 22.04/24.04 (generic VPS steps)
+
+1) Create droplet (Ubuntu), add SSH key, note public IP.
+
+2) SSH in and install basics:
+   sudo apt update && sudo apt install -y nginx git python3 python3-venv python3-pip certbot python3-certbot-nginx
+
+   Optional: install uv for reproducible deps (https://docs.astral.sh/uv/) or use plain venv + pip.
+
+3) App layout (example paths — change if you prefer):
+   sudo mkdir -p /var/www/rider-community
+   sudo chown $USER:$USER /var/www/rider-community
+
+   Upload your project (git clone or rsync) so the backend lives at:
+   /var/www/rider-community/backend
+
+4) Python env (with uv, from backend folder):
+   cd /var/www/rider-community/backend
+   uv sync
+
+   Or without uv:
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -e .
+
+5) Production .env (never commit secrets):
+   Copy backend/.env.example to backend/.env on the server and set at least:
+   - DJANGO_SECRET_KEY       (long random string)
+   - DJANGO_DEBUG=false
+   - ALLOWED_HOSTS=bharataiconnect.com,www.bharataiconnect.com,your.droplet.ip.x.x
+   - PUBLIC_BASE_URL=https://bharataiconnect.com
+   - BEHIND_HTTPS_PROXY=true   (after HTTPS works behind nginx)
+   - CSRF_TRUSTED_ORIGINS=https://bharataiconnect.com,https://www.bharataiconnect.com
+   - CORS_ALLOWED_ORIGINS=https://bharataiconnect.com,https://www.bharataiconnect.com   (add Flutter web origins if needed)
+   - FASTAPI_X_API_KEY=your-strong-api-key
+   - FASTAPI_JWT_SECRET=another-strong-secret   (if used by your auth layer)
+
+6) Django first-time on server:
+   cd /var/www/rider-community/backend
+   ./.venv/bin/python manage.py migrate
+   ./.venv/bin/python manage.py collectstatic --noinput
+   ./.venv/bin/python manage.py createsuperuser
+
+7) Permissions so nginx/www-data can read media uploads if desired:
+   sudo chown -R www-data:www-data /var/www/rider-community/backend/media
+   sudo chown -R www-data:www-data /var/www/rider-community/backend/db.sqlite3
+   (If the app user is not www-data, match User= in the systemd unit instead.)
+
+8) Systemd:
+   Edit deploy/digitalocean/rider-backend.service paths and User, then:
+   sudo cp rider-backend.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now rider-backend
+   sudo systemctl status rider-backend
+
+9) Nginx:
+   Verify nginx-rider.conf has correct domain/path aliases, then:
+   sudo cp nginx-rider.conf /etc/nginx/sites-available/rider-backend
+   sudo ln -sf /etc/nginx/sites-available/rider-backend /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+
+10) HTTPS:
+    sudo certbot --nginx -d bharataiconnect.com -d www.bharataiconnect.com
+
+11) Firewall:
+    sudo ufw allow OpenSSH
+    sudo ufw allow 'Nginx Full'
+    sudo ufw enable
+
+12) Point your DNS A record for the domain to the droplet IP.
+
+13) Flutter app: set API base URL to https://bharataiconnect.com (same origin as PUBLIC_BASE_URL conceptually).
+
+Notes
+- SQLite + local disk is fine for a small demo; back up db.sqlite3 and media/ regularly.
+- For heavier traffic, move to PostgreSQL and managed object storage later.
+- If admin CSS is 404, run collectstatic and confirm nginx /static/ alias matches STATIC_ROOT.
