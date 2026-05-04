@@ -18,10 +18,19 @@ from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, re_path
+from django.views.generic import RedirectView
 from django.views.static import serve
+
+from apps.legal import views as legal_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('privacy/', legal_views.privacy_policy, name='privacy_policy'),
+    path(
+        'privacy-policy/',
+        RedirectView.as_view(url='/privacy/', permanent=False),
+        name='privacy_policy_alias',
+    ),
 ]
 
 if settings.DEBUG:

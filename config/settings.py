@@ -73,7 +73,14 @@ INSTALLED_APPS = [
     'apps.ev.apps.EvConfig',
     'apps.posts.apps.PostsConfig',
     'apps.contact.apps.ContactConfig',
+    'apps.legal.apps.LegalConfig',
 ]
+
+# Public legal pages (templates/legal/*.html)
+LEGAL_SITE_NAME = os.environ.get("LEGAL_SITE_NAME", "Ridermanch")
+LEGAL_OPERATOR_NAME = os.environ.get("LEGAL_OPERATOR_NAME", "Bharat AI Connect")
+LEGAL_POLICY_UPDATED = os.environ.get("LEGAL_POLICY_UPDATED", "May 2026")
+SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "").strip()
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
