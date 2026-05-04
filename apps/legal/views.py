@@ -15,3 +15,18 @@ def privacy_policy(request):
             "last_updated": getattr(settings, "LEGAL_POLICY_UPDATED", "May 2026"),
         },
     )
+
+
+def csae_standards(request):
+    """Public CSAE standards page for Play Console policy disclosure."""
+    return render(
+        request,
+        "legal/csae_standards.html",
+        {
+            "site_name": getattr(settings, "LEGAL_SITE_NAME", "Ridermanch"),
+            "operator_name": getattr(settings, "LEGAL_OPERATOR_NAME", "Bharat AI Connect"),
+            "public_origin": getattr(settings, "PUBLIC_BASE_URL", "").rstrip("/"),
+            "support_email": getattr(settings, "SUPPORT_EMAIL", ""),
+            "last_updated": getattr(settings, "LEGAL_POLICY_UPDATED", "May 2026"),
+        },
+    )

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSAE Standards - {{ site_name }}</title>
+  <meta name="description" content="Child sexual abuse and exploitation (CSAE) standards for {{ site_name }}.">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f8fafc;
+      --fg: #0f172a;
+      --muted: #475569;
+      --accent: #1d4ed8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1220;
+        --fg: #f1f5f9;
+        --muted: #94a3b8;
+        --accent: #60a5fa;
+      }
+    }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 1.25rem;
+      background: var(--bg);
+      color: var(--fg);
+    }
+    main { max-width: 44rem; margin: 0 auto; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    h2 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--accent); }
+    p, li { color: var(--muted); }
+    ul { padding-left: 1.25rem; }
+    .notice {
+      border-left: 3px solid var(--accent);
+      padding: 0.75rem 1rem;
+      margin: 1.5rem 0;
+      background: rgba(29, 78, 216, 0.06);
+      border-radius: 0 0.375rem 0.375rem 0;
+      font-size: 0.9rem;
+    }
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(148, 163, 184, 0.35);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Child Safety and CSAE Standards</h1>
+    <p class="meta"><strong>{{ site_name }}</strong> · Last updated: {{ last_updated }}</p>
+
+    <p>
+      {{ operator_name }} has a zero-tolerance policy for child sexual abuse and exploitation (CSAE).
+      We prohibit any content, behavior, or account activity related to child sexual abuse material (CSAM),
+      grooming, sexual exploitation of minors, or any attempt to facilitate such harm.
+    </p>
+
+    <div class="notice">
+      If you believe a child is in immediate danger, contact local law enforcement immediately.
+    </div>
+
+    <h2>1. Prohibited content and behavior</h2>
+    <ul>
+      <li>Any CSAM, including images, videos, links, or text descriptions.</li>
+      <li>Sexualization of minors or any exploitative behavior involving minors.</li>
+      <li>Grooming, solicitation, trafficking, coercion, or attempts to exploit minors.</li>
+      <li>Sharing instructions or services that enable CSAE activity.</li>
+    </ul>
+
+    <h2>2. Detection and enforcement</h2>
+    <p>
+      We may use a combination of user reports, automated checks, and manual review to detect violations.
+      Accounts or content that violate these standards may be removed immediately. We may suspend or permanently
+      ban accounts and preserve evidence where required by law.
+    </p>
+
+    <h2>3. Reporting</h2>
+    <p>
+      Users can report abusive or suspicious behavior through in-app help/contact channels.
+      We review high-risk reports with priority and act quickly to reduce harm.
+    </p>
+
+    <h2>4. Cooperation with authorities</h2>
+    <p>
+      Where legally required, we cooperate with relevant law enforcement and child safety authorities,
+      including reporting CSAM and preserving required records.
+    </p>
+
+    <h2>5. Child safety commitment</h2>
+    <p>
+      We continuously improve our trust and safety controls, moderation workflows, and escalation procedures
+      to prevent abuse and protect users, especially children.
+    </p>
+
+    <h2>6. Contact</h2>
+    <p>
+      {% if support_email %}
+        For child safety concerns, contact: <a href="mailto:{{ support_email }}">{{ support_email }}</a>.
+      {% else %}
+        For child safety concerns, use the app's Help/Contact options or contact us via our official website
+        {% if public_origin %}at <a href="{{ public_origin }}">{{ public_origin }}</a>{% endif %}.
+      {% endif %}
+    </p>
+
+    <footer>
+      © {{ operator_name }}. Applies to {{ site_name }} services.
+    </footer>
+  </main>
+</body>
+</html>

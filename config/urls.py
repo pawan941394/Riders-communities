@@ -26,6 +26,7 @@ from apps.legal import views as legal_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('privacy/', legal_views.privacy_policy, name='privacy_policy'),
+    path('csae-standards/', legal_views.csae_standards, name='csae_standards'),
     path(
         'privacy-policy/',
         RedirectView.as_view(url='/privacy/', permanent=False),
