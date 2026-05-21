@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     'apps.legal.apps.LegalConfig',
     'apps.wallet.apps.WalletConfig',
     'apps.referral.apps.ReferralConfig',
+    'apps.update.apps.UpdateConfig',
 ]
 
 # Public legal pages (templates/legal/*.html)

@@ -13,6 +13,7 @@ from apps.ev.api import router as ev_router
 from apps.posts.api import router as posts_router
 from apps.referral.api import router as referral_router
 from apps.rider_auth.api import router as rider_auth_router
+from apps.update.api import router as update_router
 from apps.wallet.api import router as wallet_router
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -50,6 +51,7 @@ def create_app() -> FastAPI:
     app.include_router(contact_router, dependencies=[Depends(verify_api_key)])
     app.include_router(referral_router, dependencies=[Depends(verify_api_key)])
     app.include_router(wallet_router, dependencies=[Depends(verify_api_key)])
+    app.include_router(update_router, dependencies=[Depends(verify_api_key)])
     return app
 
 
