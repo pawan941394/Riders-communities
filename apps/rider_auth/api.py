@@ -21,6 +21,12 @@ from fastapi import (
 
 from apps.posts.models import Post, PostComment, PostReaction
 
+from apps.referral.models import ReferralCode
+from apps.referral.services import (
+    ReferralApplyError,
+    apply_referral_code_for_user,
+    generate_unique_referral_code,
+)
 from apps.rider_auth.models import RiderProfile
 
 router = APIRouter(prefix="/auth", tags=["Rider Auth"])
@@ -102,6 +108,7 @@ class UserProfileData(BaseModel):
     city: str | None = None
     bio: str = ""
     preferred_language: str | None = None
+    referral_code: str | None = None
 
 
 class ProfileStatsOut(BaseModel):
@@ -154,6 +161,10 @@ def _build_profile_response(user, profile, request: Request) -> UserProfileData:
     photo_url = None
     if profile.profile_photo:
         photo_url = f"{str(request.base_url).rstrip('/')}{profile.profile_photo.url}"
+    referral_row, _ = ReferralCode.objects.get_or_create(
+        user=user,
+        defaults={"code": generate_unique_referral_code()},
+    )
     return UserProfileData(
         full_name=f"{user.first_name} {user.last_name}".strip() or user.username,
         username=user.username,
@@ -165,6 +176,7 @@ def _build_profile_response(user, profile, request: Request) -> UserProfileData:
         city=profile.city or None,
         bio=(profile.bio or "").strip(),
         preferred_language=profile.preferred_language or None,
+        referral_code=referral_row.code,
     )
 
 
@@ -240,6 +252,7 @@ def signup(
     rider_company: str | None = Form(default=None),
     city: str | None = Form(default=None),
     preferred_language: str = Form(default="en"),
+    referral_code: str | None = Form(default=None),
 ) -> AuthResponse:
     full_name = full_name.strip()
     if not full_name:
@@ -249,6 +262,7 @@ def signup(
 
     email = str(email).lower().strip()
     phone = phone_number.strip()
+    referral_code_clean = (referral_code or "").strip().upper()
 
     if User.objects.filter(email=email).exists():
         raise HTTPException(status_code=400, detail="Email already registered.")
@@ -281,6 +295,16 @@ def signup(
         photo_bytes = profile_photo.file.read()
         profile.profile_photo.save(photo_name, ContentFile(photo_bytes), save=True)
 
+        if referral_code_clean:
+            try:
+                apply_referral_code_for_user(
+                    referred_user=user,
+                    referral_code=referral_code_clean,
+                    channel="signup",
+                )
+            except ReferralApplyError as exc:
+                raise HTTPException(status_code=400, detail=str(exc))
+
     return AuthResponse(
         message="Signup successful.",
         user_id=user.id,
@@ -305,4 +329,3 @@ def login(payload: LoginRequest, request: Request) -> AuthResponse:
         access_token=_create_access_token(user.id, profile.phone_number),
         profile=_build_profile_response(user, profile, request),
     )
-

@@ -11,7 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from apps.contact.api import router as contact_router
 from apps.ev.api import router as ev_router
 from apps.posts.api import router as posts_router
+from apps.referral.api import router as referral_router
 from apps.rider_auth.api import router as rider_auth_router
+from apps.wallet.api import router as wallet_router
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 API_ACCESS_KEY = os.getenv("FASTAPI_X_API_KEY", "dev-rider-api-key")
@@ -46,6 +48,8 @@ def create_app() -> FastAPI:
     app.include_router(ev_router, dependencies=[Depends(verify_api_key)])
     app.include_router(posts_router, dependencies=[Depends(verify_api_key)])
     app.include_router(contact_router, dependencies=[Depends(verify_api_key)])
+    app.include_router(referral_router, dependencies=[Depends(verify_api_key)])
+    app.include_router(wallet_router, dependencies=[Depends(verify_api_key)])
     return app
 
 
