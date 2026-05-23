@@ -77,6 +77,8 @@ INSTALLED_APPS = [
     'apps.wallet.apps.WalletConfig',
     'apps.referral.apps.ReferralConfig',
     'apps.update.apps.UpdateConfig',
+    'apps.vehicle.apps.VehicleConfig',
+    'apps.rsa.apps.RsaConfig',
 ]
 
 # Public legal pages (templates/legal/*.html)
