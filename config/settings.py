@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'apps.ev.apps.EvConfig',
     'apps.posts.apps.PostsConfig',
     'apps.contact.apps.ContactConfig',
+    'apps.notifications.apps.NotificationsConfig',
     'apps.legal.apps.LegalConfig',
     'apps.wallet.apps.WalletConfig',
     'apps.referral.apps.ReferralConfig',

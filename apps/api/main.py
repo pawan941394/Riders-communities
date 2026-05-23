@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from apps.contact.api import router as contact_router
 from apps.ev.api import router as ev_router
+from apps.notifications.api import router as notifications_router
 from apps.posts.api import router as posts_router
 from apps.referral.api import router as referral_router
 from apps.rider_auth.api import router as rider_auth_router
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
     app.include_router(ev_router, dependencies=[Depends(verify_api_key)])
     app.include_router(posts_router, dependencies=[Depends(verify_api_key)])
     app.include_router(contact_router, dependencies=[Depends(verify_api_key)])
+    app.include_router(notifications_router, dependencies=[Depends(verify_api_key)])
     app.include_router(referral_router, dependencies=[Depends(verify_api_key)])
     app.include_router(wallet_router, dependencies=[Depends(verify_api_key)])
     app.include_router(update_router, dependencies=[Depends(verify_api_key)])
