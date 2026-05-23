@@ -10,6 +10,7 @@ from django.db.models import Count, Prefetch, Q
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from pydantic import BaseModel, ConfigDict
 
+from apps.notifications.push_service import send_topic_notification
 from apps.posts.models import Post, PostCityOption, PostComment, PostCompanyOption, PostIssueTypeOption, PostReaction
 from apps.rider_auth.models import RiderProfile
 
@@ -199,6 +200,17 @@ def _author_display(post: Post) -> str:
     if name:
         return f"{name}, {post.city}"
     return u.username
+
+
+def _post_notification_payload(post: Post) -> tuple[str, str]:
+    clean_body, _ = _strip_issue_prefix(post.body)
+    snippet = " ".join(clean_body.split()).strip()
+    if len(snippet) > 120:
+        snippet = f"{snippet[:117]}..."
+    if not snippet:
+        snippet = "New rider post in community."
+    title = f"New post • {post.city} • {post.company}"
+    return title, snippet
 
 
 def _absolute_media_url(request: Request, relative: str) -> str:
@@ -542,6 +554,23 @@ def create_post(
         post.image.save(fname, ContentFile(raw), save=False)
 
     post.save()
+
+    # Non-blocking broadcast: a failed push should never fail post creation.
+    try:
+        notif_title, notif_body = _post_notification_payload(post)
+        send_topic_notification(
+            title=notif_title,
+            body=notif_body,
+            topic="all_users",
+            data={
+                "type": "new_post",
+                "post_id": str(post.id),
+                "city": post.city,
+                "company": post.company,
+            },
+        )
+    except Exception:
+        pass
 
     image_url = None
     if post.image:
