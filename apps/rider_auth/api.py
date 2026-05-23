@@ -136,6 +136,12 @@ class OtpRegisterRequest(BaseModel):
     verification_ref: str | None = Field(default=None, max_length=128)
 
 
+class OtpConfigResponse(BaseModel):
+    enabled: bool
+    widget_id: str
+    auth_token: str
+
+
 class UserProfileData(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -377,6 +383,18 @@ def patch_profile(
             profile.save()
 
     return _build_profile_response(user, profile, request)
+
+
+@router.get("/otp/config", response_model=OtpConfigResponse)
+def otp_config() -> OtpConfigResponse:
+    widget_id = os.getenv("SENDOTP_WIDGET_ID", "").strip()
+    auth_token = os.getenv("SENDOTP_AUTH_TOKEN", "").strip()
+    enabled = bool(widget_id and auth_token)
+    return OtpConfigResponse(
+        enabled=enabled,
+        widget_id=widget_id,
+        auth_token=auth_token,
+    )
 
 
 @router.post("/otp/precheck", response_model=OtpPrecheckResponse)
