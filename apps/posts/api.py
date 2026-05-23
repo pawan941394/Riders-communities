@@ -10,6 +10,7 @@ from django.db.models import Count, Prefetch, Q
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from pydantic import BaseModel, ConfigDict
 
+from apps.notifications.user_events import create_user_notification
 from apps.notifications.push_service import send_topic_notification
 from apps.posts.models import Post, PostCityOption, PostComment, PostCompanyOption, PostIssueTypeOption, PostReaction
 from apps.rider_auth.models import RiderProfile
@@ -200,6 +201,13 @@ def _author_display(post: Post) -> str:
     if name:
         return f"{name}, {post.city}"
     return u.username
+
+
+def _user_display_name(user: User) -> str:
+    full = f"{user.first_name} {user.last_name}".strip()
+    if full:
+        return full
+    return (user.username or "Rider").strip() or "Rider"
 
 
 def _post_notification_payload(post: Post) -> tuple[str, str]:
@@ -425,6 +433,19 @@ def create_post_comment(
     c = PostComment(post=post, author=user, parent=parent, body=body)
     c.save()
     c = PostComment.objects.select_related("author", "author__rider_profile").get(pk=c.pk)
+
+    if post.author_id != user.id:
+        actor_name = _user_display_name(user)
+        create_user_notification(
+            user=post.author,
+            actor=user,
+            kind="post_commented",
+            title=f"{actor_name} commented on your post",
+            body=body[:160],
+            post_id=post.id,
+            metadata={"post_id": post.id, "comment_id": c.id},
+        )
+
     return _serialize_comment_leaf(request, c)
 
 
@@ -493,6 +514,9 @@ def set_post_reaction(
     if post is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
 
+    before = PostReaction.objects.filter(post=post, user=user).first()
+    old_kind = before.kind if before else None
+
     if payload.kind == "none":
         PostReaction.objects.filter(post=post, user=user).delete()
     else:
@@ -501,6 +525,17 @@ def set_post_reaction(
             user=user,
             defaults={"kind": payload.kind},
         )
+        if post.author_id != user.id and old_kind != payload.kind and payload.kind == "like":
+            actor_name = _user_display_name(user)
+            create_user_notification(
+                user=post.author,
+                actor=user,
+                kind="post_liked",
+                title=f"{actor_name} liked your post",
+                body=f"{actor_name} liked your community post.",
+                post_id=post.id,
+                metadata={"post_id": post.id, "reaction": payload.kind},
+            )
 
     likes = PostReaction.objects.filter(post=post, kind=PostReaction.Kind.LIKE).count()
     dislikes = PostReaction.objects.filter(post=post, kind=PostReaction.Kind.DISLIKE).count()

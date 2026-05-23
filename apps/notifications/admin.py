@@ -5,6 +5,7 @@ from django.utils import timezone
 from apps.notifications.models import (
     BroadcastNotification,
     PushDeviceToken,
+    UserNotification,
     UserNotificationState,
 )
 from apps.notifications.push_service import send_topic_notification
@@ -99,3 +100,11 @@ class PushDeviceTokenAdmin(admin.ModelAdmin):
     list_filter = ("platform", "is_active", "updated_at")
     search_fields = ("user__username", "user__email", "token")
     readonly_fields = ("last_seen_at", "created_at", "updated_at")
+
+
+@admin.register(UserNotification)
+class UserNotificationAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "kind", "title", "post_id", "read_at", "created_at")
+    list_filter = ("kind", "read_at", "created_at")
+    search_fields = ("user__username", "user__email", "title", "body")
+    readonly_fields = ("created_at", "updated_at")

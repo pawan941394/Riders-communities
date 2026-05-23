@@ -77,3 +77,38 @@ def send_topic_notification(
         return True, message_id
     except Exception as exc:  # pragma: no cover
         return False, str(exc)
+
+
+def send_tokens_notification(
+    *,
+    title: str,
+    body: str,
+    tokens: list[str],
+    data: Optional[dict[str, str]] = None,
+) -> Tuple[bool, str]:
+    clean_tokens = [t.strip() for t in tokens if (t or "").strip()]
+    if not clean_tokens:
+        return False, "No active device tokens."
+
+    try:
+        _init_firebase_app()
+        message = messaging.MulticastMessage(
+            tokens=clean_tokens,
+            notification=messaging.Notification(
+                title=title.strip()[:140],
+                body=body.strip()[:1024],
+            ),
+            data=data or {},
+            android=messaging.AndroidConfig(
+                priority="high",
+                notification=messaging.AndroidNotification(
+                    channel_id="ridewithgarv_general",
+                    icon="ic_stat_ridewithgarv",
+                    color="#FFC928",
+                ),
+            ),
+        )
+        result = messaging.send_each_for_multicast(message)
+        return True, f"success={result.success_count}, failure={result.failure_count}"
+    except Exception as exc:  # pragma: no cover
+        return False, str(exc)

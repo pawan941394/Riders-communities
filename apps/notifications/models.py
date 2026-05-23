@@ -64,3 +64,42 @@ class PushDeviceToken(models.Model):
 
     def __str__(self) -> str:
         return f"PushDeviceToken(user_id={self.user_id}, platform={self.platform})"
+
+
+class UserNotification(models.Model):
+    class Kind(models.TextChoices):
+        POST_LIKED = "post_liked", "Post liked"
+        POST_COMMENTED = "post_commented", "Post commented"
+        GENERAL = "general", "General"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="user_notifications",
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="triggered_notifications",
+        null=True,
+        blank=True,
+    )
+    kind = models.CharField(max_length=40, choices=Kind.choices, default=Kind.GENERAL)
+    title = models.CharField(max_length=140)
+    body = models.TextField(blank=True, default="")
+    post_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    read_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+
+    def mark_read(self) -> None:
+        if self.read_at is None:
+            self.read_at = timezone.now()
+            self.save(update_fields=["read_at", "updated_at"])
+
+    def __str__(self) -> str:
+        return f"UserNotification(user_id={self.user_id}, kind={self.kind}, id={self.id})"
