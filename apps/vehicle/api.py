@@ -94,11 +94,6 @@ def upsert_vehicle(
     chassis_number = _clean(payload.chassis_number).upper()
     company_name = _required(payload.company_name, "Rider company")
     battery_number = _clean(payload.battery_number).upper()
-    if payload.vehicle_type in {"ev_scooter", "ev_bike"} and not battery_number:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Battery number is required for EV vehicles.",
-        )
 
     vehicle, _ = Vehicle.objects.get_or_create(user=user)
     vehicle.vehicle_type = payload.vehicle_type
