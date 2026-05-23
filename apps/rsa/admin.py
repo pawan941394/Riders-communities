@@ -8,7 +8,7 @@ class RSATicketHistoryInline(admin.TabularInline):
     extra = 0
     readonly_fields = (
         "user",
-        "event",
+        "status",
         "from_status",
         "to_status",
         "note",
@@ -80,12 +80,12 @@ class RSATicketHistoryAdmin(admin.ModelAdmin):
         "id",
         "ticket",
         "user",
-        "event",
+        "status",
         "from_status",
         "to_status",
         "created_at",
     )
-    list_filter = ("event", "from_status", "to_status", "created_at")
+    list_filter = ("status", "from_status", "to_status", "created_at")
     search_fields = (
         "ticket__id",
         "user__username",

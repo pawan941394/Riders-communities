@@ -54,7 +54,7 @@ class RSATicketHistoryOut(BaseModel):
     id: int
     ticket_id: int
     user_id: int | None
-    event: str
+    status: str
     from_status: str
     to_status: str
     note: str
@@ -99,7 +99,7 @@ def _history_out(row: RSATicketHistory) -> RSATicketHistoryOut:
         id=row.id,
         ticket_id=row.ticket_id,
         user_id=row.user_id,
-        event=row.event,
+        status=row.status,
         from_status=row.from_status or "",
         to_status=row.to_status or "",
         note=row.note or "",
@@ -139,7 +139,7 @@ def create_rsa_ticket(
     RSATicketHistory.objects.create(
         ticket=ticket,
         user=user,
-        event=RSATicketHistory.Event.CREATED,
+        status=RSATicketHistory.Status.CREATED,
         to_status=ticket.status,
         note="RSA ticket created by rider.",
     )

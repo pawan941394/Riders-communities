@@ -232,6 +232,11 @@ def patch_profile(
     if rider_id is not None:
         received_field = True
         next_rider_id = rider_id.strip()
+        if not next_rider_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Rider ID is required.",
+            )
         current_rider_id = (profile.rider_id or "").strip()
         if current_rider_id and next_rider_id and current_rider_id != next_rider_id:
             raise HTTPException(
@@ -245,6 +250,11 @@ def patch_profile(
     if rider_company is not None:
         received_field = True
         next_company = rider_company.strip()
+        if not next_company:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Rider company is required.",
+            )
         current_company = (profile.rider_company or "").strip()
         if current_company and next_company and current_company != next_company:
             raise HTTPException(
@@ -258,6 +268,11 @@ def patch_profile(
     if city is not None:
         received_field = True
         next_city = city.strip()
+        if not next_city:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="City is required.",
+            )
         if next_city and (profile.city or "").strip() != next_city:
             profile.city = next_city
             changed = True

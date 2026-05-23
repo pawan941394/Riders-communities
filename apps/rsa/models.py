@@ -51,7 +51,7 @@ class RSATicket(models.Model):
 
 
 class RSATicketHistory(models.Model):
-    class Event(models.TextChoices):
+    class Status(models.TextChoices):
         CREATED = "created", "Created"
         STATUS_CHANGED = "status_changed", "Status changed"
         NOTE_ADDED = "note_added", "Note added"
@@ -71,7 +71,7 @@ class RSATicketHistory(models.Model):
         blank=True,
         related_name="rsa_history_entries",
     )
-    event = models.CharField(max_length=32, choices=Event.choices)
+    status = models.CharField(max_length=32, choices=Status.choices)
     from_status = models.CharField(max_length=24, blank=True, default="")
     to_status = models.CharField(max_length=24, blank=True, default="")
     note = models.TextField(blank=True, default="")
@@ -83,8 +83,8 @@ class RSATicketHistory(models.Model):
         indexes = [
             models.Index(fields=["ticket", "-created_at"]),
             models.Index(fields=["user", "-created_at"]),
-            models.Index(fields=["event"]),
+            models.Index(fields=["status"], name="rsa_hist_status_idx"),
         ]
 
     def __str__(self) -> str:
-        return f"RSA history #{self.id} - ticket {self.ticket_id} - {self.event}"
+        return f"RSA history #{self.id} - ticket {self.ticket_id} - {self.status}"

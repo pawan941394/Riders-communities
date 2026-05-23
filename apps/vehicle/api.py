@@ -49,6 +49,16 @@ def _clean(value: str) -> str:
     return value.strip()
 
 
+def _required(value: str, field_name: str) -> str:
+    cleaned = _clean(value)
+    if not cleaned:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{field_name} is required.",
+        )
+    return cleaned
+
+
 def _vehicle_out(vehicle: Vehicle) -> VehicleOut:
     return VehicleOut(
         id=vehicle.id,
@@ -79,13 +89,24 @@ def upsert_vehicle(
     payload: VehicleIn,
     user: User = Depends(current_user_dep),
 ) -> VehicleMeResponse:
+    model_name = _required(payload.model_name, "Vehicle model")
+    registration_number = _required(payload.registration_number, "Vehicle number").upper()
+    chassis_number = _required(payload.chassis_number, "Chassis number").upper()
+    company_name = _required(payload.company_name, "Rider company")
+    battery_number = _clean(payload.battery_number).upper()
+    if payload.vehicle_type in {"ev_scooter", "ev_bike"} and not battery_number:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Battery number is required for EV vehicles.",
+        )
+
     vehicle, _ = Vehicle.objects.get_or_create(user=user)
     vehicle.vehicle_type = payload.vehicle_type
-    vehicle.company_name = _clean(payload.company_name)
-    vehicle.model_name = _clean(payload.model_name)
-    vehicle.registration_number = _clean(payload.registration_number).upper()
-    vehicle.chassis_number = _clean(payload.chassis_number).upper()
-    vehicle.battery_number = _clean(payload.battery_number).upper()
+    vehicle.company_name = company_name
+    vehicle.model_name = model_name
+    vehicle.registration_number = registration_number
+    vehicle.chassis_number = chassis_number
+    vehicle.battery_number = battery_number
     vehicle.color = _clean(payload.color)
     vehicle.purchase_year = payload.purchase_year
     vehicle.is_active = payload.is_active
