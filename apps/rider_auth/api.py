@@ -211,19 +211,60 @@ def patch_profile(
     request: Request,
     user: User = Depends(current_user_dep),
     bio: str | None = Form(default=None),
+    rider_id: str | None = Form(default=None),
+    rider_company: str | None = Form(default=None),
+    city: str | None = Form(default=None),
     profile_photo: UploadFile | None = File(default=None),
 ) -> UserProfileData:
     profile = RiderProfile.objects.filter(user=user).select_related("user").first()
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rider profile not found.")
 
+    received_field = False
     changed = False
     if bio is not None:
-        profile.bio = bio.strip()
-        changed = True
+        received_field = True
+        next_bio = bio.strip()
+        if profile.bio != next_bio:
+            profile.bio = next_bio
+            changed = True
+
+    if rider_id is not None:
+        received_field = True
+        next_rider_id = rider_id.strip()
+        current_rider_id = (profile.rider_id or "").strip()
+        if current_rider_id and next_rider_id and current_rider_id != next_rider_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Rider ID is already submitted and cannot be changed.",
+            )
+        if next_rider_id and current_rider_id != next_rider_id:
+            profile.rider_id = next_rider_id
+            changed = True
+
+    if rider_company is not None:
+        received_field = True
+        next_company = rider_company.strip()
+        current_company = (profile.rider_company or "").strip()
+        if current_company and next_company and current_company != next_company:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Rider company is already submitted and cannot be changed.",
+            )
+        if next_company and current_company != next_company:
+            profile.rider_company = next_company
+            changed = True
+
+    if city is not None:
+        received_field = True
+        next_city = city.strip()
+        if next_city and (profile.city or "").strip() != next_city:
+            profile.city = next_city
+            changed = True
 
     photo_updated = False
     if profile_photo is not None and profile_photo.filename:
+        received_field = True
         photo_ext = os.path.splitext(profile_photo.filename)[1].lower() or ".jpg"
         photo_name = f"rider_{user.id}_{uuid.uuid4().hex[:10]}{photo_ext}"
         photo_bytes = profile_photo.file.read()
@@ -231,11 +272,12 @@ def patch_profile(
         changed = True
         photo_updated = True
 
-    if not changed:
+    if not received_field:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update.")
 
     if not photo_updated:
-        profile.save()
+        if changed:
+            profile.save()
 
     return _build_profile_response(user, profile, request)
 
