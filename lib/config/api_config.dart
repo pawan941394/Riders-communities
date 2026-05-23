@@ -17,4 +17,14 @@ class ApiConfig {
     'APP_VERSION',
     defaultValue: '1.0.0',
   );
+
+  static const String sendOtpWidgetId = String.fromEnvironment(
+    'SENDOTP_WIDGET_ID',
+    defaultValue: '',
+  );
+
+  static const String sendOtpAuthToken = String.fromEnvironment(
+    'SENDOTP_AUTH_TOKEN',
+    defaultValue: '',
+  );
 }

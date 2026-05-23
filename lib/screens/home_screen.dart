@@ -53,12 +53,40 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  static const String _kLastSeenNotificationId = 'last_seen_notification_id';
   int _currentIndex = 0;
+  Timer? _notificationsTimer;
+  bool _notificationFetching = false;
+  int _lastSeenNotificationId = 0;
+  final List<Map<String, dynamic>> _notifications = <Map<String, dynamic>>[];
+  int _unreadNotifications = 0;
+  String _languageCode = 'en';
+  bool _languageSaving = false;
 
   static const String _shellApiAccessKey = ApiConfig.apiAccessKey;
 
   String get _shellApiBaseUrl {
     return ApiConfig.apiBaseUrl;
+  }
+
+  bool get _isHindi => _languageCode == 'hi';
+  String _tr(String en, String hi) => _isHindi ? hi : en;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_bootstrapNotifications());
+    unawaited(_loadLanguagePreference());
+    _notificationsTimer = Timer.periodic(
+      const Duration(minutes: 2),
+      (_) => unawaited(_checkNotifications()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _notificationsTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -68,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
       CommunityFeedScreen(
         initialCity: widget.currentUserCity.trim(),
         accessToken: widget.accessToken,
+        languageCode: _languageCode,
         onOpenCreatePost: () {
           setState(() {
             _currentIndex = 7;
@@ -83,6 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
         apiBaseUrl: _shellApiBaseUrl,
         apiAccessKey: _shellApiAccessKey,
         accessToken: widget.accessToken,
+        languageCode: _languageCode,
         initialPhone: widget.currentUserPhone,
         onOpenOnboarding: () {
           setState(() {
@@ -94,6 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
         apiBaseUrl: _shellApiBaseUrl,
         apiAccessKey: _shellApiAccessKey,
         accessToken: widget.accessToken,
+        languageCode: _languageCode,
         onCompleted: () {
           setState(() {
             _currentIndex = 0;
@@ -184,6 +215,55 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            Container(
+                              margin: const EdgeInsets.only(right: 10),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF1F2937).withValues(alpha: 0.92)
+                                    : const Color(0xFFFFF3D1).withValues(alpha: 0.9),
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x12000000),
+                                    blurRadius: 14,
+                                    offset: Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Notifications',
+                                    onPressed: _openNotificationsSheet,
+                                    icon: Icon(
+                                      Icons.notifications_rounded,
+                                      color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
+                                    ),
+                                  ),
+                                  if (_unreadNotifications > 0)
+                                    Positioned(
+                                      right: 6,
+                                      top: 6,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFEF4444),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          _unreadNotifications > 99 ? '99+' : '$_unreadNotifications',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                             Container(
                               decoration: BoxDecoration(
                                 color: isDark
@@ -289,31 +369,31 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildNavItem(
                         index: 0,
                         icon: Icons.groups_rounded,
-                        label: 'Community',
+                        label: _tr('Community', 'कम्युनिटी'),
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 1,
                         icon: Icons.health_and_safety_rounded,
-                        label: 'RSA',
+                        label: _tr('RSA', 'आरएसए'),
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 2,
                         icon: Icons.add_box_rounded,
-                        label: 'Onboarding',
+                        label: _tr('Onboarding', 'ऑनबोर्डिंग'),
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 3,
                         icon: Icons.electric_bike_rounded,
-                        label: 'EV',
+                        label: _tr('EV', 'ईवी'),
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 4,
                         icon: Icons.currency_rupee_rounded,
-                        label: 'Refer',
+                        label: _tr('Refer', 'रेफर'),
                         compact: compact,
                       ),
                     ],
@@ -382,13 +462,13 @@ class _HomeScreenState extends State<HomeScreen> {
             Divider(color: dividerColor),
             _buildDrawerItem(
               icon: Icons.groups_rounded,
-              label: 'Community',
+              label: _tr('Community', 'कम्युनिटी'),
               index: 0,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.add_box_rounded,
-              label: 'Onboarding',
+              label: _tr('Onboarding', 'ऑनबोर्डिंग'),
               index: 2,
               isDark: isDark,
             ),
@@ -400,27 +480,74 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             _buildDrawerItem(
               icon: Icons.currency_rupee_rounded,
-              label: 'Refer n earn',
+              label: _tr('Refer n earn', 'रेफर और कमाओ'),
               index: 4,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.add_box_rounded,
-              label: 'Create post',
+              label: _tr('Create post', 'पोस्ट बनाएं'),
               index: 7,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.support_agent_rounded,
-              label: 'Help',
+              label: _tr('Help', 'मदद'),
               index: 5,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.person_rounded,
-              label: 'Profile',
+              label: _tr('Profile', 'प्रोफाइल'),
               index: 6,
               isDark: isDark,
+            ),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              leading: Icon(
+                Icons.language_rounded,
+                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+              ),
+              title: Text(
+                _tr('Language', 'भाषा'),
+                style: TextStyle(color: titleColor, fontWeight: FontWeight.w700),
+              ),
+              subtitle: Text(
+                _languageCode == 'hi' ? 'हिंदी' : 'English',
+                style: TextStyle(color: bodyColor, fontWeight: FontWeight.w600),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'EN',
+                    style: TextStyle(
+                      color: _languageCode == 'en' ? titleColor : bodyColor,
+                      fontWeight: _languageCode == 'en' ? FontWeight.w800 : FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Switch(
+                    value: _languageCode == 'hi',
+                    activeColor: const Color(0xFFFFC928),
+                    onChanged: _languageSaving
+                        ? null
+                        : (bool value) {
+                            unawaited(_setLanguagePreference(value ? 'hi' : 'en'));
+                          },
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'HI',
+                    style: TextStyle(
+                      color: _languageCode == 'hi' ? titleColor : bodyColor,
+                      fontWeight: _languageCode == 'hi' ? FontWeight.w800 : FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
             ),
             Divider(color: dividerColor),
             SwitchListTile(
@@ -430,7 +557,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
               ),
               title: Text(
-                widget.isDarkMode ? 'Dark theme' : 'Light theme',
+                widget.isDarkMode ? _tr('Dark theme', 'डार्क थीम') : _tr('Light theme', 'लाइट थीम'),
                 style: TextStyle(color: titleColor, fontWeight: FontWeight.w700),
               ),
               value: widget.isDarkMode,
@@ -440,9 +567,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 8),
               leading: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444)),
-              title: const Text(
-                'Logout',
-                style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w800),
+              title: Text(
+                _tr('Logout', 'लॉगआउट'),
+                style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w800),
               ),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               onTap: () {
@@ -486,6 +613,527 @@ class _HomeScreenState extends State<HomeScreen> {
           unawaited(_selectTab(index));
         },
       ),
+    );
+  }
+
+  Future<void> _bootstrapNotifications() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      _lastSeenNotificationId = prefs.getInt(_kLastSeenNotificationId) ?? 0;
+    } catch (_) {}
+    await _checkNotifications();
+  }
+
+  Future<void> _loadLanguagePreference() async {
+    final String token = widget.accessToken.trim();
+    if (token.isEmpty) return;
+    try {
+      final http.Response response = await http.get(
+        Uri.parse('$_shellApiBaseUrl/api/v1/language/me'),
+        headers: <String, String>{
+          'X-API-Key': _shellApiAccessKey,
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) return;
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) return;
+      final String code = ('${decoded['language_code'] ?? 'en'}').trim().toLowerCase();
+      if (!mounted) return;
+      setState(() {
+        _languageCode = code == 'hi' ? 'hi' : 'en';
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _setLanguagePreference(String nextCode) async {
+    if (_languageSaving) return;
+    final String token = widget.accessToken.trim();
+    if (token.isEmpty) return;
+    final String normalized = nextCode == 'hi' ? 'hi' : 'en';
+    final String previous = _languageCode;
+
+    setState(() {
+      _languageCode = normalized;
+      _languageSaving = true;
+    });
+    try {
+      final http.Response response = await http.post(
+        Uri.parse('$_shellApiBaseUrl/api/v1/language/set'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'X-API-Key': _shellApiAccessKey,
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(<String, dynamic>{'language_code': normalized}),
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        if (mounted) {
+          setState(() {
+            _languageCode = previous;
+          });
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _languageCode = previous;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _languageSaving = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _saveLastSeenNotificationId(int id) async {
+    if (id <= _lastSeenNotificationId) return;
+    _lastSeenNotificationId = id;
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_kLastSeenNotificationId, id);
+    } catch (_) {}
+  }
+
+  Future<void> _markNotificationRead(int id, {String source = 'broadcast'}) async {
+    final String token = widget.accessToken.trim();
+    if (token.isEmpty) return;
+    try {
+      await http.post(
+        Uri.parse('$_shellApiBaseUrl/api/v1/notifications/$id/read?source=$source'),
+        headers: <String, String>{
+          'X-API-Key': _shellApiAccessKey,
+          'Authorization': 'Bearer $token',
+        },
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _showBroadcastNotification({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    if (!mounted) return;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF111827) : const Color(0xFFFFFBF1),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Row(
+            children: [
+              const Icon(Icons.notifications_active_rounded, color: Color(0xFFB45309)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          content: Text(body),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Later'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                unawaited(_markNotificationRead(id));
+              },
+              child: const Text('Got it'),
+            ),
+          ],
+        );
+      },
+    );
+    await _saveLastSeenNotificationId(id);
+  }
+
+  Future<void> _checkNotifications() async {
+    if (_notificationFetching) return;
+    final String token = widget.accessToken.trim();
+    if (token.isEmpty) return;
+    _notificationFetching = true;
+    try {
+      final http.Response response = await http.get(
+        Uri.parse('$_shellApiBaseUrl/api/v1/notifications/inbox?limit=25'),
+        headers: <String, String>{
+          'X-API-Key': _shellApiAccessKey,
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) return;
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) return;
+      final dynamic rawItems = decoded['items'];
+      if (rawItems is! List<dynamic>) return;
+
+      final List<Map<String, dynamic>> parsed = <Map<String, dynamic>>[];
+      int unread = 0;
+      for (final dynamic item in rawItems) {
+        if (item is! Map) continue;
+        final Map<String, dynamic> row = item.map<String, dynamic>(
+          (dynamic k, dynamic v) => MapEntry<String, dynamic>('$k', v),
+        );
+        if (row['is_read'] != true) unread += 1;
+        parsed.add(row);
+      }
+      if (mounted) {
+        setState(() {
+          _notifications
+            ..clear()
+            ..addAll(parsed);
+          _unreadNotifications = unread;
+        });
+      }
+      if (parsed.isEmpty) return;
+
+      Map<String, dynamic>? candidate;
+      for (final Map<String, dynamic> row in parsed) {
+        final int id = int.tryParse('${row['id'] ?? 0}') ?? 0;
+        final bool isRead = row['is_read'] == true;
+        final String source = ('${row['source'] ?? 'broadcast'}').trim().toLowerCase();
+        if (source == 'broadcast' && id > _lastSeenNotificationId && !isRead) {
+          candidate = row;
+          break;
+        }
+      }
+      if (candidate == null) return;
+      final int id = int.tryParse('${candidate['id'] ?? 0}') ?? 0;
+      if (id <= 0) return;
+      final String title = ('${candidate['title'] ?? ''}').trim();
+      final String body = ('${candidate['body'] ?? ''}').trim();
+      if (title.isEmpty && body.isEmpty) return;
+      await _showBroadcastNotification(
+        id: id,
+        title: title.isEmpty ? 'Notification' : title,
+        body: body.isEmpty ? 'You have a new update.' : body,
+      );
+    } catch (_) {
+      // Silent fail: notifications should never block main app flow.
+    } finally {
+      _notificationFetching = false;
+    }
+  }
+
+  Future<void> _openPostDetailFromNotification(int postId) async {
+    final String token = widget.accessToken.trim();
+    if (token.isEmpty) return;
+    try {
+      final http.Response res = await http.get(
+        Uri.parse('$_shellApiBaseUrl/api/v1/posts/$postId'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'X-API-Key': _shellApiAccessKey,
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (res.statusCode != 200) return;
+      final dynamic decoded = jsonDecode(res.body);
+      if (decoded is! Map<String, dynamic>) return;
+
+      final String author = ('${decoded['author_display'] ?? 'Rider'}').trim();
+      final String problem = ('${decoded['body'] ?? ''}').trim();
+      final String city = ('${decoded['city'] ?? ''}').trim();
+      final String company = ('${decoded['company'] ?? ''}').trim();
+      final bool isAnonymous = decoded['is_anonymous'] == true;
+      final List<String> tags = decoded['tags'] is List<dynamic>
+          ? (decoded['tags'] as List<dynamic>)
+              .whereType<String>()
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList()
+          : <String>[];
+      final int commentsCount = decoded['comments_count'] is int
+          ? decoded['comments_count'] as int
+          : int.tryParse('${decoded['comments_count']}') ?? 0;
+      final int likesCount = decoded['likes_count'] is int
+          ? decoded['likes_count'] as int
+          : int.tryParse('${decoded['likes_count']}') ?? 0;
+      final int dislikesCount = decoded['dislikes_count'] is int
+          ? decoded['dislikes_count'] as int
+          : int.tryParse('${decoded['dislikes_count']}') ?? 0;
+      final String? imageUrl = decoded['image_url'] is String ? decoded['image_url'] as String : null;
+      final String? bodyFull = decoded['body_full'] is String ? decoded['body_full'] as String : null;
+      final String? authorAvatarUrl =
+          decoded['author_avatar_url'] is String ? decoded['author_avatar_url'] as String : null;
+      final String authorInitial = ('${decoded['author_initial'] ?? '?'}').trim().isEmpty
+          ? '?'
+          : '${decoded['author_initial']}';
+      final String? viewerReaction =
+          decoded['viewer_reaction'] is String ? decoded['viewer_reaction'] as String : null;
+
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => PostDetailScreen(
+            postId: postId,
+            apiBaseUrl: _shellApiBaseUrl,
+            author: author.isEmpty ? 'Rider' : author,
+            problem: problem.isEmpty ? 'Post detail' : problem,
+            city: city,
+            company: company,
+            tags: tags,
+            commentsCount: commentsCount,
+            isAnonymous: isAnonymous,
+            imageUrl: imageUrl,
+            bodyFull: bodyFull,
+            authorAvatarUrl: authorAvatarUrl,
+            authorInitial: authorInitial,
+            likesCount: likesCount,
+            dislikesCount: dislikesCount,
+            viewerReaction: viewerReaction,
+          ),
+        ),
+      );
+    } catch (_) {}
+  }
+
+  String _formatNotificationTime(String? iso) {
+    if (iso == null || iso.trim().isEmpty) return '';
+    final DateTime? dt = DateTime.tryParse(iso);
+    if (dt == null) return '';
+    final DateTime local = dt.toLocal();
+    final Duration diff = DateTime.now().difference(local);
+    if (diff.isNegative || diff.inSeconds < 45) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    final String day = local.day.toString().padLeft(2, '0');
+    final String month = local.month.toString().padLeft(2, '0');
+    final String year = local.year.toString();
+    return '$day/$month/$year';
+  }
+
+  Future<void> _openNotificationsSheet() async {
+    await _checkNotifications();
+    if (!mounted) return;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFBF2),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext sheetContext) {
+        return SafeArea(
+          top: false,
+          child: SizedBox(
+            height: MediaQuery.of(sheetContext).size.height * 0.78,
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        height: 34,
+                        width: 34,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                          ),
+                        ),
+                        child: const Icon(Icons.notifications_rounded, color: Color(0xFF0B1F3A), size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Notifications',
+                          style: TextStyle(
+                            color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                      if (_unreadNotifications > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: isDark ? const Color(0x335B6B88) : const Color(0x332563EB),
+                            ),
+                          ),
+                          child: Text(
+                            'Unread $_unreadNotifications',
+                            style: TextStyle(
+                              color: isDark ? const Color(0xFFBFDBFE) : const Color(0xFF1D4ED8),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: _notifications.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No notifications yet.',
+                            style: TextStyle(
+                              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(14, 0, 14, 18),
+                          itemBuilder: (context, index) {
+                            final Map<String, dynamic> row = _notifications[index];
+                            final int id = int.tryParse('${row['id'] ?? 0}') ?? 0;
+                            final String source = ('${row['source'] ?? 'broadcast'}').trim().toLowerCase();
+                            final bool isRead = row['is_read'] == true;
+                            final String title = ('${row['title'] ?? ''}').trim();
+                            final String body = ('${row['body'] ?? ''}').trim();
+                            final int postId = int.tryParse('${row['post_id'] ?? 0}') ?? 0;
+                            final String timeText = _formatNotificationTime('${row['created_at'] ?? ''}');
+                            return Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () async {
+                                  await _markNotificationRead(id, source: source);
+                                  if (!mounted) return;
+                                  Navigator.of(sheetContext).pop();
+                                  await _checkNotifications();
+                                  if (postId > 0) {
+                                    await _openPostDetailFromNotification(postId);
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    color: isRead
+                                        ? (isDark ? const Color(0xFF111827) : const Color(0xFFFFFFFF))
+                                        : (isDark ? const Color(0xFF1E293B) : const Color(0xFFFFF5D8)),
+                                    border: Border.all(
+                                      color: isDark ? const Color(0x335B6B88) : const Color(0x33F4B400),
+                                    ),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x100F172A),
+                                        blurRadius: 10,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 34,
+                                        height: 34,
+                                        decoration: BoxDecoration(
+                                          color: isRead
+                                              ? (isDark ? const Color(0xFF1F2937) : const Color(0xFFF8FAFC))
+                                              : (isDark ? const Color(0xFF334155) : const Color(0xFFFFE9A8)),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Icon(
+                                          postId > 0 ? Icons.forum_rounded : Icons.notifications_active_rounded,
+                                          size: 18,
+                                          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    title.isEmpty ? 'Notification' : title,
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      fontWeight: isRead ? FontWeight.w700 : FontWeight.w900,
+                                                      color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  timeText,
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (body.isNotEmpty) ...[
+                                              const SizedBox(height: 3),
+                                              Text(
+                                                body,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                      if (!isRead)
+                                        const Padding(
+                                          padding: EdgeInsets.only(left: 8, top: 6),
+                                          child: Icon(
+                                            Icons.brightness_1_rounded,
+                                            size: 9,
+                                            color: Color(0xFF2563EB),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          separatorBuilder: (_, __) => const SizedBox(height: 9),
+                          itemCount: _notifications.length,
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -711,6 +1359,7 @@ class CommunityFeedScreen extends StatefulWidget {
     super.key,
     this.initialCity = '',
     required this.accessToken,
+    this.languageCode = 'en',
     required this.onOpenCreatePost,
     required this.onOpenRefer,
   });
@@ -718,6 +1367,7 @@ class CommunityFeedScreen extends StatefulWidget {
   /// Prefills city filter when it matches API/meta options.
   final String initialCity;
   final String accessToken;
+  final String languageCode;
   final VoidCallback onOpenCreatePost;
   final VoidCallback onOpenRefer;
 
@@ -1115,20 +1765,12 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isHindi = widget.languageCode.trim().toLowerCase() == 'hi';
     final List<Widget> children = <Widget>[
-      const _CommunityOverviewCard(),
-      const SizedBox(height: 10),
-      _WalletReferralBanner(
-        loading: _walletBannerLoading,
-        balanceCredits: _walletBannerBalance,
-        referralCode: _walletBannerCode,
-        onOpenRefer: widget.onOpenRefer,
-        onCopyReferral: () {
-          unawaited(_copyReferralCode());
-        },
-      ),
+      _CommunityOverviewCard(isHindi: isHindi),
       const SizedBox(height: 10),
       _CreatePostEntryCard(
+        isHindi: isHindi,
         onOpenCreatePost: widget.onOpenCreatePost,
       ),
       const SizedBox(height: 14),
@@ -1324,13 +1966,14 @@ class _CommunityFeedFilters extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? const [Color(0xEE1F2937), Color(0xE6141F2F)]
-              : const [Color(0xF2FFFFFF), Color(0xEFFFF8E8)],
-        ),
+        color: isDark ? null : const Color(0xFFFFFFFF),
+        gradient: isDark
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xEE1F2937), Color(0xE6141F2F)],
+              )
+            : null,
         border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x33F4B400)),
         boxShadow: const [
           BoxShadow(
@@ -1388,7 +2031,7 @@ class _CommunityFeedFilters extends StatelessWidget {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF111827) : const Color(0xFFFFFBF1),
+              color: isDark ? const Color(0xFF111827) : const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x44F4B400)),
             ),
@@ -1445,7 +2088,9 @@ class _CommunityFeedFilters extends StatelessWidget {
 }
 
 class _CommunityOverviewCard extends StatelessWidget {
-  const _CommunityOverviewCard();
+  const _CommunityOverviewCard({required this.isHindi});
+
+  final bool isHindi;
 
   @override
   Widget build(BuildContext context) {
@@ -1501,7 +2146,7 @@ class _CommunityOverviewCard extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Rider Community',
+                          isHindi ? 'राइडर कम्युनिटी' : 'Rider Community',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w900,
                                 color: Colors.white,
@@ -1512,7 +2157,9 @@ class _CommunityOverviewCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Ask, help and grow together with delivery riders.',
+                    isHindi
+                        ? 'डिलीवरी राइडर्स के साथ पूछें, मदद करें और साथ में आगे बढ़ें।'
+                        : 'Ask, help and grow together with delivery riders.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
                         ),
@@ -1675,9 +2322,11 @@ class _WalletReferralBanner extends StatelessWidget {
 
 class _CreatePostEntryCard extends StatelessWidget {
   const _CreatePostEntryCard({
+    required this.isHindi,
     required this.onOpenCreatePost,
   });
 
+  final bool isHindi;
   final VoidCallback onOpenCreatePost;
 
   @override
@@ -1711,7 +2360,7 @@ class _CreatePostEntryCard extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Share your issue with riders now.',
+              isHindi ? 'अपनी समस्या अभी राइडर्स के साथ शेयर करें।' : 'Share your issue with riders now.',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF102A56),
@@ -1721,7 +2370,7 @@ class _CreatePostEntryCard extends StatelessWidget {
           FilledButton.icon(
             onPressed: onOpenCreatePost,
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('Create post'),
+            label: Text(isHindi ? 'पोस्ट बनाएं' : 'Create post'),
           ),
         ],
       ),
@@ -1753,7 +2402,7 @@ class _FilterDropdownChip extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: isDark
               ? const [Color(0xFF1F2937), Color(0xFF111827)]
-              : const [Color(0xFFFFFFFF), Color(0xFFFFF8E8)],
+              : const [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
         ),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x44F4B400), width: 1.0),
@@ -2525,12 +3174,14 @@ class RiderOnboardingDetailsScreen extends StatefulWidget {
     required this.apiBaseUrl,
     required this.apiAccessKey,
     required this.accessToken,
+    this.languageCode = 'en',
     required this.onCompleted,
   });
 
   final String apiBaseUrl;
   final String apiAccessKey;
   final String accessToken;
+  final String languageCode;
   final VoidCallback onCompleted;
 
   @override
@@ -2552,9 +3203,6 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
   final TextEditingController _otherCompanyController = TextEditingController();
   final TextEditingController _evModelController = TextEditingController();
   final TextEditingController _evNumberController = TextEditingController();
-  final TextEditingController _evRangeController = TextEditingController();
-  final TextEditingController _batteryNumberController = TextEditingController();
-  final TextEditingController _vehicleColorController = TextEditingController();
   final TextEditingController _purchaseYearController = TextEditingController();
 
   List<String> _companies = List<String>.from(_fallbackCompanies);
@@ -2564,6 +3212,9 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
   bool _loading = true;
   bool _saving = false;
   bool _detailsLocked = false;
+
+  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';
+  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   void initState() {
@@ -2579,9 +3230,6 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
     _otherCompanyController.dispose();
     _evModelController.dispose();
     _evNumberController.dispose();
-    _evRangeController.dispose();
-    _batteryNumberController.dispose();
-    _vehicleColorController.dispose();
     _purchaseYearController.dispose();
     super.dispose();
   }
@@ -2597,13 +3245,19 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
       _hasEv = prefs.getBool('onboarding_has_ev') ?? false;
       _evModelController.text = (prefs.getString('onboarding_ev_model') ?? '').trim();
       _evNumberController.text = (prefs.getString('onboarding_ev_number') ?? '').trim();
-      _evRangeController.text = (prefs.getString('onboarding_ev_range') ?? '').trim();
-      _batteryNumberController.text = (prefs.getString('onboarding_battery_number') ?? '').trim();
-      _vehicleColorController.text = (prefs.getString('onboarding_vehicle_color') ?? '').trim();
       _purchaseYearController.text = (prefs.getString('onboarding_purchase_year') ?? '').trim();
       final String savedVehicleType =
           (prefs.getString('onboarding_vehicle_type') ?? 'ev_scooter').trim();
-      _vehicleType = _vehicleTypes.containsKey(savedVehicleType) ? savedVehicleType : 'other';
+      if (savedVehicleType.startsWith('ev_')) {
+        _vehicleType = 'ev_scooter';
+      } else if (savedVehicleType == 'bike' ||
+          savedVehicleType == 'scooter' ||
+          savedVehicleType == 'other') {
+        _vehicleType = 'bike';
+      } else {
+        _vehicleType = 'ev_scooter';
+      }
+      _hasEv = _vehicleType.startsWith('ev_');
       _detailsLocked = prefs.getBool('onboarding_details_locked') ?? false;
       _loading = false;
     });
@@ -2668,13 +3322,16 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
         if (vehicle != null) {
           _detailsLocked = true;
           final String type = ('${vehicle['vehicle_type'] ?? 'ev_scooter'}').trim();
-          _vehicleType = _vehicleTypes.containsKey(type) ? type : 'other';
+          if (type.startsWith('ev_')) {
+            _vehicleType = 'ev_scooter';
+          } else if (type == 'bike' || type == 'scooter' || type == 'other') {
+            _vehicleType = 'bike';
+          } else {
+            _vehicleType = 'ev_scooter';
+          }
           _hasEv = _vehicleType.startsWith('ev_');
           _evModelController.text = ('${vehicle['model_name'] ?? ''}').trim();
           _evNumberController.text = ('${vehicle['registration_number'] ?? ''}').trim();
-          _evRangeController.text = ('${vehicle['chassis_number'] ?? ''}').trim();
-          _batteryNumberController.text = ('${vehicle['battery_number'] ?? ''}').trim();
-          _vehicleColorController.text = ('${vehicle['color'] ?? ''}').trim();
           _purchaseYearController.text = ('${vehicle['purchase_year'] ?? ''}').trim();
           final dynamic metadata = vehicle['metadata'];
           if (_riderIdController.text.trim().isEmpty && metadata is Map) {
@@ -2688,11 +3345,8 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
   }
 
   static const Map<String, String> _vehicleTypes = <String, String>{
-    'ev_scooter': 'EV scooter',
-    'ev_bike': 'EV bike',
-    'bike': 'Bike',
-    'scooter': 'Scooter',
-    'other': 'Other',
+    'ev_scooter': 'EV',
+    'bike': 'Petrol',
   };
 
   Future<void> _loadCompaniesFromMeta() async {
@@ -2737,7 +3391,14 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
   Future<void> _save() async {
     if (_detailsLocked) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Onboarding details are already submitted and cannot be changed.')),
+        SnackBar(
+          content: Text(
+            _tr(
+              'Onboarding details are already submitted and cannot be changed.',
+              'ऑनबोर्डिंग जानकारी पहले ही सबमिट हो चुकी है और अब बदली नहीं जा सकती।',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -2747,19 +3408,13 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
         _company == 'Other' ? _otherCompanyController.text.trim() : _company.trim();
     final String vehicleModel = _evModelController.text.trim();
     final String registrationNumber = _evNumberController.text.trim();
-    final String chassisNumber = _evRangeController.text.trim();
-    final String batteryNumber = _batteryNumberController.text.trim();
 
     final List<String> missing = <String>[];
     if (riderCompany.isEmpty) missing.add('Company');
     if (riderId.isEmpty) missing.add('Rider ID');
     if (city.isEmpty) missing.add('City');
-    if (vehicleModel.isEmpty) missing.add('Vehicle model');
+    if (_vehicleType.trim().isEmpty) missing.add('Vehicle type');
     if (registrationNumber.isEmpty) missing.add('Vehicle number');
-    if (chassisNumber.isEmpty) missing.add('Chassis number');
-    if (_vehicleType.startsWith('ev_') && batteryNumber.isEmpty) {
-      missing.add('Battery number');
-    }
     if (missing.isNotEmpty) {
       await _showRequiredInfoDialog(missing);
       return;
@@ -2811,9 +3466,9 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
           'company_name': riderCompany,
           'model_name': vehicleModel,
           'registration_number': registrationNumber,
-          'chassis_number': chassisNumber,
-          'battery_number': batteryNumber,
-          'color': _vehicleColorController.text.trim(),
+          'chassis_number': '',
+          'battery_number': '',
+          'color': '',
           'purchase_year': purchaseYear,
           'is_active': true,
           'metadata': <String, dynamic>{
@@ -2843,9 +3498,9 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
       await prefs.setString('onboarding_vehicle_type', _vehicleType);
       await prefs.setString('onboarding_ev_model', vehicleModel);
       await prefs.setString('onboarding_ev_number', registrationNumber);
-      await prefs.setString('onboarding_ev_range', chassisNumber);
-      await prefs.setString('onboarding_battery_number', batteryNumber);
-      await prefs.setString('onboarding_vehicle_color', _vehicleColorController.text.trim());
+      await prefs.setString('onboarding_ev_range', '');
+      await prefs.setString('onboarding_battery_number', '');
+      await prefs.setString('onboarding_vehicle_color', '');
       await prefs.setString('onboarding_purchase_year', _purchaseYearController.text.trim());
       await prefs.setBool('onboarding_details_locked', true);
       if (!mounted) return;
@@ -2853,7 +3508,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
         _detailsLocked = true;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Onboarding and vehicle details saved.')),
+        SnackBar(content: Text(_tr('Onboarding and vehicle details saved.', 'ऑनबोर्डिंग और वाहन जानकारी सेव हो गई।'))),
       );
       widget.onCompleted();
     } catch (error) {
@@ -2877,20 +3532,22 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF111827) : const Color(0xFFFFFBF1),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Submit onboarding details?'),
-          content: const Text(
-            'Ek baar details submit hone ke baad aap inhe app se change nahi kar paoge.\n\n'
-            'Once submitted, these onboarding and vehicle details cannot be changed from the app.',
+          title: Text(_tr('Submit onboarding details?', 'ऑनबोर्डिंग जानकारी सबमिट करें?')),
+          content: Text(
+            _tr(
+              'Ek baar details submit hone ke baad aap inhe app se change nahi kar paoge.\n\nOnce submitted, these onboarding and vehicle details cannot be changed from the app.',
+              'एक बार जानकारी सबमिट होने के बाद आप इन्हें ऐप से बदल नहीं पाएंगे।',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Review again'),
+              child: Text(_tr('Review again', 'फिर से देखें')),
             ),
             FilledButton.icon(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               icon: const Icon(Icons.lock_rounded),
-              label: const Text('Submit & lock'),
+              label: Text(_tr('Submit & lock', 'सबमिट और लॉक करें')),
             ),
           ],
         );
@@ -2964,7 +3621,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
     if (_riderIdController.text.trim().isNotEmpty) completed += 1;
     if (_cityController.text.trim().isNotEmpty) completed += 1;
     if (_evModelController.text.trim().isNotEmpty) completed += 1;
-    if (_evNumberController.text.trim().isNotEmpty || _evRangeController.text.trim().isNotEmpty) {
+    if (_evNumberController.text.trim().isNotEmpty) {
       completed += 1;
     }
     final double progress = (completed / 5).clamp(0.0, 1.0);
@@ -3289,7 +3946,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                       ),
                       const SizedBox(height: 10),
                       DropdownButtonFormField<String>(
-                        value: _vehicleTypes.containsKey(_vehicleType) ? _vehicleType : 'other',
+                        value: _vehicleTypes.containsKey(_vehicleType) ? _vehicleType : 'ev_scooter',
                         isExpanded: true,
                         items: _vehicleTypes.entries
                             .map(
@@ -3320,7 +3977,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                         enabled: !_detailsLocked,
                         onChanged: (_) => setState(() {}),
                         decoration: _fieldDecoration(
-                          label: 'Vehicle model *',
+                          label: 'Vehicle model',
                           hint: 'e.g. Ola S1, Hero bike',
                           isDark: isDark,
                           icon: Icons.electric_bike_rounded,
@@ -3341,76 +3998,16 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                       ),
                       const SizedBox(height: 10),
                       TextField(
-                        controller: _evRangeController,
+                        controller: _purchaseYearController,
                         enabled: !_detailsLocked,
-                        textCapitalization: TextCapitalization.characters,
-                        onChanged: (_) => setState(() {}),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        maxLength: 4,
                         decoration: _fieldDecoration(
-                          label: 'Chassis number *',
+                          label: 'Purchase year',
                           isDark: isDark,
-                          icon: Icons.tag_rounded,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      LayoutBuilder(
-                        builder: (BuildContext context, BoxConstraints constraints) {
-                          final bool stackFields = constraints.maxWidth < 520;
-                          final List<Widget> fields = [
-                            TextField(
-                              controller: _batteryNumberController,
-                              enabled: !_detailsLocked,
-                              textCapitalization: TextCapitalization.characters,
-                              decoration: _fieldDecoration(
-                                label: _vehicleType.startsWith('ev_')
-                                    ? 'Battery number *'
-                                    : 'Battery number',
-                                isDark: isDark,
-                                icon: Icons.battery_charging_full_rounded,
-                              ),
-                            ),
-                            TextField(
-                              controller: _vehicleColorController,
-                              enabled: !_detailsLocked,
-                              decoration: _fieldDecoration(
-                                label: 'Vehicle color',
-                                isDark: isDark,
-                                icon: Icons.palette_rounded,
-                              ),
-                            ),
-                            TextField(
-                              controller: _purchaseYearController,
-                              enabled: !_detailsLocked,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              maxLength: 4,
-                              decoration: _fieldDecoration(
-                                label: 'Purchase year',
-                                isDark: isDark,
-                                icon: Icons.calendar_month_rounded,
-                              ).copyWith(counterText: ''),
-                            ),
-                          ];
-                          if (stackFields) {
-                            return Column(
-                              children: [
-                                fields[0],
-                                const SizedBox(height: 10),
-                                fields[1],
-                                const SizedBox(height: 10),
-                                fields[2],
-                              ],
-                            );
-                          }
-                          return Row(
-                            children: [
-                              Expanded(child: fields[0]),
-                              const SizedBox(width: 10),
-                              Expanded(child: fields[1]),
-                              const SizedBox(width: 10),
-                              Expanded(child: fields[2]),
-                            ],
-                          );
-                        },
+                          icon: Icons.calendar_month_rounded,
+                        ).copyWith(counterText: ''),
                       ),
                     ],
                   ),
@@ -3833,22 +4430,31 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             : (isDark ? const Color(0x335B6B88) : const Color(0x221D4ED8)),
                       ),
                     ),
-                    child: SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: _anonymous,
-                      onChanged: (_submitting || _metaLoading) ? null : (v) => setState(() => _anonymous = v),
-                      title: Text(
-                        'Anonymous post',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF1E293B),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _anonymous,
+                        onChanged: (_submitting || _metaLoading)
+                            ? null
+                            : (v) => setState(() => _anonymous = v),
+                        title: Text(
+                          'Anonymous post',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? const Color(0xFFE5E7EB)
+                                : const Color(0xFF1E293B),
+                          ),
                         ),
-                      ),
-                      subtitle: Text(
-                        'Feed par naam hide; admin dekh sakta hai.',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        subtitle: Text(
+                          'Feed par naam hide; admin dekh sakta hai.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF64748B),
+                          ),
                         ),
                       ),
                     ),

@@ -26,6 +26,7 @@ class RsaScreen extends StatefulWidget {
     required this.apiBaseUrl,
     required this.apiAccessKey,
     required this.accessToken,
+    this.languageCode = 'en',
     required this.onOpenOnboarding,
     this.initialPhone = '',
   });
@@ -33,6 +34,7 @@ class RsaScreen extends StatefulWidget {
   final String apiBaseUrl;
   final String apiAccessKey;
   final String accessToken;
+  final String languageCode;
   final VoidCallback onOpenOnboarding;
   final String initialPhone;
 
@@ -44,6 +46,8 @@ class _RsaScreenState extends State<RsaScreen> {
   bool _loadingHistory = false;
   String? _historyError;
   List<RsaTicketItem> _historyTickets = <RsaTicketItem>[];
+  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';
+  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   Map<String, String> get _headers {
     return <String, String>{
@@ -168,6 +172,7 @@ class _RsaScreenState extends State<RsaScreen> {
           apiBaseUrl: widget.apiBaseUrl,
           apiAccessKey: widget.apiAccessKey,
           accessToken: widget.accessToken,
+          languageCode: widget.languageCode,
           initialPhone: widget.initialPhone,
         ),
       ),
@@ -182,15 +187,17 @@ class _RsaScreenState extends State<RsaScreen> {
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF111827) : const Color(0xFFFFFBF1),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Complete onboarding first'),
-          content: const Text(
-            'RSA ticket raise karne se pehle Rider ID aur vehicle details add karni zaroori hain.\n\n'
-            'Before raising an RSA ticket, please add your Rider ID and vehicle details.',
+          title: Text(_tr('Complete onboarding first', 'पहले ऑनबोर्डिंग पूरा करें')),
+          content: Text(
+            _tr(
+              'RSA ticket raise karne se pehle Rider ID aur vehicle details add karni zaroori hain.\n\nBefore raising an RSA ticket, please add your Rider ID and vehicle details.',
+              'RSA टिकट बनाने से पहले Rider ID और वाहन की जानकारी जोड़ना जरूरी है।',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Later'),
+              child: Text(_tr('Later', 'बाद में')),
             ),
             FilledButton.icon(
               onPressed: () {
@@ -198,7 +205,7 @@ class _RsaScreenState extends State<RsaScreen> {
                 widget.onOpenOnboarding();
               },
               icon: const Icon(Icons.assignment_ind_rounded),
-              label: const Text('Go to onboarding'),
+              label: Text(_tr('Go to onboarding', 'ऑनबोर्डिंग पर जाएं')),
             ),
           ],
         );
@@ -211,6 +218,9 @@ class _RsaScreenState extends State<RsaScreen> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color pageBg = isDark ? const Color(0xFF0B1220) : const Color(0xFFFFF9EA);
     final Color panelBorder = isDark ? const Color(0x334B5563) : const Color(0x40F4B400);
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool compact = screenWidth < 390;
+    final double heroHeight = compact ? 740 : 680;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
@@ -230,71 +240,70 @@ class _RsaScreenState extends State<RsaScreen> {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(25),
-            child: Stack(
-              children: [
-                SizedBox(
-                  height: 680,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.asset(
-                        'assets/images/rsa_hero.png',
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
-                      ),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              const Color(0xFF061325).withValues(alpha: 0.9),
-                              const Color(0xFF0B1F3A).withValues(alpha: 0.52),
-                              const Color(0xFF061325).withValues(alpha: 0.86),
-                            ],
-                            stops: const [0, 0.5, 1],
-                          ),
-                        ),
-                      ),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              Colors.black.withValues(alpha: 0.12),
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.14),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+            child: SizedBox(
+              height: heroHeight,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Image.asset(
+                      'assets/images/rsa_hero.png',
+                      fit: BoxFit.cover,
+                      alignment: Alignment.center,
+                    ),
                   ),
-                ),
-                SizedBox(
-                  height: 680,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        (isDark ? const Color(0xFF08111F) : const Color(0xFF061325))
-                            .withValues(alpha: 0.1),
-                      ],
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            const Color(0xFF061325).withValues(alpha: 0.9),
+                            const Color(0xFF0B1F3A).withValues(alpha: 0.52),
+                            const Color(0xFF061325).withValues(alpha: 0.86),
+                          ],
+                          stops: const [0, 0.5, 1],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.12),
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.14),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            (isDark ? const Color(0xFF08111F) : const Color(0xFF061325))
+                                .withValues(alpha: 0.1),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                       Text(
-                        'Ride With Garv Assistance',
+                        _tr('Ride With Garv Assistance', 'राइड विद गर्व असिस्टेंस'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.88),
@@ -309,79 +318,100 @@ class _RsaScreenState extends State<RsaScreen> {
                         style: TextStyle(
                           color: Color(0xFFFFD166),
                           fontWeight: FontWeight.w900,
-                          fontSize: 52,
+                          fontSize: 48,
                           height: 1,
                         ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Rescue Ready',
+                      Text(
+                        _tr('Rescue Ready', 'रेस्क्यू रेडी'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w900,
-                          fontSize: 38,
+                          fontSize: compact ? 32 : 38,
                           height: 1,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Ride rukegi nahi, help turant milegi',
+                        _tr('Ride rukegi nahi, help turant milegi', 'राइड रुकेगी नहीं, मदद तुरंत मिलेगी'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.96),
                           fontWeight: FontWeight.w800,
-                          fontSize: 22,
+                          fontSize: compact ? 19 : 22,
                           height: 1.12,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Breakdown, puncture, towing aur urgent rider support',
+                        _tr(
+                          'Breakdown, puncture, towing aur urgent rider support',
+                          'ब्रेकडाउन, पंचर, टोइंग और तुरंत राइडर सपोर्ट',
+                        ),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.88),
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: compact ? 14 : 16,
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      const SizedBox(height: 20),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: compact ? 12 : 20,
+                        runSpacing: 10,
                         children: [
-                          _RsaCircleBadge(label: 'SOS'),
-                          _RsaCircleBadge(label: '24x7'),
-                          _RsaCircleBadge(label: 'NCR'),
+                          _RsaCircleBadge(label: 'SOS', size: compact ? 82 : 92, fontSize: compact ? 20 : 22),
+                          _RsaCircleBadge(label: '24x7', size: compact ? 82 : 92, fontSize: compact ? 20 : 22),
+                          _RsaCircleBadge(label: 'NCR', size: compact ? 82 : 92, fontSize: compact ? 20 : 22),
                         ],
                       ),
-                      const SizedBox(height: 250),
+                      const Spacer(),
                       Text(
-                        'RIDER SUPPORT SERVICES',
+                        _tr('RIDER SUPPORT SERVICES', 'राइडर सपोर्ट सर्विसेज'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.74),
                           fontWeight: FontWeight.w700,
-                          fontSize: 15,
+                          fontSize: compact ? 13 : 15,
                           letterSpacing: 0.2,
                         ),
                       ),
                       const SizedBox(height: 14),
-                      const Wrap(
+                      Wrap(
                         alignment: WrapAlignment.center,
-                        spacing: 8,
+                        spacing: compact ? 6 : 8,
                         runSpacing: 8,
                         children: [
-                          _RsaFeatureChip(icon: Icons.bolt_rounded, label: 'Fast Response'),
-                          _RsaFeatureChip(icon: Icons.build_rounded, label: 'Trained Technicians'),
-                          _RsaFeatureChip(icon: Icons.location_on_rounded, label: 'Live Location'),
-                          _RsaFeatureChip(icon: Icons.support_agent_rounded, label: 'Rider Helpdesk'),
+                          _RsaFeatureChip(
+                            icon: Icons.bolt_rounded,
+                            label: _tr('Fast Response', 'फास्ट रिस्पॉन्स'),
+                            compact: compact,
+                          ),
+                          _RsaFeatureChip(
+                            icon: Icons.build_rounded,
+                            label: _tr('Trained Technicians', 'ट्रेन्ड टेक्नीशियन'),
+                            compact: compact,
+                          ),
+                          _RsaFeatureChip(
+                            icon: Icons.location_on_rounded,
+                            label: _tr('Live Location', 'लाइव लोकेशन'),
+                            compact: compact,
+                          ),
+                          _RsaFeatureChip(
+                            icon: Icons.support_agent_rounded,
+                            label: _tr('Rider Helpdesk', 'राइडर हेल्पडेस्क'),
+                            compact: compact,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 18),
                       FilledButton.icon(
                         onPressed: () => _openTicketOrOnboarding(context),
                         icon: const Icon(Icons.sos_rounded),
-                        label: const Text('Raise RSA Ticket Now'),
+                        label: Text(_tr('Raise RSA Ticket Now', 'अभी RSA टिकट बनाएं')),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(56),
                           backgroundColor: const Color(0xFFF59E0B),
@@ -395,7 +425,7 @@ class _RsaScreenState extends State<RsaScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Gaadi kharab? Turant ticket darj karein',
+                        _tr('Gaadi kharab? Turant ticket darj karein', 'गाड़ी खराब? तुरंत टिकट दर्ज करें'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.88),
@@ -403,16 +433,18 @@ class _RsaScreenState extends State<RsaScreen> {
                           fontSize: 13,
                         ),
                       ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
         const SizedBox(height: 16),
         _RsaLandingHistoryCard(
           isDark: isDark,
+          isHindi: _isHindi,
           loading: _loadingHistory,
           error: _historyError,
           tickets: _historyTickets,
@@ -424,15 +456,21 @@ class _RsaScreenState extends State<RsaScreen> {
 }
 
 class _RsaCircleBadge extends StatelessWidget {
-  const _RsaCircleBadge({required this.label});
+  const _RsaCircleBadge({
+    required this.label,
+    this.size = 92,
+    this.fontSize = 22,
+  });
 
   final String label;
+  final double size;
+  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 92,
-      height: 92,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.white.withValues(alpha: 0.95),
@@ -448,10 +486,10 @@ class _RsaCircleBadge extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           color: Color(0xFF0B1220),
           fontWeight: FontWeight.w900,
-          fontSize: 22,
+          fontSize: fontSize,
           height: 1,
         ),
       ),
@@ -460,31 +498,36 @@ class _RsaCircleBadge extends StatelessWidget {
 }
 
 class _RsaFeatureChip extends StatelessWidget {
-  const _RsaFeatureChip({required this.icon, required this.label});
+  const _RsaFeatureChip({
+    required this.icon,
+    required this.label,
+    this.compact = false,
+  });
 
   final IconData icon;
   final String label;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 9 : 10, vertical: compact ? 6 : 7),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.13),
+        color: Colors.black.withValues(alpha: 0.46),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: const Color(0xFF93C5FD), size: 14),
+          Icon(icon, color: const Color(0xFFFCD34D), size: compact ? 13 : 14),
           const SizedBox(width: 5),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w700,
-              fontSize: 11,
+              fontSize: compact ? 10 : 11,
             ),
           ),
         ],
@@ -496,6 +539,7 @@ class _RsaFeatureChip extends StatelessWidget {
 class _RsaLandingHistoryCard extends StatelessWidget {
   const _RsaLandingHistoryCard({
     required this.isDark,
+    required this.isHindi,
     required this.loading,
     required this.error,
     required this.tickets,
@@ -503,6 +547,7 @@ class _RsaLandingHistoryCard extends StatelessWidget {
   });
 
   final bool isDark;
+  final bool isHindi;
   final bool loading;
   final String? error;
   final List<RsaTicketItem> tickets;
@@ -538,7 +583,7 @@ class _RsaLandingHistoryCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Your RSA History',
+                  isHindi ? 'आपकी RSA हिस्ट्री' : 'Your RSA History',
                   style: TextStyle(
                     color: textPrimary,
                     fontWeight: FontWeight.w900,
@@ -575,7 +620,7 @@ class _RsaLandingHistoryCard extends StatelessWidget {
             )
           else if (tickets.isEmpty)
             Text(
-              'Abhi koi RSA ticket history nahi hai.',
+              isHindi ? 'अभी कोई RSA टिकट हिस्ट्री नहीं है।' : 'Abhi koi RSA ticket history nahi hai.',
               style: TextStyle(
                 color: textSecondary,
                 fontWeight: FontWeight.w800,

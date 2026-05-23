@@ -41,6 +41,10 @@ dependencies:
   http: ^1.6.0
   geolocator: ^14.0.2
   url_launcher: ^6.3.2
+  sendotp_flutter_sdk: any
+  firebase_core: ^4.0.0
+  firebase_messaging: ^16.0.0
+  flutter_local_notifications: ^19.4.2
 
 dev_dependencies:
   flutter_test:

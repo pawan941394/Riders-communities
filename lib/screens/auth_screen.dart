@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sendotp_flutter_sdk/sendotp_flutter_sdk.dart';
 
 import '../widgets/floating_blob.dart';
 import '../config/api_config.dart';
@@ -18,12 +20,25 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   bool _isLogin = true;
+  bool _useOtpFlow = true;
   bool _isSubmitting = false;
+  bool _isSendingOtp = false;
+  bool _isVerifyingOtp = false;
+  bool _isResendingOtp = false;
+  bool _otpSent = false;
+  bool _otpVerified = false;
+  bool _otpNeedsSignup = false;
+  bool _otpSdkInitialized = false;
+  String _otpReqId = '';
   static const String _apiAccessKey = ApiConfig.apiAccessKey;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
+  final TextEditingController _riderIdController = TextEditingController();
+  final TextEditingController _riderCompanyController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
   final TextEditingController _referralCodeController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
   String? _profileImagePath;
@@ -33,23 +48,43 @@ class _AuthScreenState extends State<AuthScreen> {
     return ApiConfig.apiBaseUrl;
   }
 
+  bool get _isOtpBusy => _isSendingOtp || _isVerifyingOtp || _isResendingOtp;
+
+  @override
+  void initState() {
+    super.initState();
+    _initOtpSdkIfPossible();
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _fullNameController.dispose();
     _phoneController.dispose();
+    _otpController.dispose();
+    _riderIdController.dispose();
+    _riderCompanyController.dispose();
+    _cityController.dispose();
     _referralCodeController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = _isLogin ? 'Welcome back rider' : 'Join Ride With Garv';
-    final subtitle = _isLogin
-        ? 'Login to continue helping and getting help.'
-        : 'Create your account to start posting in your city community.';
-    final actionText = _isLogin ? 'Login' : 'Create account';
+    final title = _useOtpFlow
+        ? (_otpNeedsSignup ? 'Complete OTP signup' : 'Login with OTP')
+        : (_isLogin ? 'Welcome back rider' : 'Join Ride With Garv');
+    final subtitle = _useOtpFlow
+        ? (_otpNeedsSignup
+            ? 'OTP verified hai, ab signup details fill karo.'
+            : 'Phone number daalo, OTP verify karo, aur direct login.')
+        : (_isLogin
+            ? 'Login to continue helping and getting help.'
+            : 'Create your account to start posting in your city community.');
+    final actionText = _useOtpFlow
+        ? (_otpNeedsSignup ? 'Complete signup' : (_otpSent ? 'Verify OTP' : 'Send OTP'))
+        : (_isLogin ? 'Login' : 'Create account');
 
     return Scaffold(
       body: Container(
@@ -131,34 +166,37 @@ class _AuthScreenState extends State<AuthScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFFBF1).withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: const Color(0x44F4B400)),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _AuthModeChip(
-                                label: 'Login',
-                                selected: _isLogin,
-                                onTap: () => setState(() => _isLogin = true),
+                      const SizedBox(height: 28),
+                      if (!_useOtpFlow) ...[
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBF1).withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: const Color(0x44F4B400)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _AuthModeChip(
+                                  label: 'Login',
+                                  selected: _isLogin,
+                                  onTap: () => _setLoginMode(true),
+                                ),
                               ),
-                            ),
-                            Expanded(
-                              child: _AuthModeChip(
-                                label: 'Signup',
-                                selected: !_isLogin,
-                                onTap: () => setState(() => _isLogin = false),
+                              Expanded(
+                                child: _AuthModeChip(
+                                  label: 'Signup',
+                                  selected: !_isLogin,
+                                  onTap: () => _setLoginMode(false),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 18),
+                        const SizedBox(height: 18),
+                      ],
+                      const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -177,11 +215,24 @@ class _AuthScreenState extends State<AuthScreen> {
                           children: [
                             TextField(
                               controller: _phoneController,
-                              decoration: _fieldDecoration('Phone number', Icons.phone_rounded),
+                              decoration: _fieldDecoration('Phone number', Icons.phone_rounded).copyWith(
+                                prefixText: '+91 ',
+                                counterText: '',
+                              ),
                               keyboardType: TextInputType.phone,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              maxLength: 10,
                             ),
                             const SizedBox(height: 12),
-                            if (!_isLogin) ...[
+                            if (_useOtpFlow && _otpSent) ...[
+                              TextField(
+                                controller: _otpController,
+                                decoration: _fieldDecoration('OTP', Icons.lock_clock_rounded),
+                                keyboardType: TextInputType.number,
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                            if ((_useOtpFlow && !_isLogin && _otpNeedsSignup) || (!_useOtpFlow && !_isLogin)) ...[
                               TextField(
                                 controller: _fullNameController,
                                 decoration: _fieldDecoration('Full name', Icons.badge_outlined),
@@ -194,6 +245,26 @@ class _AuthScreenState extends State<AuthScreen> {
                                 keyboardType: TextInputType.emailAddress,
                               ),
                               const SizedBox(height: 12),
+                              if (_useOtpFlow) ...[
+                                TextField(
+                                  controller: _riderCompanyController,
+                                  decoration: _fieldDecoration('Company (optional)', Icons.business_rounded),
+                                  keyboardType: TextInputType.text,
+                                ),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _riderIdController,
+                                  decoration: _fieldDecoration('Rider ID (optional)', Icons.badge_rounded),
+                                  keyboardType: TextInputType.text,
+                                ),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _cityController,
+                                  decoration: _fieldDecoration('City (optional)', Icons.location_city_rounded),
+                                  keyboardType: TextInputType.text,
+                                ),
+                                const SizedBox(height: 12),
+                              ],
                               TextField(
                                 controller: _referralCodeController,
                                 decoration: _fieldDecoration(
@@ -204,11 +275,12 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                               const SizedBox(height: 12),
                             ],
-                            TextField(
-                              controller: _passwordController,
-                              obscureText: true,
-                              decoration: _fieldDecoration('Password', Icons.lock_outline_rounded),
-                            ),
+                            if (!_useOtpFlow)
+                              TextField(
+                                controller: _passwordController,
+                                obscureText: true,
+                                decoration: _fieldDecoration('Password', Icons.lock_outline_rounded),
+                              ),
                             // Forgot password — hidden until flow is implemented.
                             // if (_isLogin)
                             //   Align(
@@ -218,7 +290,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             //       child: const Text('Forgot password?'),
                             //     ),
                             //   ),
-                            if (!_isLogin)
+                            if (!_useOtpFlow && !_isLogin)
                               InkWell(
                                 onTap: _pickProfilePhoto,
                                 borderRadius: BorderRadius.circular(14),
@@ -293,7 +365,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             SizedBox(
                               width: double.infinity,
                               child: FilledButton(
-                                onPressed: _isSubmitting ? null : _handlePrimaryAuthAction,
+                                onPressed: (_isSubmitting || _isOtpBusy)
+                                    ? null
+                                    : _handlePrimaryAuthAction,
                                 style: FilledButton.styleFrom(
                                   backgroundColor: const Color(0xFFF59E0B),
                                   foregroundColor: const Color(0xFF172033),
@@ -302,7 +376,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                 ),
-                                child: _isSubmitting
+                                child: (_isSubmitting || _isSendingOtp)
                                     ? const SizedBox(
                                         width: 22,
                                         height: 22,
@@ -311,60 +385,76 @@ class _AuthScreenState extends State<AuthScreen> {
                                           color: Color(0xFF172033),
                                         ),
                                       )
-                                    : Text(
-                                        actionText,
-                                        style: const TextStyle(fontWeight: FontWeight.w700),
-                                      ),
+                                    : Text(actionText, style: const TextStyle(fontWeight: FontWeight.w700)),
                               ),
                             ),
                             const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                const Expanded(child: Divider()),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                                  child: Text(
-                                    'or continue with',
-                                    style: Theme.of(context).textTheme.bodySmall,
-                                  ),
+                            if (_useOtpFlow && _otpSent)
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton.icon(
+                                  onPressed: _isOtpBusy ? null : _handleResendOtp,
+                                  icon: _isResendingOtp
+                                      ? const SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.refresh_rounded),
+                                  label: Text(_isResendingOtp ? 'Resending...' : 'Resend OTP'),
                                 ),
-                                const Expanded(child: Divider()),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _SocialAuthButton(
-                                    label: 'Google',
-                                    icon: Icons.g_mobiledata_rounded,
-                                    onPressed: () => _showComingSoonSheet(
-                                      context,
-                                      method: 'Google login',
+                              ),
+                            if (!_useOtpFlow) ...[
+                              Row(
+                                children: [
+                                  const Expanded(child: Divider()),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                                    child: Text(
+                                      'or continue with',
+                                      style: Theme.of(context).textTheme.bodySmall,
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: _SocialAuthButton(
-                                    label: 'Phone OTP',
-                                    icon: Icons.sms_outlined,
-                                    onPressed: () => _showComingSoonSheet(
-                                      context,
-                                      method: 'OTP login',
+                                  const Expanded(child: Divider()),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _SocialAuthButton(
+                                      label: 'Google',
+                                      icon: Icons.g_mobiledata_rounded,
+                                      onPressed: () => _showComingSoonSheet(
+                                        context,
+                                        method: 'Google login',
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: _SocialAuthButton(
+                                      label: 'Phone OTP',
+                                      icon: Icons.sms_outlined,
+                                      onPressed: () => _showComingSoonSheet(
+                                        context,
+                                        method: 'OTP login',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
                       const SizedBox(height: 14),
                       Text(
-                        _isLogin
-                            ? 'Use the email and password for your account.'
-                            : 'Signup helps us keep the rider community trusted and safe.',
+                        _useOtpFlow
+                            ? 'Phone number daalo, OTP verify karo. Naya user hoga to signup fields auto aa jayenge.'
+                            : (_isLogin
+                                ? 'Use the email and password for your account.'
+                                : 'Signup helps us keep the rider community trusted and safe.'),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: const Color(0xFF5B6B84),
@@ -400,6 +490,508 @@ class _AuthScreenState extends State<AuthScreen> {
         borderSide: const BorderSide(color: Color(0xFFF59E0B), width: 1.4),
       ),
     );
+  }
+
+  Future<void> _initOtpSdkIfPossible() async {
+    if (_otpSdkInitialized) return;
+    String widgetId = ApiConfig.sendOtpWidgetId.trim();
+    String authToken = ApiConfig.sendOtpAuthToken.trim();
+    if (widgetId.isEmpty || authToken.isEmpty) {
+      final Map<String, String>? runtime = await _fetchOtpRuntimeConfig();
+      if (runtime != null) {
+        widgetId = runtime['widget_id'] ?? '';
+        authToken = runtime['auth_token'] ?? '';
+      }
+    }
+    if (widgetId.isEmpty || authToken.isEmpty) {
+      return;
+    }
+    try {
+      OTPWidget.initializeWidget(widgetId, authToken);
+      _otpSdkInitialized = true;
+    } catch (_) {
+      _otpSdkInitialized = false;
+    }
+  }
+
+  Future<Map<String, String>?> _fetchOtpRuntimeConfig() async {
+    try {
+      final http.Response response = await http.get(
+        Uri.parse('$_apiBaseUrl/api/v1/auth/otp/config'),
+        headers: <String, String>{'X-API-Key': _apiAccessKey},
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return null;
+      }
+      final Map<String, dynamic> data = response.body.isNotEmpty
+          ? (jsonDecode(response.body) as Map<String, dynamic>)
+          : <String, dynamic>{};
+      final bool enabled = (data['enabled'] as bool?) ?? false;
+      if (!enabled) {
+        return null;
+      }
+      final String widgetId = ('${data['widget_id'] ?? ''}').trim();
+      final String authToken = ('${data['auth_token'] ?? ''}').trim();
+      if (widgetId.isEmpty || authToken.isEmpty) {
+        return null;
+      }
+      return <String, String>{
+        'widget_id': widgetId,
+        'auth_token': authToken,
+      };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _resetOtpJourney() {
+    _otpSent = false;
+    _otpVerified = false;
+    _otpNeedsSignup = false;
+    _otpReqId = '';
+    _otpController.clear();
+  }
+
+  void _setLoginMode(bool isLogin) {
+    setState(() {
+      _isLogin = isLogin;
+      _resetOtpJourney();
+    });
+  }
+
+  void _setAuthMethod(bool useOtpFlow) {
+    setState(() {
+      _useOtpFlow = useOtpFlow;
+      _resetOtpJourney();
+      if (useOtpFlow) {
+        _isLogin = true;
+      }
+    });
+  }
+
+  String _normalizeLocalPhone(String phone) {
+    String digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('0') && digits.length == 11) {
+      digits = digits.substring(1);
+    }
+    if (digits.startsWith('91') && digits.length >= 12) {
+      digits = digits.substring(digits.length - 10);
+    }
+    if (digits.length > 10) {
+      digits = digits.substring(digits.length - 10);
+    }
+    return digits;
+  }
+
+  String _toSendOtpIdentifier(String localPhone) {
+    final String digits = _normalizeLocalPhone(localPhone);
+    if (digits.length == 10) return '91$digits';
+    return digits;
+  }
+
+  String _extractReqId(dynamic response) {
+    if (response is String) {
+      final String raw = response.trim();
+      // Some providers return request id directly as plain string.
+      if (raw.isNotEmpty && !raw.contains(' ') && raw.length >= 12) {
+        return raw;
+      }
+    }
+
+    final Map<String, dynamic>? map = _asJsonMap(response);
+    if (map != null) {
+      final List<String> keys = <String>[
+        'reqId',
+        'req_id',
+        'request_id',
+        'requestId',
+        'reference_id',
+        'referenceId',
+      ];
+      for (final String key in keys) {
+        final dynamic value = map[key];
+        if (value != null && '$value'.trim().isNotEmpty) {
+          return '$value'.trim();
+        }
+      }
+      final String messageAsId = ('${map['message'] ?? ''}').trim();
+      if (messageAsId.isNotEmpty && !messageAsId.contains(' ') && messageAsId.length >= 12) {
+        return messageAsId;
+      }
+      final Map<String, dynamic>? data = _asJsonMap(map['data']);
+      if (data != null) {
+        for (final String key in keys) {
+          final dynamic value = data[key];
+          if (value != null && '$value'.trim().isNotEmpty) {
+            return '$value'.trim();
+          }
+        }
+        final String nestedMessageAsId = ('${data['message'] ?? ''}').trim();
+        if (nestedMessageAsId.isNotEmpty &&
+            !nestedMessageAsId.contains(' ') &&
+            nestedMessageAsId.length >= 12) {
+          return nestedMessageAsId;
+        }
+      }
+    }
+    return '';
+  }
+
+  bool _isOtpSuccess(dynamic response) {
+    if (response is String) {
+      final String raw = response.toLowerCase().trim();
+      if (raw.isEmpty) return false;
+      final bool hasPositive =
+          raw.contains('success') || raw.contains('verified') || raw.contains('otp verified');
+      final bool hasNegative = raw.contains('fail') ||
+          raw.contains('invalid') ||
+          raw.contains('wrong') ||
+          raw.contains('expired') ||
+          raw.contains('blocked') ||
+          raw.contains('error');
+      if (hasPositive && !hasNegative) return true;
+    }
+
+    final Map<String, dynamic>? map = _asJsonMap(response);
+    if (map != null) {
+      final String status = ('${map['status'] ?? map['statusCode'] ?? ''}').toLowerCase().trim();
+      final String message = ('${map['message'] ?? ''}').toLowerCase().trim();
+      final dynamic success = map['success'];
+      final dynamic verified = map['verified'] ?? map['is_verified'] ?? map['isVerified'];
+      if (success == true) return true;
+      if (verified == true) return true;
+      if (status == 'success' || status == 'ok' || status == '200') return true;
+      if (message.contains('verified') || message.contains('success')) return true;
+      final dynamic dataRaw = map['data'];
+      final Map<String, dynamic>? data = _asJsonMap(dataRaw);
+      if (data != null) {
+        final dynamic dataSuccess = data['success'];
+        final dynamic dataVerified = data['verified'] ?? data['is_verified'] ?? data['isVerified'];
+        if (dataSuccess == true) return true;
+        if (dataVerified == true) return true;
+        final String dataMessage = ('${data['message'] ?? ''}').toLowerCase().trim();
+        if (dataMessage.contains('verified') || dataMessage.contains('success')) return true;
+      }
+    }
+    return false;
+  }
+
+  bool _isOtpExplicitFailure(dynamic response) {
+    String raw = '';
+    if (response is String) {
+      raw = response.toLowerCase().trim();
+    } else {
+      final Map<String, dynamic>? map = _asJsonMap(response);
+      if (map != null) {
+        raw = jsonEncode(map).toLowerCase();
+      }
+    }
+    if (raw.isEmpty) return false;
+    const List<String> failWords = <String>[
+      'invalid',
+      'wrong',
+      'incorrect',
+      'expired',
+      'blocked',
+      'ipblocked',
+      'too many',
+      'attempt',
+      'fail',
+      'failed',
+      'error',
+      'denied',
+      'mismatch',
+    ];
+    return failWords.any(raw.contains);
+  }
+
+  String _otpFailureMessage(dynamic response) {
+    final String flat = ('$response').toLowerCase();
+    if (flat.contains('ipblocked') || flat.contains('ip blocked')) {
+      return 'Aaj OTP limit exceed ho gayi hai. 24 hours baad phir try karein.';
+    }
+    if (response is String) {
+      final String msg = response.trim();
+      if (msg.isNotEmpty) return msg;
+    }
+    final Map<String, dynamic>? map = _asJsonMap(response);
+    if (map != null) {
+      final String msg = ('${map['message'] ?? map['detail'] ?? map['error'] ?? ''}').trim();
+      if (msg.isNotEmpty) return msg;
+      final Map<String, dynamic>? data = _asJsonMap(map['data']);
+      if (data != null) {
+        final String nested = ('${data['message'] ?? data['detail'] ?? data['error'] ?? ''}').trim();
+        if (nested.isNotEmpty) return nested;
+      }
+    }
+    return 'OTP verification failed. Please check and retry.';
+  }
+
+  Map<String, dynamic>? _asJsonMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) {
+      return value.map<String, dynamic>((dynamic k, dynamic v) => MapEntry<String, dynamic>('$k', v));
+    }
+    if (value is String) {
+      try {
+        final dynamic decoded = jsonDecode(value);
+        if (decoded is Map<String, dynamic>) return decoded;
+        if (decoded is Map) {
+          return decoded.map<String, dynamic>(
+            (dynamic k, dynamic v) => MapEntry<String, dynamic>('$k', v),
+          );
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>> _postJson(String path, Map<String, dynamic> body) async {
+    final http.Response response = await http.post(
+      Uri.parse('$_apiBaseUrl$path'),
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'X-API-Key': _apiAccessKey,
+      },
+      body: jsonEncode(body),
+    );
+    final Map<String, dynamic> data = response.body.isNotEmpty
+        ? (jsonDecode(response.body) as Map<String, dynamic>)
+        : <String, dynamic>{};
+    return <String, dynamic>{
+      'status': response.statusCode,
+      'data': data,
+    };
+  }
+
+  Future<void> _handleSendOtp() async {
+    final String phone = _normalizeLocalPhone(_phoneController.text.trim());
+    if (phone.length < 10) {
+      _showErrorModal('Please enter a valid 10-digit phone number.');
+      return;
+    }
+    if (_isOtpBusy) return;
+    setState(() => _isSendingOtp = true);
+    try {
+      await _initOtpSdkIfPossible();
+      if (!_otpSdkInitialized) {
+        _showErrorModal('OTP config not available. Please check server OTP env setup.');
+        return;
+      }
+
+      final Map<String, dynamic> precheck = await _postJson(
+        '/api/v1/auth/otp/precheck',
+        <String, dynamic>{'phone_number': phone},
+      );
+      final int status = (precheck['status'] as int?) ?? 500;
+      final Map<String, dynamic> precheckData =
+          (precheck['data'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+      if (status < 200 || status >= 300) {
+        _showErrorModal(_extractErrorMessage(precheckData));
+        return;
+      }
+      final bool userExists = (precheckData['user_exists'] as bool?) ?? false;
+      _otpNeedsSignup = (precheckData['signup_required'] as bool?) ?? !userExists;
+
+      final String identifier = _toSendOtpIdentifier(phone);
+      final dynamic otpSendResponse = await OTPWidget.sendOTP(<String, dynamic>{
+        'identifier': identifier,
+      });
+      final String reqId = _extractReqId(otpSendResponse);
+      if (reqId.isEmpty) {
+        final Map<String, dynamic>? parsed = _asJsonMap(otpSendResponse);
+        final String msg = ('${parsed?['message'] ?? ''}').trim();
+        final String flat = ('${msg.isNotEmpty ? msg : otpSendResponse}').toLowerCase();
+        if (flat.contains('ipblocked') || flat.contains('ip blocked')) {
+          _showErrorModal('Aaj OTP limit exceed ho gayi hai. 24 hours baad phir try karein.');
+          return;
+        }
+        _showErrorModal(
+          msg.isNotEmpty
+              ? 'OTP request id missing from provider response: $msg'
+              : 'OTP request ID not returned. Please try again.',
+        );
+        return;
+      }
+      setState(() {
+        _otpReqId = reqId;
+        _otpSent = true;
+        _otpVerified = false;
+      });
+      _showSnack('OTP sent successfully. SMS aane me 20-60 sec lag sakte hain.');
+    } catch (_) {
+      _showErrorModal('Could not send OTP right now.');
+    } finally {
+      if (mounted) {
+        setState(() => _isSendingOtp = false);
+      }
+    }
+  }
+
+  Future<void> _handleResendOtp() async {
+    if (_otpReqId.isEmpty) {
+      await _handleSendOtp();
+      return;
+    }
+    if (_isOtpBusy) return;
+    setState(() => _isResendingOtp = true);
+    try {
+      final dynamic retryResponse = await OTPWidget.retryOTP(<String, dynamic>{
+        'reqId': _otpReqId,
+        'retryChannel': 11, // SMS
+      });
+      final String nextReqId = _extractReqId(retryResponse);
+      if (nextReqId.isNotEmpty) {
+        _otpReqId = nextReqId;
+      }
+      _showSnack('OTP resend request sent.');
+    } catch (_) {
+      _showErrorModal('Could not resend OTP. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() => _isResendingOtp = false);
+      }
+    }
+  }
+
+  Future<void> _handleVerifyOtpAndContinue() async {
+    final String otp = _otpController.text.trim();
+    final String phone = _normalizeLocalPhone(_phoneController.text.trim());
+    if (phone.length < 10) {
+      _showErrorModal('Please enter a valid phone number.');
+      return;
+    }
+    if (_otpReqId.isEmpty) {
+      _showErrorModal('Please send OTP first.');
+      return;
+    }
+    if (otp.length < 4) {
+      _showErrorModal('Please enter a valid OTP.');
+      return;
+    }
+    if (_isOtpBusy) return;
+    setState(() => _isVerifyingOtp = true);
+    try {
+      final dynamic otpVerifyResponse = await OTPWidget.verifyOTP(<String, dynamic>{
+        'reqId': _otpReqId,
+        'otp': otp,
+      });
+      final bool explicitFailure = _isOtpExplicitFailure(otpVerifyResponse);
+      final bool parsedSuccess = _isOtpSuccess(otpVerifyResponse);
+      if (explicitFailure && !parsedSuccess) {
+        _showErrorModal(_otpFailureMessage(otpVerifyResponse));
+        return;
+      }
+
+      setState(() => _otpVerified = true);
+      final Map<String, dynamic> complete = await _postJson(
+        '/api/v1/auth/otp/complete-login',
+        <String, dynamic>{
+          'phone_number': phone,
+          'otp_verified': true,
+          'verification_ref': _otpReqId,
+        },
+      );
+      final int status = (complete['status'] as int?) ?? 500;
+      final Map<String, dynamic> data = (complete['data'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+      if (status < 200 || status >= 300) {
+        _showErrorModal(_extractErrorMessage(data));
+        return;
+      }
+
+      final bool signupRequired = (data['signup_required'] as bool?) ?? false;
+      if (signupRequired) {
+        setState(() {
+          _isLogin = false;
+          _otpNeedsSignup = true;
+        });
+        _showSnack('OTP verified. Please complete signup.');
+        return;
+      }
+
+      final String token = ('${data['access_token'] ?? ''}').trim();
+      if (token.isEmpty) {
+        _showErrorModal('Access token missing in response.');
+        return;
+      }
+      final Map<String, dynamic> profile =
+          (data['profile'] is Map<String, dynamic>) ? data['profile'] as Map<String, dynamic> : <String, dynamic>{};
+      widget.onAuthComplete(<String, dynamic>{
+        'access_token': token,
+        'profile': profile,
+        'phone_number': phone,
+      });
+    } catch (error) {
+      final String msg = error.toString().replaceFirst('Exception: ', '').trim();
+      _showErrorModal(msg.isEmpty ? 'Could not verify OTP right now.' : 'Verify error: $msg');
+    } finally {
+      if (mounted) {
+        setState(() => _isVerifyingOtp = false);
+      }
+    }
+  }
+
+  Future<void> _handleOtpSignup() async {
+    final String phone = _normalizeLocalPhone(_phoneController.text.trim());
+    final String fullName = _fullNameController.text.trim();
+    final String email = _emailController.text.trim();
+    final String referralCode = _referralCodeController.text.trim().toUpperCase();
+    if (!_otpVerified) {
+      _showErrorModal('Please verify OTP first.');
+      return;
+    }
+    if (fullName.length < 2) {
+      _showErrorModal('Full name must be at least 2 characters.');
+      return;
+    }
+    if (email.isNotEmpty && !email.contains('@')) {
+      _showErrorModal('Please enter a valid email.');
+      return;
+    }
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
+    try {
+      final Map<String, dynamic> res = await _postJson(
+        '/api/v1/auth/otp/register',
+        <String, dynamic>{
+          'phone_number': phone,
+          'full_name': fullName,
+          'email': email.isEmpty ? null : email,
+          'rider_id': _riderIdController.text.trim().isEmpty ? null : _riderIdController.text.trim(),
+          'rider_company':
+              _riderCompanyController.text.trim().isEmpty ? null : _riderCompanyController.text.trim(),
+          'city': _cityController.text.trim().isEmpty ? null : _cityController.text.trim(),
+          'preferred_language': 'en',
+          'referral_code': referralCode.isEmpty ? null : referralCode,
+          'otp_verified': true,
+          'verification_ref': _otpReqId,
+        },
+      );
+      final int status = (res['status'] as int?) ?? 500;
+      final Map<String, dynamic> data = (res['data'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+      if (status < 200 || status >= 300) {
+        _showErrorModal(_extractErrorMessage(data));
+        return;
+      }
+      final String token = ('${data['access_token'] ?? ''}').trim();
+      if (token.isEmpty) {
+        _showErrorModal('Access token missing in response.');
+        return;
+      }
+      final Map<String, dynamic> profile =
+          (data['profile'] is Map<String, dynamic>) ? data['profile'] as Map<String, dynamic> : <String, dynamic>{};
+      widget.onAuthComplete(<String, dynamic>{
+        'access_token': token,
+        'profile': profile,
+        'phone_number': phone,
+      });
+    } catch (_) {
+      _showErrorModal('Could not complete signup.');
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 
   void _showComingSoonSheet(
@@ -470,6 +1062,19 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _handlePrimaryAuthAction() async {
+    if (_useOtpFlow) {
+      if (_isLogin) {
+        if (_otpSent) {
+          await _handleVerifyOtpAndContinue();
+        } else {
+          await _handleSendOtp();
+        }
+      } else {
+        await _handleOtpSignup();
+      }
+      return;
+    }
+
     final String fullName = _fullNameController.text.trim();
     final String email = _emailController.text.trim();
     final String password = _passwordController.text.trim();

@@ -1,15 +1,31 @@
 import 'dart:convert';
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config/api_config.dart';
+import 'firebase_options.dart';
+import 'screens/post_detail_screen.dart';
 import 'screens/screens.dart' as app_screens;
 
-void main() {
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS)) {
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  }
   runApp(const RidersCommunityApp());
 }
 
@@ -37,6 +53,19 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
   String _currentUserCity = '';
   String _currentUserPhone = '';
   String _accessToken = '';
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  String _fcmToken = '';
+  StreamSubscription<String>? _tokenRefreshSub;
+  StreamSubscription<RemoteMessage>? _foregroundMessageSub;
+  StreamSubscription<RemoteMessage>? _messageOpenedAppSub;
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
+  bool _localNotificationsReady = false;
+  int? _pendingPostIdFromNotification;
+  int? _lastOpenedPostId;
+  DateTime? _lastOpenedPostAt;
 
   static const String _kThemeMode = 'session_theme_mode';
   static const String _kOnboardingDone = 'session_onboarding_done';
@@ -52,6 +81,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _initializePushNotifications();
     _restoreSession();
   }
 
@@ -59,6 +89,9 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _versionCheckTimer?.cancel();
+    _tokenRefreshSub?.cancel();
+    _foregroundMessageSub?.cancel();
+    _messageOpenedAppSub?.cancel();
     super.dispose();
   }
 
@@ -144,6 +177,10 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       _accessToken = accessToken;
       _isSessionLoading = false;
     });
+    if (_isLoggedIn && _fcmToken.isNotEmpty) {
+      unawaited(_syncPushTokenToServer(_fcmToken));
+    }
+    _drainPendingNotificationNavigation();
     _startVersionRecheckLoop();
   }
 
@@ -240,6 +277,10 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       userCity: city,
       userPhone: phone,
     );
+    if (_fcmToken.isNotEmpty) {
+      unawaited(_syncPushTokenToServer(_fcmToken));
+    }
+    _drainPendingNotificationNavigation();
   }
 
   void _logout() {
@@ -261,6 +302,287 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       userCity: '',
       userPhone: '',
     );
+  }
+
+  bool _isPushSupportedPlatform() {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+  }
+
+  String _platformName() {
+    if (kIsWeb) return 'web';
+    if (defaultTargetPlatform == TargetPlatform.android) return 'android';
+    if (defaultTargetPlatform == TargetPlatform.iOS) return 'ios';
+    if (defaultTargetPlatform == TargetPlatform.macOS) return 'macos';
+    if (defaultTargetPlatform == TargetPlatform.windows) return 'windows';
+    if (defaultTargetPlatform == TargetPlatform.linux) return 'linux';
+    return 'unknown';
+  }
+
+  Future<void> _initializePushNotifications() async {
+    if (!_isPushSupportedPlatform()) return;
+    try {
+      await _initializeLocalNotifications();
+      final FirebaseMessaging messaging = FirebaseMessaging.instance;
+      await messaging.requestPermission(alert: true, badge: true, sound: true);
+      await messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      await messaging.subscribeToTopic('all_users');
+
+      _fcmToken = (await messaging.getToken()) ?? '';
+      if (_fcmToken.isNotEmpty && _accessToken.trim().isNotEmpty) {
+        unawaited(_syncPushTokenToServer(_fcmToken));
+      }
+
+      _tokenRefreshSub = messaging.onTokenRefresh.listen((String token) {
+        _fcmToken = token.trim();
+        if (_fcmToken.isNotEmpty && _accessToken.trim().isNotEmpty) {
+          unawaited(_syncPushTokenToServer(_fcmToken));
+        }
+      });
+
+      _foregroundMessageSub = FirebaseMessaging.onMessage.listen((RemoteMessage msg) async {
+        final String title = (msg.notification?.title ?? '').trim();
+        final String body = (msg.notification?.body ?? '').trim();
+        final int? postId = _extractPostIdFromData(msg.data);
+        await _showForegroundTrayNotification(title: title, body: body, postId: postId);
+        final String text = [title, body].where((s) => s.isNotEmpty).join('\n');
+        if (text.isEmpty) return;
+        _scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text(text),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      });
+
+      _messageOpenedAppSub = FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage msg) {
+        final int? postId = _extractPostIdFromData(msg.data);
+        if (postId != null && postId > 0) {
+          _openOrQueuePostFromNotification(postId);
+        }
+      });
+
+      final RemoteMessage? initialMessage = await messaging.getInitialMessage();
+      if (initialMessage != null) {
+        final int? postId = _extractPostIdFromData(initialMessage.data);
+        if (postId != null && postId > 0) {
+          _openOrQueuePostFromNotification(postId);
+        }
+      }
+    } catch (_) {
+      // Push setup should never break app startup.
+    }
+  }
+
+  Future<void> _initializeLocalNotifications() async {
+    if (_localNotificationsReady || !_isPushSupportedPlatform()) return;
+    const androidSettings = AndroidInitializationSettings('@drawable/ic_stat_ridewithgarv');
+    const iosSettings = DarwinInitializationSettings();
+    const settings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+    await _localNotifications.initialize(
+      settings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        final int? postId = _extractPostIdFromPayload(response.payload);
+        if (postId != null && postId > 0) {
+          _openOrQueuePostFromNotification(postId);
+        }
+      },
+    );
+    const androidChannel = AndroidNotificationChannel(
+      'ridewithgarv_general',
+      'Ride With Garv Alerts',
+      description: 'General rider updates',
+      importance: Importance.high,
+    );
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(androidChannel);
+    _localNotificationsReady = true;
+  }
+
+  Future<void> _showForegroundTrayNotification({
+    required String title,
+    required String body,
+    int? postId,
+  }) async {
+    if (!_localNotificationsReady) return;
+    final String finalTitle = title.isEmpty ? 'Ride With Garv' : title;
+    final String finalBody = body.isEmpty ? 'New notification received.' : body;
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'ridewithgarv_general',
+        'Ride With Garv Alerts',
+        channelDescription: 'General rider updates',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: 'ic_stat_ridewithgarv',
+        color: const Color(0xFFFFC928),
+      ),
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+    final int id = DateTime.now().millisecondsSinceEpoch.remainder(2147483647);
+    final String? payload = postId != null ? jsonEncode(<String, dynamic>{'post_id': postId}) : null;
+    await _localNotifications.show(id, finalTitle, finalBody, details, payload: payload);
+  }
+
+  int? _extractPostIdFromData(Map<String, dynamic> data) {
+    final dynamic raw = data['post_id'];
+    if (raw is int) return raw;
+    if (raw is String) return int.tryParse(raw.trim());
+    return null;
+  }
+
+  int? _extractPostIdFromPayload(String? payload) {
+    if (payload == null || payload.trim().isEmpty) return null;
+    try {
+      final dynamic decoded = jsonDecode(payload);
+      if (decoded is Map<String, dynamic>) {
+        final dynamic raw = decoded['post_id'];
+        if (raw is int) return raw;
+        if (raw is String) return int.tryParse(raw.trim());
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
+  }
+
+  void _openOrQueuePostFromNotification(int postId) {
+    if (_isSessionLoading || !_isLoggedIn || _accessToken.trim().isEmpty) {
+      _pendingPostIdFromNotification = postId;
+      return;
+    }
+    unawaited(_openPostDetailFromNotification(postId));
+  }
+
+  void _drainPendingNotificationNavigation() {
+    final int? pending = _pendingPostIdFromNotification;
+    if (pending == null) return;
+    if (_isSessionLoading || !_isLoggedIn || _accessToken.trim().isEmpty) return;
+    _pendingPostIdFromNotification = null;
+    unawaited(_openPostDetailFromNotification(pending));
+  }
+
+  Future<void> _openPostDetailFromNotification(int postId) async {
+    final DateTime now = DateTime.now();
+    if (_lastOpenedPostId == postId &&
+        _lastOpenedPostAt != null &&
+        now.difference(_lastOpenedPostAt!).inSeconds < 2) {
+      return;
+    }
+
+    try {
+      final http.Response res = await http.get(
+        Uri.parse('${ApiConfig.apiBaseUrl}/api/v1/posts/$postId'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'X-API-Key': ApiConfig.apiAccessKey,
+          'Authorization': 'Bearer ${_accessToken.trim()}',
+        },
+      );
+      if (res.statusCode != 200) return;
+      final dynamic decoded = jsonDecode(res.body);
+      if (decoded is! Map<String, dynamic>) return;
+
+      final String author = ('${decoded['author_display'] ?? 'Rider'}').trim();
+      final String problem = ('${decoded['body'] ?? ''}').trim();
+      final String city = ('${decoded['city'] ?? ''}').trim();
+      final String company = ('${decoded['company'] ?? ''}').trim();
+      final bool isAnonymous = decoded['is_anonymous'] == true;
+      final List<String> tags = decoded['tags'] is List<dynamic>
+          ? (decoded['tags'] as List<dynamic>)
+              .whereType<String>()
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList()
+          : <String>[];
+      final int commentsCount = decoded['comments_count'] is int
+          ? decoded['comments_count'] as int
+          : int.tryParse('${decoded['comments_count']}') ?? 0;
+      final int likesCount = decoded['likes_count'] is int
+          ? decoded['likes_count'] as int
+          : int.tryParse('${decoded['likes_count']}') ?? 0;
+      final int dislikesCount = decoded['dislikes_count'] is int
+          ? decoded['dislikes_count'] as int
+          : int.tryParse('${decoded['dislikes_count']}') ?? 0;
+      final String? imageUrl = decoded['image_url'] is String ? decoded['image_url'] as String : null;
+      final String? bodyFull = decoded['body_full'] is String ? decoded['body_full'] as String : null;
+      final String? authorAvatarUrl =
+          decoded['author_avatar_url'] is String ? decoded['author_avatar_url'] as String : null;
+      final String authorInitial = ('${decoded['author_initial'] ?? '?'}').trim().isEmpty
+          ? '?'
+          : '${decoded['author_initial']}';
+      final String? viewerReaction =
+          decoded['viewer_reaction'] is String ? decoded['viewer_reaction'] as String : null;
+
+      _lastOpenedPostId = postId;
+      _lastOpenedPostAt = now;
+
+      final NavigatorState? nav = _navigatorKey.currentState;
+      if (nav == null) return;
+      nav.push(
+        MaterialPageRoute<void>(
+          builder: (context) => PostDetailScreen(
+            postId: postId,
+            apiBaseUrl: ApiConfig.apiBaseUrl,
+            author: author.isEmpty ? 'Rider' : author,
+            problem: problem.isEmpty ? 'Post detail' : problem,
+            city: city,
+            company: company,
+            tags: tags,
+            commentsCount: commentsCount,
+            isAnonymous: isAnonymous,
+            imageUrl: imageUrl,
+            bodyFull: bodyFull,
+            authorAvatarUrl: authorAvatarUrl,
+            authorInitial: authorInitial,
+            likesCount: likesCount,
+            dislikesCount: dislikesCount,
+            viewerReaction: viewerReaction,
+          ),
+        ),
+      );
+    } catch (_) {
+      // Ignore navigation failures from notification tap.
+    }
+  }
+
+  Future<void> _syncPushTokenToServer(String token) async {
+    final String bearer = _accessToken.trim();
+    final String cleanToken = token.trim();
+    if (bearer.isEmpty || cleanToken.isEmpty) return;
+    try {
+      await http.post(
+        Uri.parse('${ApiConfig.apiBaseUrl}/api/v1/notifications/devices/register'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'X-API-Key': ApiConfig.apiAccessKey,
+          'Authorization': 'Bearer $bearer',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'token': cleanToken,
+          'device_token': cleanToken,
+          'fcm_token': cleanToken,
+          'platform': _platformName(),
+          'app_version': ApiConfig.appVersion,
+        }),
+      );
+    } catch (_) {
+      // Silent fail; token sync retry happens on next app open/token refresh.
+    }
   }
 
   void _applyProfileFromServer(Map<String, dynamic> profile) {
@@ -305,6 +627,8 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     return MaterialApp(
       title: 'Ride With Garv',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: _scaffoldMessengerKey,
+      navigatorKey: _navigatorKey,
       themeMode: _themeMode,
       theme: ThemeData(
         useMaterial3: true,
