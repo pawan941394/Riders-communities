@@ -22,6 +22,7 @@ from fastapi import (
 
 from apps.posts.models import Post, PostComment, PostReaction
 
+from apps.language.models import UserLanguage
 from apps.referral.models import ReferralCode
 from apps.referral.services import (
     ReferralApplyError,
@@ -155,6 +156,7 @@ class UserProfileData(BaseModel):
     city: str | None = None
     bio: str = ""
     preferred_language: str | None = None
+    language_code: str | None = None
     referral_code: str | None = None
 
 
@@ -253,6 +255,13 @@ def _build_profile_response(user, profile, request: Request) -> UserProfileData:
         user=user,
         defaults={"code": generate_unique_referral_code()},
     )
+    language_row = UserLanguage.objects.filter(user=user).first()
+    language_code = "en"
+    if language_row is not None:
+        language_code = (language_row.language_code or "").strip().lower() or "en"
+    else:
+        language_code = ((profile.preferred_language or "").strip().lower() or "en")
+
     return UserProfileData(
         full_name=f"{user.first_name} {user.last_name}".strip() or user.username,
         username=user.username,
@@ -264,6 +273,7 @@ def _build_profile_response(user, profile, request: Request) -> UserProfileData:
         city=profile.city or None,
         bio=(profile.bio or "").strip(),
         preferred_language=profile.preferred_language or None,
+        language_code=language_code,
         referral_code=referral_row.code,
     )
 
@@ -462,7 +472,7 @@ def otp_register(payload: OtpRegisterRequest, request: Request) -> AuthResponse:
         raise HTTPException(status_code=400, detail="Email already registered.")
 
     referral_code_clean = (payload.referral_code or "").strip().upper()
-    preferred_language = (payload.preferred_language or "en").strip().lower()
+    preferred_language = "en"
 
     with transaction.atomic():
         name_parts = full_name.split()
@@ -485,8 +495,12 @@ def otp_register(payload: OtpRegisterRequest, request: Request) -> AuthResponse:
             rider_id=(payload.rider_id or "").strip(),
             rider_company=(payload.rider_company or "").strip(),
             city=(payload.city or "").strip(),
-            preferred_language=preferred_language or "en",
+            preferred_language="en",
             is_phone_verified=True,
+        )
+        UserLanguage.objects.get_or_create(
+            user=user,
+            defaults={"language_code": "en"},
         )
 
         if referral_code_clean:
@@ -554,7 +568,11 @@ def signup(
             rider_id=(rider_id or "").strip(),
             rider_company=(rider_company or "").strip(),
             city=(city or "").strip(),
-            preferred_language=(preferred_language or "en").strip().lower(),
+            preferred_language="en",
+        )
+        UserLanguage.objects.get_or_create(
+            user=user,
+            defaults={"language_code": "en"},
         )
 
         photo_ext = os.path.splitext(profile_photo.filename)[1].lower() or ".jpg"

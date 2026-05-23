@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'apps.update.apps.UpdateConfig',
     'apps.vehicle.apps.VehicleConfig',
     'apps.rsa.apps.RsaConfig',
+    'apps.language.apps.LanguageConfig',
 ]
 
 # Public legal pages (templates/legal/*.html)
