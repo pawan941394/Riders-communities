@@ -3,7 +3,7 @@ from django.db import transaction
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from apps.notifications.models import BroadcastNotification, UserNotificationState
+from apps.notifications.models import BroadcastNotification, PushDeviceToken, UserNotificationState
 from apps.rider_auth.api import current_user_dep
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
@@ -23,6 +23,18 @@ class NotificationInboxOut(BaseModel):
 
 
 class NotificationReadOut(BaseModel):
+    success: bool
+    message: str
+
+
+class RegisterDeviceIn(BaseModel):
+    token: str | None = None
+    device_token: str | None = None
+    fcm_token: str | None = None
+    platform: str = Field(default="android", max_length=20)
+
+
+class RegisterDeviceOut(BaseModel):
     success: bool
     message: str
 
@@ -77,3 +89,27 @@ def mark_read(notification_id: int, user: User = Depends(current_user_dep)) -> N
 
     return NotificationReadOut(success=True, message="Notification marked as read.")
 
+
+@router.post("/devices/register", response_model=RegisterDeviceOut)
+def register_device_token(payload: RegisterDeviceIn, user: User = Depends(current_user_dep)) -> RegisterDeviceOut:
+    token = (payload.token or payload.device_token or payload.fcm_token or "").strip()
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Device token is required.",
+        )
+
+    platform = (payload.platform or "android").strip().lower()[:20]
+    if not platform:
+        platform = "android"
+
+    PushDeviceToken.objects.update_or_create(
+        token=token,
+        defaults={
+            "user": user,
+            "platform": platform,
+            "is_active": True,
+        },
+    )
+
+    return RegisterDeviceOut(success=True, message="Device token saved.")

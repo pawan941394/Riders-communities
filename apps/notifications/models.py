@@ -41,3 +41,22 @@ class UserNotificationState(models.Model):
             self.read_at = timezone.now()
             self.save(update_fields=["read_at", "updated_at"])
 
+
+class PushDeviceToken(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="push_device_tokens",
+    )
+    token = models.CharField(max_length=512, unique=True)
+    platform = models.CharField(max_length=20, default="android")
+    is_active = models.BooleanField(default=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-updated_at", "-id")
+
+    def __str__(self) -> str:
+        return f"PushDeviceToken(user_id={self.user_id}, platform={self.platform})"

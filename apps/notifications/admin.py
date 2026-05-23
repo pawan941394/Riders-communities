@@ -1,6 +1,10 @@
 from django.contrib import admin
 
-from apps.notifications.models import BroadcastNotification, UserNotificationState
+from apps.notifications.models import (
+    BroadcastNotification,
+    PushDeviceToken,
+    UserNotificationState,
+)
 
 
 @admin.register(BroadcastNotification)
@@ -18,3 +22,10 @@ class UserNotificationStateAdmin(admin.ModelAdmin):
     search_fields = ("user__username", "user__email", "notification__title")
     readonly_fields = ("created_at", "updated_at")
 
+
+@admin.register(PushDeviceToken)
+class PushDeviceTokenAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "platform", "is_active", "last_seen_at", "updated_at")
+    list_filter = ("platform", "is_active", "updated_at")
+    search_fields = ("user__username", "user__email", "token")
+    readonly_fields = ("last_seen_at", "created_at", "updated_at")
