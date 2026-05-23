@@ -124,14 +124,52 @@ def create_rsa_ticket(
     user: User = Depends(current_user_dep),
 ) -> RSATicketOut:
     vehicle = Vehicle.objects.filter(user=user).first()
+    phone_number = payload.phone_number.strip()
+    calling_number = payload.alternate_phone_number.strip()
+    region = payload.region.strip()
+    issue = payload.issue.strip()
+    description = payload.description.strip()
+    calling_digits = "".join(ch for ch in calling_number if ch.isdigit())
+
+    if not phone_number:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Registered phone number is required.",
+        )
+    if not calling_number:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Calling mobile number is required.",
+        )
+    if len(calling_digits) != 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Calling mobile number must be 10 digits.",
+        )
+    if not region:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Region is required.",
+        )
+    if not issue:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Issue is required.",
+        )
+    if not description:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Description is required.",
+        )
+
     ticket = RSATicket.objects.create(
         user=user,
         vehicle=vehicle,
-        phone_number=payload.phone_number.strip(),
-        alternate_phone_number=payload.alternate_phone_number.strip(),
-        region=payload.region.strip(),
-        issue=payload.issue.strip(),
-        description=payload.description.strip(),
+        phone_number=phone_number,
+        alternate_phone_number=calling_number,
+        region=region,
+        issue=issue,
+        description=description,
         gps_latitude=_decimal_or_none(payload.gps_latitude),
         gps_longitude=_decimal_or_none(payload.gps_longitude),
         metadata=payload.metadata,
