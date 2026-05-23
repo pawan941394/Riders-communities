@@ -10,8 +10,9 @@ from django.db.models import Count, Prefetch, Q
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from pydantic import BaseModel, ConfigDict
 
+from apps.notifications.models import PushDeviceToken
 from apps.notifications.user_events import create_user_notification
-from apps.notifications.push_service import send_topic_notification
+from apps.notifications.push_service import send_tokens_notification
 from apps.posts.models import Post, PostCityOption, PostComment, PostCompanyOption, PostIssueTypeOption, PostReaction
 from apps.rider_auth.models import RiderProfile
 
@@ -593,10 +594,13 @@ def create_post(
     # Non-blocking broadcast: a failed push should never fail post creation.
     try:
         notif_title, notif_body = _post_notification_payload(post)
-        send_topic_notification(
+        recipient_tokens = list(
+            PushDeviceToken.objects.filter(is_active=True).exclude(user_id=user.id).values_list("token", flat=True),
+        )
+        send_tokens_notification(
             title=notif_title,
             body=notif_body,
-            topic="all_users",
+            tokens=recipient_tokens,
             data={
                 "type": "new_post",
                 "post_id": str(post.id),
