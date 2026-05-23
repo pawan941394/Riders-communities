@@ -2,7 +2,6 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-
 class BroadcastNotification(models.Model):
     title = models.CharField(max_length=140)
     body = models.TextField()

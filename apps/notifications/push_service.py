@@ -64,6 +64,14 @@ def send_topic_notification(
             ),
             topic=clean_topic,
             data=data or {},
+            android=messaging.AndroidConfig(
+                priority="high",
+                notification=messaging.AndroidNotification(
+                    channel_id="ridewithgarv_general",
+                    icon="ic_stat_ridewithgarv",
+                    color="#FFC928",
+                ),
+            ),
         )
         message_id = messaging.send(message)
         return True, message_id
