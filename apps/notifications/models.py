@@ -7,6 +7,7 @@ class BroadcastNotification(models.Model):
     title = models.CharField(max_length=140)
     body = models.TextField()
     is_active = models.BooleanField(default=True)
+    show_in_app = models.BooleanField(default=True)
     send_tray_push = models.BooleanField(default=True)
     tray_push_topic = models.CharField(max_length=120, default="all_users")
     tray_push_sent_at = models.DateTimeField(null=True, blank=True)

@@ -44,7 +44,10 @@ def inbox(
     limit: int = Query(default=20, ge=1, le=100),
     user: User = Depends(current_user_dep),
 ) -> NotificationInboxOut:
-    notifications = list(BroadcastNotification.objects.filter(is_active=True).order_by("-created_at", "-id")[:limit])
+    notifications = list(
+        BroadcastNotification.objects.filter(is_active=True, show_in_app=True)
+        .order_by("-created_at", "-id")[:limit]
+    )
     if not notifications:
         return NotificationInboxOut(items=[])
 
@@ -73,7 +76,11 @@ def inbox(
 
 @router.post("/{notification_id}/read", response_model=NotificationReadOut)
 def mark_read(notification_id: int, user: User = Depends(current_user_dep)) -> NotificationReadOut:
-    notification = BroadcastNotification.objects.filter(id=notification_id, is_active=True).first()
+    notification = BroadcastNotification.objects.filter(
+        id=notification_id,
+        is_active=True,
+        show_in_app=True,
+    ).first()
     if notification is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -16,13 +16,14 @@ class BroadcastNotificationAdmin(admin.ModelAdmin):
         "id",
         "title",
         "is_active",
+        "show_in_app",
         "send_tray_push",
         "tray_push_topic",
         "tray_push_sent_at",
         "created_at",
         "updated_at",
     )
-    list_filter = ("is_active", "send_tray_push", "tray_push_topic", "created_at")
+    list_filter = ("is_active", "show_in_app", "send_tray_push", "tray_push_topic", "created_at")
     search_fields = ("title", "body", "tray_push_topic")
     readonly_fields = ("tray_push_sent_at", "tray_push_last_error", "created_at", "updated_at")
     actions = ("send_selected_tray_push",)
