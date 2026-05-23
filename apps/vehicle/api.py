@@ -12,7 +12,7 @@ User = get_user_model()
 
 
 class VehicleIn(BaseModel):
-    vehicle_type: Literal["ev_scooter", "ev_bike", "bike", "scooter", "other"] = "ev_scooter"
+    vehicle_type: Literal["ev_scooter", "ev_bike", "bike", "scooter", "other"] = Field(...)
     company_name: str = Field(default="", max_length=120)
     model_name: str = Field(default="", max_length=120)
     registration_number: str = Field(default="", max_length=40)
@@ -89,9 +89,9 @@ def upsert_vehicle(
     payload: VehicleIn,
     user: User = Depends(current_user_dep),
 ) -> VehicleMeResponse:
-    model_name = _required(payload.model_name, "Vehicle model")
+    model_name = _clean(payload.model_name)
     registration_number = _required(payload.registration_number, "Vehicle number").upper()
-    chassis_number = _required(payload.chassis_number, "Chassis number").upper()
+    chassis_number = _clean(payload.chassis_number).upper()
     company_name = _required(payload.company_name, "Rider company")
     battery_number = _clean(payload.battery_number).upper()
     if payload.vehicle_type in {"ev_scooter", "ev_bike"} and not battery_number:

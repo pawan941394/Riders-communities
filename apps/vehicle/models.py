@@ -6,7 +6,7 @@ class Vehicle(models.Model):
     class VehicleType(models.TextChoices):
         EV_SCOOTER = "ev_scooter", "EV scooter"
         EV_BIKE = "ev_bike", "EV bike"
-        BIKE = "bike", "Bike"
+        BIKE = "bike", "Petrol"
         SCOOTER = "scooter", "Scooter"
         OTHER = "other", "Other"
 
