@@ -27,6 +27,7 @@ class RSATicketAdmin(admin.ModelAdmin):
         "region",
         "issue",
         "status",
+        "payment_status",
         "created_at",
     )
     list_filter = ("status", "region", "issue", "created_at")
@@ -65,6 +66,8 @@ class RSATicketAdmin(admin.ModelAdmin):
                     "status",
                     "assigned_to_name",
                     "admin_notes",
+                    "payment_link",
+                    "payment_status",
                     "resolved_at",
                     "metadata",
                 )

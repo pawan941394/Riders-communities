@@ -39,6 +39,8 @@ class RSATicketOut(BaseModel):
     status: Literal["new", "assigned", "in_progress", "resolved", "cancelled"]
     assigned_to_name: str
     admin_notes: str
+    payment_link: str | None = None
+    payment_status: str | None = None
     created_at: str
     updated_at: str
     resolved_at: str | None
@@ -87,6 +89,8 @@ def _ticket_out(ticket: RSATicket) -> RSATicketOut:
         status=ticket.status,
         assigned_to_name=ticket.assigned_to_name or "",
         admin_notes=ticket.admin_notes or "",
+        payment_link=(ticket.payment_link or None),
+        payment_status=(ticket.payment_status or None),
         created_at=ticket.created_at.isoformat(),
         updated_at=ticket.updated_at.isoformat(),
         resolved_at=ticket.resolved_at.isoformat() if ticket.resolved_at else None,

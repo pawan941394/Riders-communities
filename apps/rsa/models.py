@@ -32,6 +32,8 @@ class RSATicket(models.Model):
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.NEW)
     assigned_to_name = models.CharField(max_length=120, blank=True, default="")
     admin_notes = models.TextField(blank=True, default="")
+    payment_link = models.URLField(max_length=500, null=True, blank=True, default=None)
+    payment_status = models.CharField(max_length=40, null=True, blank=True, default=None)
     resolved_at = models.DateTimeField(null=True, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

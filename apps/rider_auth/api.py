@@ -1,7 +1,6 @@
 import os
 import uuid
 from datetime import UTC, datetime, timedelta
-
 import jwt
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
