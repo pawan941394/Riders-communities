@@ -638,10 +638,10 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
           onPrimary: Colors.white,
           secondary: Color(0xFFFFC928),
           onSecondary: Color(0xFF0B1F3A),
-          surface: Color(0xFFFFFCF3),
+          surface: Color(0xFFFFFFFF),
           onSurface: Color(0xFF0B1F3A),
         ),
-        scaffoldBackgroundColor: const Color(0xFFFFF9EA),
+        scaffoldBackgroundColor: const Color(0xFFFFFFFF),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
@@ -1417,7 +1417,7 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFFFFFBF1), Color(0xFFFFF7DF)],
+                colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
               ),
             ),
             child: Stack(
@@ -2214,7 +2214,7 @@ class _HomeScreenState extends State<HomeScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFF4F8FF), Color(0xFFFFFFFF)],
+            colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
           ),
         ),
         child: SafeArea(

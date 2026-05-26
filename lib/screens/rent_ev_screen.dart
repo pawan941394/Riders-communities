@@ -12,11 +12,13 @@ class RentEvScreen extends StatefulWidget {
     required this.apiBaseUrl,
     required this.apiAccessKey,
     required this.accessToken,
+    this.languageCode = 'en',
   });
 
   final String apiBaseUrl;
   final String apiAccessKey;
   final String accessToken;
+  final String languageCode;
 
   @override
   State<RentEvScreen> createState() => _RentEvScreenState();
@@ -28,6 +30,8 @@ class _RentEvScreenState extends State<RentEvScreen> {
   List<RentEvPlan> _plans = <RentEvPlan>[];
   bool _loading = true;
   String? _error;
+  bool get _isHindi => widget.languageCode.toLowerCase().startsWith('hi');
+  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   void initState() {
@@ -73,7 +77,10 @@ class _RentEvScreenState extends State<RentEvScreen> {
       }
       setState(() {
         _loading = false;
-        _error = 'Could not reach the server. Check your connection and try again.';
+        _error = _tr(
+          'Could not reach the server. Check your connection and try again.',
+          'सर्वर से कनेक्ट नहीं हो पाया। अपना कनेक्शन चेक करें और फिर कोशिश करें।',
+        );
       });
     }
   }
@@ -107,7 +114,7 @@ class _RentEvScreenState extends State<RentEvScreen> {
     final String q = _search.text;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFF9EA),
+      backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF),
       body: RefreshIndicator(
         onRefresh: _loadPlans,
         color: const Color(0xFF0B1F3A),
@@ -117,7 +124,7 @@ class _RentEvScreenState extends State<RentEvScreen> {
             SliverAppBar(
               floating: true,
               pinned: true,
-              backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFF9EA),
+              backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF),
               surfaceTintColor: Colors.transparent,
               title: const SizedBox.shrink(),
             ),
@@ -158,7 +165,7 @@ class _RentEvScreenState extends State<RentEvScreen> {
                       FilledButton.icon(
                         onPressed: _loadPlans,
                         icon: const Icon(Icons.refresh_rounded),
-                        label: const Text('Retry'),
+                        label: Text(_tr('Retry', 'फिर कोशिश करें')),
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF0B1F3A),
                           foregroundColor: Colors.white,
@@ -183,7 +190,7 @@ class _RentEvScreenState extends State<RentEvScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'No Rent EV partners yet.',
+                        _tr('No Rent EV partners yet.', 'अभी कोई Rent EV पार्टनर नहीं है।'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
@@ -193,7 +200,10 @@ class _RentEvScreenState extends State<RentEvScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Pull down to refresh once partners are added in admin.',
+                        _tr(
+                          'Pull down to refresh once partners are added in admin.',
+                          'एडमिन में पार्टनर जुड़ने के बाद रिफ्रेश करने के लिए नीचे खींचें।',
+                        ),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
@@ -234,8 +244,8 @@ class _RentEvScreenState extends State<RentEvScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Rent EV',
+                            Text(
+                              _tr('Rent EV', 'ईवी किराए पर लें'),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 22,
@@ -245,7 +255,10 @@ class _RentEvScreenState extends State<RentEvScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Compare deposits, weekly rent and documents across companies — live list from our backend.',
+                              _tr(
+                                'Compare deposits, weekly rent and documents across companies — live list from our backend.',
+                                'कंपनियों के डिपॉजिट, साप्ताहिक किराया और डॉक्यूमेंट्स की तुलना करें — लाइव लिस्ट हमारे बैकएंड से।',
+                              ),
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.9),
                                 height: 1.4,
@@ -265,7 +278,7 @@ class _RentEvScreenState extends State<RentEvScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Search company or tagline…',
+                          hintText: _tr('Search company or tagline...', 'कंपनी या टैगलाइन खोजें...'),
                           hintStyle: TextStyle(
                             color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                             fontWeight: FontWeight.w500,
@@ -277,7 +290,7 @@ class _RentEvScreenState extends State<RentEvScreen> {
                           suffixIcon: q.isEmpty
                               ? null
                               : IconButton(
-                                  tooltip: 'Clear',
+                                  tooltip: _tr('Clear', 'साफ करें'),
                                   onPressed: () {
                                     _search.clear();
                                     setState(() {});
@@ -318,7 +331,9 @@ class _RentEvScreenState extends State<RentEvScreen> {
                   child: Row(
                     children: [
                       Text(
-                        q.trim().isEmpty ? 'All partners' : 'Results',
+                        q.trim().isEmpty
+                            ? _tr('All partners', 'सभी पार्टनर्स')
+                            : _tr('Results', 'रिजल्ट्स'),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -361,7 +376,7 @@ class _RentEvScreenState extends State<RentEvScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'No partner matches “$q”',
+                            _tr('No partner matches "$q"', '"$q" से कोई पार्टनर नहीं मिला'),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16,
@@ -375,7 +390,7 @@ class _RentEvScreenState extends State<RentEvScreen> {
                               _search.clear();
                               setState(() {});
                             },
-                            child: const Text('Clear search'),
+                            child: Text(_tr('Clear search', 'सर्च साफ करें')),
                           ),
                         ],
                       ),
@@ -392,6 +407,7 @@ class _RentEvScreenState extends State<RentEvScreen> {
                       final RentEvPlan p = _filtered(q)[index];
                       return _PartnerCard(
                         plan: p,
+                        languageCode: widget.languageCode,
                         onTap: () => _openDetail(p),
                       );
                     },
@@ -406,10 +422,17 @@ class _RentEvScreenState extends State<RentEvScreen> {
 }
 
 class _PartnerCard extends StatelessWidget {
-  const _PartnerCard({required this.plan, required this.onTap});
+  const _PartnerCard({
+    required this.plan,
+    required this.onTap,
+    this.languageCode = 'en',
+  });
 
   final RentEvPlan plan;
   final VoidCallback onTap;
+  final String languageCode;
+  bool get _isHindi => languageCode.toLowerCase().startsWith('hi');
+  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   Widget build(BuildContext context) {
@@ -479,8 +502,8 @@ class _PartnerCard extends StatelessWidget {
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
-                              'Featured',
+                            child: Text(
+                              _tr('Featured', 'फीचर्ड'),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
@@ -514,24 +537,26 @@ class _PartnerCard extends StatelessWidget {
                       children: [
                         _InfoPill(
                           icon: Icons.calendar_today_outlined,
-                          label: '${RentEvPlanDetailScreen.rupee(plan.dailyRent)}/day',
+                          label: '${RentEvPlanDetailScreen.rupee(plan.dailyRent)}/${_tr('day', 'दिन')}',
                           isDark: isDark,
                           highlight: true,
                         ),
                         _InfoPill(
                           icon: Icons.date_range_outlined,
-                          label: '${RentEvPlanDetailScreen.rupee(plan.weeklyRent)}/week',
+                          label: '${RentEvPlanDetailScreen.rupee(plan.weeklyRent)}/${_tr('week', 'हफ्ता')}',
                           isDark: isDark,
                         ),
                         if (plan.securityDeposit > 0)
                           _InfoPill(
                             icon: Icons.account_balance_wallet_outlined,
-                            label: '${RentEvPlanDetailScreen.rupee(plan.securityDeposit)} deposit',
+                            label: '${RentEvPlanDetailScreen.rupee(plan.securityDeposit)} ${_tr('deposit', 'डिपॉजिट')}',
                             isDark: isDark,
                           ),
                         _InfoPill(
                           icon: Icons.description_outlined,
-                          label: '${plan.documentCount} document${plan.documentCount == 1 ? '' : 's'}',
+                          label: _isHindi
+                              ? '${plan.documentCount} ${plan.documentCount == 1 ? 'डॉक्यूमेंट' : 'डॉक्यूमेंट्स'}'
+                              : '${plan.documentCount} document${plan.documentCount == 1 ? '' : 's'}',
                           isDark: isDark,
                         ),
                       ],
@@ -540,7 +565,7 @@ class _PartnerCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          'Tap for full plan',
+                          _tr('Tap for full plan', 'पूरा प्लान देखने के लिए टैप करें'),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,

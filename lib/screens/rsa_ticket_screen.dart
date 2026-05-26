@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:sendotp_flutter_sdk/sendotp_flutter_sdk.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+
+import '../config/api_config.dart';
 
 class RsaTicketItem {
   const RsaTicketItem({
@@ -16,6 +19,11 @@ class RsaTicketItem {
     required this.createdAt,
     required this.assignedToName,
     required this.adminNotes,
+    required this.paymentLink,
+    required this.paymentStatus,
+    required this.technicianName,
+    required this.technicianLocation,
+    required this.technicianPhoneNumber,
     required this.latestHistoryStatus,
     required this.latestHistoryNote,
     required this.gpsLatitude,
@@ -30,6 +38,11 @@ class RsaTicketItem {
   final String createdAt;
   final String assignedToName;
   final String adminNotes;
+  final String paymentLink;
+  final String paymentStatus;
+  final String technicianName;
+  final String technicianLocation;
+  final String technicianPhoneNumber;
   final String latestHistoryStatus;
   final String latestHistoryNote;
   final double? gpsLatitude;
@@ -37,6 +50,11 @@ class RsaTicketItem {
 
   bool get isActive => status != 'resolved' && status != 'cancelled';
   bool get hasLocation => gpsLatitude != null && gpsLongitude != null;
+  bool get hasPaymentLink => paymentLink.trim().isNotEmpty;
+  bool get hasTechnicianInfo =>
+      technicianName.trim().isNotEmpty ||
+      technicianLocation.trim().isNotEmpty ||
+      technicianPhoneNumber.trim().isNotEmpty;
 
   String get displayStatus {
     final String historyStatus = latestHistoryStatus.isEmpty ? status : latestHistoryStatus;
@@ -88,6 +106,11 @@ class RsaTicketItem {
       createdAt: _safeText(json['created_at']),
       assignedToName: _safeText(json['assigned_to_name']),
       adminNotes: _safeText(json['admin_notes']),
+      paymentLink: _safeText(json['payment_link']),
+      paymentStatus: _safeText(json['payment_status']),
+      technicianName: _safeText(json['technician_name']),
+      technicianLocation: _safeText(json['technician_location']),
+      technicianPhoneNumber: _safeText(json['technician_phone_number']),
       latestHistoryStatus: latestHistoryStatus,
       latestHistoryNote: latestHistoryNote,
       gpsLatitude: _safeDouble(json['gps_latitude']),
@@ -124,6 +147,30 @@ Future<void> openRsaTicketMap(RsaTicketItem ticket) async {
   await launchUrlString(url, mode: LaunchMode.externalApplication);
 }
 
+Future<void> openRsaPaymentLink(RsaTicketItem ticket) async {
+  if (!ticket.hasPaymentLink) return;
+  await launchUrlString(ticket.paymentLink, mode: LaunchMode.externalApplication);
+}
+
+Future<void> openTechnicianLocation(String rawLocation) async {
+  final String value = rawLocation.trim();
+  if (value.isEmpty) return;
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    await launchUrlString(value, mode: LaunchMode.externalApplication);
+    return;
+  }
+  final String q = Uri.encodeComponent(value);
+  final String mapsUrl = 'https://www.google.com/maps/search/?api=1&query=$q';
+  await launchUrlString(mapsUrl, mode: LaunchMode.externalApplication);
+}
+
+Future<void> callTechnician(String phoneNumber) async {
+  final String value = phoneNumber.trim();
+  if (value.isEmpty) return;
+  final String telUrl = 'tel:${Uri.encodeComponent(value)}';
+  await launchUrlString(telUrl, mode: LaunchMode.externalApplication);
+}
+
 class RsaTicketScreen extends StatefulWidget {
   const RsaTicketScreen({
     super.key,
@@ -132,6 +179,7 @@ class RsaTicketScreen extends StatefulWidget {
     required this.accessToken,
     this.languageCode = 'en',
     this.initialPhone = '',
+    this.onAddVehicle,
   });
 
   final String apiBaseUrl;
@@ -139,6 +187,7 @@ class RsaTicketScreen extends StatefulWidget {
   final String accessToken;
   final String languageCode;
   final String initialPhone;
+  final VoidCallback? onAddVehicle;
 
   @override
   State<RsaTicketScreen> createState() => _RsaTicketScreenState();
@@ -146,16 +195,25 @@ class RsaTicketScreen extends StatefulWidget {
 
 class _RsaTicketScreenState extends State<RsaTicketScreen> {
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
   final TextEditingController _alternatePhoneController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
   bool _showGuide = false;
   bool _loadingProfilePhone = false;
+  bool _otpSdkInitialized = false;
+  bool _otpSent = false;
+  bool _isSendingOtp = false;
+  bool _isVerifyingOtp = false;
+  bool _isResendingOtp = false;
   bool _gpsCaptured = false;
   bool _detectingGps = false;
   bool _submittingTicket = false;
   bool _loadingTickets = false;
+  bool _hasVehicleDetails = false;
   String? _ticketsError;
+  String _otpReqId = '';
+  String _otpPhone = '';
   int? _submittedTicketId;
   List<RsaTicketItem> _tickets = <RsaTicketItem>[];
   String _profileName = '';
@@ -175,6 +233,7 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
 
   bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';
   String _tr(String en, String hi) => _isHindi ? hi : en;
+  bool get _isOtpBusy => _isSendingOtp || _isVerifyingOtp || _isResendingOtp;
 
   @override
   void initState() {
@@ -231,11 +290,15 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
         final Map<String, dynamic>? root = _safeMap(decoded);
         final Map<String, dynamic>? vehicle = _safeMap(root?['vehicle']);
         if (vehicle != null) {
+          final String company = _safeText(vehicle['company_name']);
+          final String model = _safeText(vehicle['model_name']);
+          final String number = _safeText(vehicle['registration_number']);
           if (mounted) {
             setState(() {
-              _vehicleCompany = _safeText(vehicle['company_name']);
-              _vehicleModel = _safeText(vehicle['model_name']);
-              _vehicleNumber = _safeText(vehicle['registration_number']);
+              _hasVehicleDetails = number.isNotEmpty;
+              _vehicleCompany = company;
+              _vehicleModel = model;
+              _vehicleNumber = number;
             });
           }
         }
@@ -301,6 +364,7 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
   @override
   void dispose() {
     _phoneController.dispose();
+    _otpController.dispose();
     _alternatePhoneController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -337,8 +401,201 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
     }
   }
 
-  void _verifyRider() {
-    final String phone = _phoneController.text.trim();
+  String _normalizeLocalPhone(String phone) {
+    String digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('0') && digits.length == 11) {
+      digits = digits.substring(1);
+    }
+    if (digits.startsWith('91') && digits.length >= 12) {
+      digits = digits.substring(digits.length - 10);
+    }
+    if (digits.length > 10) {
+      digits = digits.substring(digits.length - 10);
+    }
+    return digits;
+  }
+
+  String _toSendOtpIdentifier(String localPhone) {
+    final String digits = _normalizeLocalPhone(localPhone);
+    if (digits.length == 10) return '91$digits';
+    return digits;
+  }
+
+  Map<String, dynamic>? _otpResponseMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) {
+      return value.map<String, dynamic>((dynamic k, dynamic v) => MapEntry<String, dynamic>('$k', v));
+    }
+    if (value is String) {
+      try {
+        final dynamic decoded = jsonDecode(value);
+        return _otpResponseMap(decoded);
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  String _extractOtpReqId(dynamic response) {
+    if (response is String) {
+      final String raw = response.trim();
+      if (raw.isNotEmpty && !raw.contains(' ') && raw.length >= 12) return raw;
+    }
+    final Map<String, dynamic>? map = _otpResponseMap(response);
+    if (map == null) return '';
+    const List<String> keys = <String>[
+      'reqId',
+      'req_id',
+      'request_id',
+      'requestId',
+      'reference_id',
+      'referenceId',
+    ];
+    for (final String key in keys) {
+      final String value = ('${map[key] ?? ''}').trim();
+      if (value.isNotEmpty) return value;
+    }
+    final Map<String, dynamic>? data = _otpResponseMap(map['data']);
+    if (data != null) {
+      for (final String key in keys) {
+        final String value = ('${data[key] ?? ''}').trim();
+        if (value.isNotEmpty) return value;
+      }
+    }
+    final String message = ('${map['message'] ?? data?['message'] ?? ''}').trim();
+    if (message.isNotEmpty && !message.contains(' ') && message.length >= 12) return message;
+    return '';
+  }
+
+  bool _isOtpSuccess(dynamic response) {
+    if (response is String) {
+      final String raw = response.toLowerCase().trim();
+      final bool positive = raw.contains('success') || raw.contains('verified') || raw.contains('otp verified');
+      final bool negative = raw.contains('fail') ||
+          raw.contains('invalid') ||
+          raw.contains('wrong') ||
+          raw.contains('expired') ||
+          raw.contains('blocked') ||
+          raw.contains('error');
+      if (positive && !negative) return true;
+    }
+    final Map<String, dynamic>? map = _otpResponseMap(response);
+    if (map == null) return false;
+    final String status = ('${map['status'] ?? map['statusCode'] ?? ''}').toLowerCase().trim();
+    final String message = ('${map['message'] ?? ''}').toLowerCase().trim();
+    if (map['success'] == true || map['verified'] == true || map['is_verified'] == true) return true;
+    if (status == 'success' || status == 'ok' || status == '200') return true;
+    if (message.contains('verified') || message.contains('success')) return true;
+    final Map<String, dynamic>? data = _otpResponseMap(map['data']);
+    if (data == null) return false;
+    final String dataMessage = ('${data['message'] ?? ''}').toLowerCase().trim();
+    return data['success'] == true ||
+        data['verified'] == true ||
+        data['is_verified'] == true ||
+        dataMessage.contains('verified') ||
+        dataMessage.contains('success');
+  }
+
+  bool _isOtpExplicitFailure(dynamic response) {
+    final String raw = (response is String ? response : jsonEncode(_otpResponseMap(response) ?? <String, dynamic>{}))
+        .toLowerCase()
+        .trim();
+    if (raw.isEmpty) return false;
+    const List<String> failWords = <String>[
+      'invalid',
+      'wrong',
+      'incorrect',
+      'expired',
+      'blocked',
+      'ipblocked',
+      'too many',
+      'attempt',
+      'fail',
+      'failed',
+      'error',
+      'denied',
+      'mismatch',
+    ];
+    return failWords.any(raw.contains);
+  }
+
+  String _otpFailureMessage(dynamic response) {
+    final String flat = ('$response').toLowerCase();
+    if (flat.contains('ipblocked') || flat.contains('ip blocked')) {
+      return _tr(
+        'OTP limit exceeded for today. Please try again after 24 hours.',
+        'आज OTP लिमिट खत्म हो गई है। कृपया 24 घंटे बाद फिर कोशिश करें।',
+      );
+    }
+    if (response is String && response.trim().isNotEmpty) return response.trim();
+    final Map<String, dynamic>? map = _otpResponseMap(response);
+    final String message = ('${map?['message'] ?? map?['detail'] ?? map?['error'] ?? ''}').trim();
+    if (message.isNotEmpty) return message;
+    final Map<String, dynamic>? data = _otpResponseMap(map?['data']);
+    final String nested = ('${data?['message'] ?? data?['detail'] ?? data?['error'] ?? ''}').trim();
+    if (nested.isNotEmpty) return nested;
+    return _tr('OTP verification failed. Please check and retry.', 'OTP वेरिफिकेशन फेल हुआ। कृपया OTP चेक करके फिर कोशिश करें।');
+  }
+
+  Future<Map<String, String>?> _fetchOtpRuntimeConfig() async {
+    try {
+      final http.Response response = await http.get(
+        Uri.parse('${widget.apiBaseUrl}/api/v1/auth/otp/config'),
+        headers: <String, String>{'X-API-Key': widget.apiAccessKey},
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) return null;
+      final Map<String, dynamic>? data = _otpResponseMap(response.body);
+      if (data == null || data['enabled'] != true) return null;
+      final String widgetId = ('${data['widget_id'] ?? ''}').trim();
+      final String authToken = ('${data['auth_token'] ?? ''}').trim();
+      if (widgetId.isEmpty || authToken.isEmpty) return null;
+      return <String, String>{'widget_id': widgetId, 'auth_token': authToken};
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _initOtpSdkIfPossible() async {
+    if (_otpSdkInitialized) return;
+    String widgetId = ApiConfig.sendOtpWidgetId.trim();
+    String authToken = ApiConfig.sendOtpAuthToken.trim();
+    if (widgetId.isEmpty || authToken.isEmpty) {
+      final Map<String, String>? config = await _fetchOtpRuntimeConfig();
+      if (config != null) {
+        widgetId = config['widget_id'] ?? '';
+        authToken = config['auth_token'] ?? '';
+      }
+    }
+    if (widgetId.isEmpty || authToken.isEmpty) return;
+    try {
+      OTPWidget.initializeWidget(widgetId, authToken);
+      _otpSdkInitialized = true;
+    } catch (_) {
+      _otpSdkInitialized = false;
+    }
+  }
+
+  void _resetOtpVerification({bool clearOtp = true}) {
+    _otpSent = false;
+    _otpReqId = '';
+    _otpPhone = '';
+    _verifiedPhone = '';
+    if (clearOtp) _otpController.clear();
+  }
+
+  void _handlePhoneChanged(String value) {
+    final String phone = _normalizeLocalPhone(value);
+    if (_otpSent && phone != _otpPhone) {
+      setState(() => _resetOtpVerification());
+    }
+  }
+
+  void _showRsaSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _sendRsaOtp() async {
+    final String phone = _normalizeLocalPhone(_phoneController.text.trim());
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     if (phone.length != 10 || int.tryParse(phone) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -352,13 +609,120 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
       );
       return;
     }
+    if (_isOtpBusy) return;
 
-    setState(() {
-      _verifiedPhone = phone;
-      _currentStep = 1;
-      _selectedTicketTab = 1;
-    });
-    _loadRsaTickets();
+    setState(() => _isSendingOtp = true);
+    try {
+      await _initOtpSdkIfPossible();
+      if (!_otpSdkInitialized) {
+        _showRsaSnack(_tr('OTP service is not configured right now.', 'OTP सर्विस अभी कॉन्फिगर नहीं है।'));
+        return;
+      }
+      final dynamic response = await OTPWidget.sendOTP(<String, dynamic>{
+        'identifier': _toSendOtpIdentifier(phone),
+      });
+      final String reqId = _extractOtpReqId(response);
+      if (reqId.isEmpty) {
+        _showRsaSnack(_otpFailureMessage(response));
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        _otpReqId = reqId;
+        _otpPhone = phone;
+        _otpSent = true;
+        _verifiedPhone = '';
+        _otpController.clear();
+      });
+      _showRsaSnack(_tr('OTP sent successfully.', 'OTP भेज दिया गया है।'));
+    } catch (_) {
+      _showRsaSnack(_tr('Could not send OTP right now.', 'अभी OTP नहीं भेज पाए।'));
+    } finally {
+      if (mounted) {
+        setState(() => _isSendingOtp = false);
+      }
+    }
+  }
+
+  Future<void> _resendRsaOtp() async {
+    if (_otpReqId.isEmpty) {
+      await _sendRsaOtp();
+      return;
+    }
+    if (_isOtpBusy) return;
+    setState(() => _isResendingOtp = true);
+    try {
+      final dynamic response = await OTPWidget.retryOTP(<String, dynamic>{
+        'reqId': _otpReqId,
+        'retryChannel': 11,
+      });
+      final String nextReqId = _extractOtpReqId(response);
+      if (nextReqId.isNotEmpty) _otpReqId = nextReqId;
+      _showRsaSnack(_tr('OTP resend request sent.', 'OTP फिर से भेजने की request भेज दी गई है।'));
+    } catch (_) {
+      _showRsaSnack(_tr('Could not resend OTP. Please try again.', 'OTP फिर से नहीं भेज पाए। कृपया फिर कोशिश करें।'));
+    } finally {
+      if (mounted) {
+        setState(() => _isResendingOtp = false);
+      }
+    }
+  }
+
+  Future<void> _verifyRsaOtp() async {
+    final String phone = _normalizeLocalPhone(_phoneController.text.trim());
+    final String otp = _otpController.text.trim();
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    if (!_otpSent || _otpReqId.isEmpty || phone != _otpPhone) {
+      _showRsaSnack(_tr('Please send OTP first.', 'कृपया पहले OTP भेजें।'));
+      return;
+    }
+    if (otp.length < 4) {
+      _showRsaSnack(_tr('Please enter a valid OTP.', 'कृपया सही OTP दर्ज करें।'));
+      return;
+    }
+    if (_isOtpBusy) return;
+
+    setState(() => _isVerifyingOtp = true);
+    try {
+      final dynamic response = await OTPWidget.verifyOTP(<String, dynamic>{
+        'reqId': _otpReqId,
+        'otp': otp,
+      });
+      final bool explicitFailure = _isOtpExplicitFailure(response);
+      final bool success = _isOtpSuccess(response);
+      if (explicitFailure && !success) {
+        _showRsaSnack(_otpFailureMessage(response));
+        return;
+      }
+      if (!success && _isOtpExplicitFailure(response)) {
+        _showRsaSnack(_otpFailureMessage(response));
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        _verifiedPhone = phone;
+        _currentStep = 1;
+        _selectedTicketTab = 1;
+      });
+      _loadRsaTickets();
+      _showRsaSnack(_tr('Mobile number verified.', 'मोबाइल नंबर वेरिफाई हो गया।'));
+    } catch (error) {
+      final String message = error.toString().replaceFirst('Exception: ', '').trim();
+      _showRsaSnack(message.isEmpty
+          ? _tr('Could not verify OTP right now.', 'अभी OTP वेरिफाई नहीं कर पाए।')
+          : message);
+    } finally {
+      if (mounted) {
+        setState(() => _isVerifyingOtp = false);
+      }
+    }
+  }
+
+  void _openAddVehicleDetails() {
+    final VoidCallback? onAddVehicle = widget.onAddVehicle;
+    if (onAddVehicle == null) return;
+    Navigator.of(context).pop();
+    onAddVehicle();
   }
 
   Future<void> _captureLiveGps() async {
@@ -430,6 +794,19 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
   Future<void> _submitRsaTicket() async {
     if (_submittingTicket) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    if (!_hasVehicleDetails || _vehicleNumber.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _tr(
+              'Please add vehicle details before creating an RSA ticket.',
+              'RSA टिकट बनाने से पहले वाहन की जानकारी जोड़ें।',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
     final String callingPhone = _alternatePhoneController.text.trim();
     final String description = _descriptionController.text.trim();
     final String primaryPhone =
@@ -520,6 +897,7 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
         _selectedTicketTab = 0;
       });
       await _loadRsaTickets();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
@@ -544,7 +922,7 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color pageBg = isDark ? const Color(0xFF050B16) : const Color(0xFFFFF9EA);
+    final Color pageBg = isDark ? const Color(0xFF050B16) : const Color(0xFFFFFFFF);
     final Color cardBgSoft = isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFBF1);
     final Color border = isDark ? const Color(0x263B82F6) : const Color(0x40F4B400);
     final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
@@ -579,10 +957,18 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
               textPrimary: textPrimary,
               textSecondary: textSecondary,
               phoneController: _phoneController,
+              otpController: _otpController,
               loadingProfilePhone: _loadingProfilePhone,
               hasPrefilledPhone: _phoneController.text.trim().isNotEmpty,
+              otpSent: _otpSent,
+              isSendingOtp: _isSendingOtp,
+              isVerifyingOtp: _isVerifyingOtp,
+              isResendingOtp: _isResendingOtp,
               isHindi: _isHindi,
-              onVerify: _verifyRider,
+              onPhoneChanged: _handlePhoneChanged,
+              onSendOtp: _sendRsaOtp,
+              onVerifyOtp: _verifyRsaOtp,
+              onResendOtp: _resendRsaOtp,
             )
           else ...[
             _RsaProfileSummaryCard(
@@ -594,7 +980,9 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
               vehicleCompany: _vehicleCompany,
               vehicleModel: _vehicleModel,
               vehicleNumber: _vehicleNumber,
+              hasVehicleDetails: _hasVehicleDetails,
               totalTickets: _tickets.length,
+              onAddVehicle: widget.onAddVehicle == null ? null : _openAddVehicleDetails,
             ),
             const SizedBox(height: 16),
             _RsaTicketTabs(
@@ -621,24 +1009,31 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
                 onRefresh: _loadRsaTickets,
               )
             else if (_selectedTicketTab == 1)
-              _NewTicketCard(
-                isDark: isDark,
-                isHindi: _isHindi,
-                alternatePhoneController: _alternatePhoneController,
-                descriptionController: _descriptionController,
-                selectedRegion: _selectedRegion,
-                selectedIssue: _selectedIssue,
-                gpsCaptured: _gpsCaptured,
-                detectingGps: _detectingGps,
-                gpsLatitude: _gpsLatitude,
-                gpsLongitude: _gpsLongitude,
-                gpsError: _gpsError,
-                submitting: _submittingTicket,
-                onRegionChanged: (String value) => setState(() => _selectedRegion = value),
-                onIssueChanged: (String value) => setState(() => _selectedIssue = value),
-                onCaptureGps: _captureLiveGps,
-                onContinue: _submitRsaTicket,
-              )
+              if (!_hasVehicleDetails || _vehicleNumber.trim().isEmpty)
+                _VehicleRequiredPanel(
+                  isDark: isDark,
+                  isHindi: _isHindi,
+                  onAddVehicle: widget.onAddVehicle == null ? null : _openAddVehicleDetails,
+                )
+              else
+                _NewTicketCard(
+                  isDark: isDark,
+                  isHindi: _isHindi,
+                  alternatePhoneController: _alternatePhoneController,
+                  descriptionController: _descriptionController,
+                  selectedRegion: _selectedRegion,
+                  selectedIssue: _selectedIssue,
+                  gpsCaptured: _gpsCaptured,
+                  detectingGps: _detectingGps,
+                  gpsLatitude: _gpsLatitude,
+                  gpsLongitude: _gpsLongitude,
+                  gpsError: _gpsError,
+                  submitting: _submittingTicket,
+                  onRegionChanged: (String value) => setState(() => _selectedRegion = value),
+                  onIssueChanged: (String value) => setState(() => _selectedIssue = value),
+                  onCaptureGps: _captureLiveGps,
+                  onContinue: _submitRsaTicket,
+                )
             else
               _RsaTicketListPanel(
                 isDark: isDark,
@@ -665,9 +1060,17 @@ class _RiderVerificationCard extends StatelessWidget {
     required this.textPrimary,
     required this.textSecondary,
     required this.phoneController,
+    required this.otpController,
     required this.loadingProfilePhone,
     required this.hasPrefilledPhone,
-    required this.onVerify,
+    required this.otpSent,
+    required this.isSendingOtp,
+    required this.isVerifyingOtp,
+    required this.isResendingOtp,
+    required this.onPhoneChanged,
+    required this.onSendOtp,
+    required this.onVerifyOtp,
+    required this.onResendOtp,
   });
 
   final bool isDark;
@@ -677,9 +1080,17 @@ class _RiderVerificationCard extends StatelessWidget {
   final Color textPrimary;
   final Color textSecondary;
   final TextEditingController phoneController;
+  final TextEditingController otpController;
   final bool loadingProfilePhone;
   final bool hasPrefilledPhone;
-  final VoidCallback onVerify;
+  final bool otpSent;
+  final bool isSendingOtp;
+  final bool isVerifyingOtp;
+  final bool isResendingOtp;
+  final ValueChanged<String> onPhoneChanged;
+  final VoidCallback onSendOtp;
+  final VoidCallback onVerifyOtp;
+  final VoidCallback onResendOtp;
 
   @override
   Widget build(BuildContext context) {
@@ -712,6 +1123,7 @@ class _RiderVerificationCard extends StatelessWidget {
             keyboardType: TextInputType.phone,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             maxLength: 10,
+            onChanged: onPhoneChanged,
             style: TextStyle(
               color: textPrimary,
               fontWeight: FontWeight.w700,
@@ -738,13 +1150,89 @@ class _RiderVerificationCard extends StatelessWidget {
               focusedBorder: _inputBorder(const Color(0xFFF59E0B), width: 1.4),
             ),
           ),
+          if (otpSent) ...[
+            const SizedBox(height: 12),
+            Text(
+              isHindi ? 'OTP दर्ज करें' : 'Enter OTP',
+              style: TextStyle(
+                color: textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: otpController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              maxLength: 6,
+              style: TextStyle(
+                color: textPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                letterSpacing: 2,
+              ),
+              decoration: InputDecoration(
+                counterText: '',
+                hintText: isHindi ? 'SMS OTP' : 'SMS OTP',
+                helperText: isHindi
+                    ? 'OTP verify hone ke baad hi अगला step खुलेगा।'
+                    : 'Next step unlocks only after OTP verification.',
+                helperStyle: TextStyle(color: textSecondary, fontWeight: FontWeight.w600),
+                hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.7), letterSpacing: 0),
+                filled: true,
+                fillColor: cardBgSoft,
+                prefixIcon: Icon(
+                  Icons.lock_clock_rounded,
+                  color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0B1F3A),
+                ),
+                border: _inputBorder(border),
+                enabledBorder: _inputBorder(border),
+                focusedBorder: _inputBorder(const Color(0xFFF59E0B), width: 1.4),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: isSendingOtp || isVerifyingOtp || isResendingOtp ? null : onResendOtp,
+                icon: isResendingOtp
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh_rounded, size: 18),
+                label: Text(isHindi ? 'OTP फिर भेजें' : 'Resend OTP'),
+              ),
+            ),
+          ],
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: onVerify,
-              icon: const Icon(Icons.verified_user_rounded),
-              label: Text(isHindi ? 'राइडर वेरिफाई करें' : 'Verify Rider'),
+              onPressed: isSendingOtp || isVerifyingOtp || isResendingOtp
+                  ? null
+                  : (otpSent ? onVerifyOtp : onSendOtp),
+              icon: isSendingOtp || isVerifyingOtp
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF172033),
+                      ),
+                    )
+                  : Icon(otpSent ? Icons.verified_user_rounded : Icons.sms_rounded),
+              label: Text(
+                isSendingOtp
+                    ? (isHindi ? 'OTP भेज रहे हैं...' : 'Sending OTP...')
+                    : isVerifyingOtp
+                        ? (isHindi ? 'OTP verify हो रहा है...' : 'Verifying OTP...')
+                        : otpSent
+                            ? (isHindi ? 'OTP Verify करें' : 'Verify OTP')
+                            : (isHindi ? 'OTP भेजें' : 'Send OTP'),
+              ),
               style: _primaryButtonStyle(),
             ),
           ),
@@ -764,7 +1252,9 @@ class _RsaProfileSummaryCard extends StatelessWidget {
     required this.vehicleCompany,
     required this.vehicleModel,
     required this.vehicleNumber,
+    required this.hasVehicleDetails,
     required this.totalTickets,
+    this.onAddVehicle,
   });
 
   final bool isDark;
@@ -775,7 +1265,9 @@ class _RsaProfileSummaryCard extends StatelessWidget {
   final String vehicleCompany;
   final String vehicleModel;
   final String vehicleNumber;
+  final bool hasVehicleDetails;
   final int totalTickets;
+  final VoidCallback? onAddVehicle;
 
   @override
   Widget build(BuildContext context) {
@@ -785,6 +1277,8 @@ class _RsaProfileSummaryCard extends StatelessWidget {
     final String initial = displayName.trim().isEmpty ? 'R' : displayName.trim()[0].toUpperCase();
     final String displayPhone = phone.isNotEmpty ? phone : (isHindi ? 'फोन उपलब्ध नहीं' : 'Phone not available');
     final String displayRiderId = riderId.isNotEmpty ? riderId : (isHindi ? 'राइडर आईडी सेट नहीं' : 'Rider ID not set');
+    final bool missingVehicleDetails = !hasVehicleDetails ||
+        (vehicleCompany.trim().isEmpty && vehicleModel.trim().isEmpty && vehicleNumber.trim().isEmpty);
     return _RsaSurface(
       isDark: isDark,
       child: Column(
@@ -884,6 +1378,69 @@ class _RsaProfileSummaryCard extends StatelessWidget {
               );
             },
           ),
+          if (missingVehicleDetails && onAddVehicle != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFBF1),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isDark ? const Color(0x334B5563) : const Color(0x40F4B400),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.two_wheeler_rounded, color: Color(0xFFF59E0B), size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          isHindi ? 'वाहन की जानकारी जोड़ें' : 'Add vehicle details',
+                          style: TextStyle(
+                            color: textPrimary,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    isHindi
+                        ? 'RSA टिकट के लिए पहले अपना वाहन नंबर और मॉडल जोड़ें।'
+                        : 'Add your vehicle number and model before raising an RSA ticket.',
+                    style: TextStyle(
+                      color: textSecondary,
+                      fontWeight: FontWeight.w700,
+                      height: 1.35,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: onAddVehicle,
+                      icon: const Icon(Icons.add_rounded),
+                      label: Text(isHindi ? 'वाहन जोड़ें' : 'Add vehicle'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(44),
+                        backgroundColor: const Color(0xFFF59E0B),
+                        foregroundColor: const Color(0xFF172033),
+                        textStyle: const TextStyle(fontWeight: FontWeight.w900),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
@@ -1040,6 +1597,82 @@ class _RsaTicketTabs extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _VehicleRequiredPanel extends StatelessWidget {
+  const _VehicleRequiredPanel({
+    required this.isDark,
+    required this.isHindi,
+    this.onAddVehicle,
+  });
+
+  final bool isDark;
+  final bool isHindi;
+  final VoidCallback? onAddVehicle;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
+    final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
+
+    return _RsaSurface(
+      isDark: isDark,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const CircleAvatar(
+                radius: 20,
+                backgroundColor: Color(0xFFFFF3CD),
+                child: Icon(Icons.two_wheeler_rounded, color: Color(0xFFF59E0B)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  isHindi ? 'पहले वाहन जोड़ें' : 'Add vehicle first',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            isHindi
+                ? 'RSA टिकट बनाने के लिए वाहन नंबर और वाहन की जानकारी जरूरी है।'
+                : 'Vehicle number and vehicle details are required before creating an RSA ticket.',
+            style: TextStyle(
+              color: textSecondary,
+              fontWeight: FontWeight.w700,
+              height: 1.35,
+            ),
+          ),
+          if (onAddVehicle != null) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: onAddVehicle,
+                icon: const Icon(Icons.add_rounded),
+                label: Text(isHindi ? 'वाहन जोड़ें' : 'Add vehicle'),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                  backgroundColor: const Color(0xFFF59E0B),
+                  foregroundColor: const Color(0xFF172033),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1623,6 +2256,59 @@ class _RsaTicketTile extends StatelessWidget {
                 color: textSecondary,
                 fontWeight: FontWeight.w800,
                 fontSize: 12,
+              ),
+            ),
+          ],
+          if (ticket.hasTechnicianInfo) ...[
+            const SizedBox(height: 7),
+            if (ticket.technicianName.isNotEmpty)
+              Text(
+                'Technician name: ${ticket.technicianName}',
+                style: TextStyle(
+                  color: textSecondary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            if (ticket.technicianLocation.isNotEmpty || ticket.technicianPhoneNumber.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (ticket.technicianLocation.isNotEmpty)
+                    OutlinedButton.icon(
+                      onPressed: () => openTechnicianLocation(ticket.technicianLocation),
+                      icon: const Icon(Icons.location_searching_rounded, size: 17),
+                      label: const Text('Track Technician'),
+                    ),
+                  if (ticket.technicianPhoneNumber.isNotEmpty)
+                    FilledButton.tonalIcon(
+                      onPressed: () => callTechnician(ticket.technicianPhoneNumber),
+                      icon: const Icon(Icons.call_rounded, size: 17),
+                      label: const Text('Call Technician'),
+                    ),
+                ],
+              ),
+            ],
+          ],
+          if (ticket.hasPaymentLink) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Payment status: ${ticket.paymentStatus.isEmpty ? 'Pending' : ticket.paymentStatus}',
+              style: TextStyle(
+                color: textSecondary,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: () => openRsaPaymentLink(ticket),
+                icon: const Icon(Icons.payments_rounded, size: 17),
+                label: const Text('Pay Now'),
               ),
             ),
           ],

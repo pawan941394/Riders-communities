@@ -113,7 +113,7 @@ class _BuyEvPlanDetailScreenState extends State<BuyEvPlanDetailScreen> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color cardBg = isDark ? const Color(0xFF1F2937) : const Color(0xFFFFFFFF);
     final Color border = isDark ? const Color(0x335B6B88) : const Color(0x33F4B400);
-    const Color lightPageBg = Color(0xFFFFF9EA);
+    const Color lightPageBg = Color(0xFFFFFFFF);
     const Color navy = Color(0xFF0B1F3A);
     const Color amber = Color(0xFFF4B400);
 

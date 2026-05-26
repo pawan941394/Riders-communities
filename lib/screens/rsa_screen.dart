@@ -27,16 +27,16 @@ class RsaScreen extends StatefulWidget {
     required this.apiAccessKey,
     required this.accessToken,
     this.languageCode = 'en',
-    required this.onOpenOnboarding,
     this.initialPhone = '',
+    required this.onOpenOnboarding,
   });
 
   final String apiBaseUrl;
   final String apiAccessKey;
   final String accessToken;
   final String languageCode;
-  final VoidCallback onOpenOnboarding;
   final String initialPhone;
+  final VoidCallback onOpenOnboarding;
 
   @override
   State<RsaScreen> createState() => _RsaScreenState();
@@ -124,48 +124,7 @@ class _RsaScreenState extends State<RsaScreen> {
     }
   }
 
-  Future<bool> _hasRequiredOnboarding() async {
-    final String token = widget.accessToken.trim();
-    if (token.isEmpty) return false;
-
-    try {
-      String riderId = '';
-      final http.Response profileResponse = await http.get(
-        Uri.parse('${widget.apiBaseUrl}/api/v1/auth/me'),
-        headers: _headers,
-      );
-      if (profileResponse.statusCode >= 200 && profileResponse.statusCode < 300) {
-        final dynamic decoded = jsonDecode(profileResponse.body);
-        final Map<String, dynamic>? root = _safeMap(decoded);
-        final Map<String, dynamic>? profile = _safeMap(root?['profile']);
-        if (profile != null) {
-          riderId = _safeText(profile['rider_id']);
-        }
-      }
-
-      final http.Response vehicleResponse = await http.get(
-        Uri.parse('${widget.apiBaseUrl}/api/v1/vehicle/me'),
-        headers: _headers,
-      );
-      if (vehicleResponse.statusCode < 200 || vehicleResponse.statusCode >= 300) {
-        return false;
-      }
-      final dynamic decoded = jsonDecode(vehicleResponse.body);
-      final Map<String, dynamic>? root = _safeMap(decoded);
-      final bool hasVehicle = root?['vehicle'] != null;
-      return hasVehicle && riderId.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<void> _openTicketOrOnboarding(BuildContext context) async {
-    final bool ready = await _hasRequiredOnboarding();
-    if (!context.mounted) return;
-    if (!ready) {
-      _showOnboardingRequiredDialog(context);
-      return;
-    }
+  Future<void> _openTicket(BuildContext context) async {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => RsaTicketScreen(
@@ -174,49 +133,16 @@ class _RsaScreenState extends State<RsaScreen> {
           accessToken: widget.accessToken,
           languageCode: widget.languageCode,
           initialPhone: widget.initialPhone,
+          onAddVehicle: widget.onOpenOnboarding,
         ),
       ),
     ).then((_) => _loadLandingHistory());
   }
 
-  void _showOnboardingRequiredDialog(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF111827) : const Color(0xFFFFFBF1),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(_tr('Complete onboarding first', 'पहले ऑनबोर्डिंग पूरा करें')),
-          content: Text(
-            _tr(
-              'RSA ticket raise karne se pehle Rider ID aur vehicle details add karni zaroori hain.\n\nBefore raising an RSA ticket, please add your Rider ID and vehicle details.',
-              'RSA टिकट बनाने से पहले Rider ID और वाहन की जानकारी जोड़ना जरूरी है।',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(_tr('Later', 'बाद में')),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                widget.onOpenOnboarding();
-              },
-              icon: const Icon(Icons.assignment_ind_rounded),
-              label: Text(_tr('Go to onboarding', 'ऑनबोर्डिंग पर जाएं')),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color pageBg = isDark ? const Color(0xFF0B1220) : const Color(0xFFFFF9EA);
+    final Color pageBg = isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF);
     final Color panelBorder = isDark ? const Color(0x334B5563) : const Color(0x40F4B400);
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool compact = screenWidth < 390;
@@ -409,7 +335,7 @@ class _RsaScreenState extends State<RsaScreen> {
                       ),
                       const SizedBox(height: 18),
                       FilledButton.icon(
-                        onPressed: () => _openTicketOrOnboarding(context),
+                        onPressed: () => _openTicket(context),
                         icon: const Icon(Icons.sos_rounded),
                         label: Text(_tr('Raise RSA Ticket Now', 'अभी RSA टिकट बनाएं')),
                         style: FilledButton.styleFrom(
@@ -768,6 +694,59 @@ class _RsaLandingHistoryTile extends StatelessWidget {
                 color: textPrimary.withValues(alpha: 0.86),
                 fontWeight: FontWeight.w800,
                 height: 1.3,
+              ),
+            ),
+          ],
+          if (ticket.hasTechnicianInfo) ...[
+            const SizedBox(height: 7),
+            if (ticket.technicianName.isNotEmpty)
+              Text(
+                'Technician name: ${ticket.technicianName}',
+                style: TextStyle(
+                  color: textSecondary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            if (ticket.technicianLocation.isNotEmpty || ticket.technicianPhoneNumber.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (ticket.technicianLocation.isNotEmpty)
+                    OutlinedButton.icon(
+                      onPressed: () => openTechnicianLocation(ticket.technicianLocation),
+                      icon: const Icon(Icons.location_searching_rounded, size: 17),
+                      label: const Text('Track Technician'),
+                    ),
+                  if (ticket.technicianPhoneNumber.isNotEmpty)
+                    FilledButton.tonalIcon(
+                      onPressed: () => callTechnician(ticket.technicianPhoneNumber),
+                      icon: const Icon(Icons.call_rounded, size: 17),
+                      label: const Text('Call Technician'),
+                    ),
+                ],
+              ),
+            ],
+          ],
+          if (ticket.hasPaymentLink) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Payment status: ${ticket.paymentStatus.isEmpty ? 'Pending' : ticket.paymentStatus}',
+              style: TextStyle(
+                color: textSecondary,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: () => openRsaPaymentLink(ticket),
+                icon: const Icon(Icons.payments_rounded, size: 17),
+                label: const Text('Pay Now'),
               ),
             ),
           ],

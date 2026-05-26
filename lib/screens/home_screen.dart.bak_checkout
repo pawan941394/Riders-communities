@@ -1,4 +1,4 @@
-﻿import 'dart:async' show Timer, unawaited;
+import 'dart:async' show Timer, unawaited;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +16,6 @@ import 'wallet_screen.dart';
 import 'buy_ev_screen.dart';
 import 'contact_screen.dart';
 import 'rent_ev_screen.dart';
-import 'rsa_screen.dart';
 import '../inquiry_icons.dart';
 import '../services/contact_api.dart';
 import '../config/api_config.dart';
@@ -33,7 +32,6 @@ class HomeScreen extends StatefulWidget {
     required this.currentUserHandle,
     required this.currentUserAvatarUrl,
     required this.currentUserCity,
-    required this.currentUserPhone,
   });
 
   final bool isDarkMode;
@@ -45,7 +43,6 @@ class HomeScreen extends StatefulWidget {
   final String currentUserHandle;
   final String currentUserAvatarUrl;
   final String currentUserCity;
-  final String currentUserPhone;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -53,40 +50,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  static const String _kLastSeenNotificationId = 'last_seen_notification_id';
   int _currentIndex = 0;
-  Timer? _notificationsTimer;
-  bool _notificationFetching = false;
-  int _lastSeenNotificationId = 0;
-  final List<Map<String, dynamic>> _notifications = <Map<String, dynamic>>[];
-  int _unreadNotifications = 0;
-  String _languageCode = 'en';
-  bool _languageSaving = false;
 
   static const String _shellApiAccessKey = ApiConfig.apiAccessKey;
 
   String get _shellApiBaseUrl {
     return ApiConfig.apiBaseUrl;
-  }
-
-  bool get _isHindi => _languageCode == 'hi';
-  String _tr(String en, String hi) => _isHindi ? hi : en;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_bootstrapNotifications());
-    unawaited(_loadLanguagePreference());
-    _notificationsTimer = Timer.periodic(
-      const Duration(minutes: 2),
-      (_) => unawaited(_checkNotifications()),
-    );
-  }
-
-  @override
-  void dispose() {
-    _notificationsTimer?.cancel();
-    super.dispose();
   }
 
   @override
@@ -96,59 +65,20 @@ class _HomeScreenState extends State<HomeScreen> {
       CommunityFeedScreen(
         initialCity: widget.currentUserCity.trim(),
         accessToken: widget.accessToken,
-        languageCode: _languageCode,
-        onOpenCreatePost: () {
-          setState(() {
-            _currentIndex = 7;
-          });
-        },
-        onOpenRefer: () {
-          setState(() {
-            _currentIndex = 4;
-          });
-        },
       ),
-      RsaScreen(
-        apiBaseUrl: _shellApiBaseUrl,
-        apiAccessKey: _shellApiAccessKey,
-        accessToken: widget.accessToken,
-        languageCode: _languageCode,
-        initialPhone: widget.currentUserPhone,
-        onOpenOnboarding: () {
-          setState(() {
-            _currentIndex = 2;
-          });
-        },
-      ),
-      RiderOnboardingDetailsScreen(
-        apiBaseUrl: _shellApiBaseUrl,
-        apiAccessKey: _shellApiAccessKey,
-        accessToken: widget.accessToken,
-        languageCode: _languageCode,
-        onCompleted: () {
-          setState(() {
-            _currentIndex = 0;
-          });
-        },
+      CreatePostScreen(
+        initialCity: widget.currentUserCity.trim().isEmpty ? null : widget.currentUserCity.trim(),
       ),
       EvScreen(
         currentUserCity: widget.currentUserCity,
         apiBaseUrl: _shellApiBaseUrl,
         apiAccessKey: _shellApiAccessKey,
         accessToken: widget.accessToken,
-        languageCode: _languageCode,
-      ),
-      WalletScreen(
-        apiBaseUrl: _shellApiBaseUrl,
-        apiAccessKey: _shellApiAccessKey,
-        accessToken: widget.accessToken,
-        languageCode: _languageCode,
       ),
       HelpScreen(
         apiBaseUrl: _shellApiBaseUrl,
         apiAccessKey: _shellApiAccessKey,
         accessToken: widget.accessToken,
-        languageCode: _languageCode,
       ),
       ProfileScreen(
         onLogout: widget.onLogout,
@@ -159,10 +89,11 @@ class _HomeScreenState extends State<HomeScreen> {
         displayName: widget.currentUserName,
         username: widget.currentUserHandle,
         profileImageUrl: widget.currentUserAvatarUrl,
-        languageCode: _languageCode,
       ),
-      CreatePostScreen(
-        initialCity: widget.currentUserCity.trim().isEmpty ? null : widget.currentUserCity.trim(),
+      WalletScreen(
+        apiBaseUrl: _shellApiBaseUrl,
+        apiAccessKey: _shellApiAccessKey,
+        accessToken: widget.accessToken,
       ),
     ];
     return Scaffold(
@@ -177,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
             end: Alignment.bottomCenter,
             colors: isDark
                 ? const [Color(0xFF0B1220), Color(0xFF111827)]
-                : const [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
+                : const [Color(0xFFFFF8E6), Color(0xFFFFFDF6)],
           ),
         ),
         child: SafeArea(
@@ -220,55 +151,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              margin: const EdgeInsets.only(right: 10),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF1F2937).withValues(alpha: 0.92)
-                                    : const Color(0xFFFFF3D1).withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x12000000),
-                                    blurRadius: 14,
-                                    offset: Offset(0, 6),
-                                  ),
-                                ],
-                              ),
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  IconButton(
-                                    tooltip: 'Notifications',
-                                    onPressed: _openNotificationsSheet,
-                                    icon: Icon(
-                                      Icons.notifications_rounded,
-                                      color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
-                                    ),
-                                  ),
-                                  if (_unreadNotifications > 0)
-                                    Positioned(
-                                      right: 6,
-                                      top: 6,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFEF4444),
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Text(
-                                          _unreadNotifications > 99 ? '99+' : '$_unreadNotifications',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            Container(
                               decoration: BoxDecoration(
                                 color: isDark
                                     ? const Color(0xFF1F2937).withValues(alpha: 0.92)
@@ -286,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(14),
                                 onTap: () {
                                   setState(() {
-                                    _currentIndex = 6;
+                                    _currentIndex = 4;
                                   });
                                 },
                                 child: CircleAvatar(
@@ -373,31 +255,31 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildNavItem(
                         index: 0,
                         icon: Icons.groups_rounded,
-                        label: _tr('Community', 'à¤•à¤®à¥à¤¯à¥à¤¨à¤¿à¤Ÿà¥€'),
+                        label: 'Community',
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 1,
-                        icon: Icons.health_and_safety_rounded,
-                        label: _tr('RSA', 'à¤†à¤°à¤à¤¸à¤'),
+                        icon: Icons.add_box_rounded,
+                        label: 'Create',
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 2,
-                        icon: Icons.add_box_rounded,
-                        label: _tr('Onboarding', 'à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤—'),
+                        icon: Icons.electric_bike_rounded,
+                        label: 'EV',
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 3,
-                        icon: Icons.electric_bike_rounded,
-                        label: _tr('EV', 'à¤ˆà¤µà¥€'),
+                        icon: Icons.support_agent_rounded,
+                        label: 'Help',
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 4,
-                        icon: Icons.currency_rupee_rounded,
-                        label: _tr('Refer', 'à¤°à¥‡à¤«à¤°'),
+                        icon: Icons.person_rounded,
+                        label: 'Profile',
                         compact: compact,
                       ),
                     ],
@@ -412,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAppDrawer(bool isDark) {
-    final Color background = isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFFFF);
+    final Color background = isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFCF2);
     final Color titleColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
     final Color bodyColor = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
     final Color dividerColor = isDark ? const Color(0x335B6B88) : const Color(0xFFFFE5A8);
@@ -466,92 +348,39 @@ class _HomeScreenState extends State<HomeScreen> {
             Divider(color: dividerColor),
             _buildDrawerItem(
               icon: Icons.groups_rounded,
-              label: _tr('Community', 'à¤•à¤®à¥à¤¯à¥à¤¨à¤¿à¤Ÿà¥€'),
+              label: 'Community',
               index: 0,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.add_box_rounded,
-              label: _tr('Onboarding', 'à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤—'),
-              index: 2,
+              label: 'Create post',
+              index: 1,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.electric_bike_rounded,
               label: 'EV',
-              index: 3,
-              isDark: isDark,
-            ),
-            _buildDrawerItem(
-              icon: Icons.currency_rupee_rounded,
-              label: _tr('Refer n earn', 'à¤°à¥‡à¤«à¤° à¤”à¤° à¤•à¤®à¤¾à¤“'),
-              index: 4,
-              isDark: isDark,
-            ),
-            _buildDrawerItem(
-              icon: Icons.add_box_rounded,
-              label: _tr('Create post', 'à¤ªà¥‹à¤¸à¥à¤Ÿ à¤¬à¤¨à¤¾à¤à¤‚'),
-              index: 7,
+              index: 2,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.support_agent_rounded,
-              label: _tr('Help', 'à¤®à¤¦à¤¦'),
-              index: 5,
+              label: 'Help',
+              index: 3,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.person_rounded,
-              label: _tr('Profile', 'à¤ªà¥à¤°à¥‹à¤«à¤¾à¤‡à¤²'),
-              index: 6,
+              label: 'Profile',
+              index: 4,
               isDark: isDark,
             ),
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              leading: Icon(
-                Icons.language_rounded,
-                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
-              ),
-              title: Text(
-                _tr('Language', 'à¤­à¤¾à¤·à¤¾'),
-                style: TextStyle(color: titleColor, fontWeight: FontWeight.w700),
-              ),
-              subtitle: Text(
-                _languageCode == 'hi' ? 'à¤¹à¤¿à¤‚à¤¦à¥€' : 'English',
-                style: TextStyle(color: bodyColor, fontWeight: FontWeight.w600),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'EN',
-                    style: TextStyle(
-                      color: _languageCode == 'en' ? titleColor : bodyColor,
-                      fontWeight: _languageCode == 'en' ? FontWeight.w800 : FontWeight.w600,
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Switch(
-                    value: _languageCode == 'hi',
-                    activeColor: const Color(0xFFFFC928),
-                    onChanged: _languageSaving
-                        ? null
-                        : (bool value) {
-                            unawaited(_setLanguagePreference(value ? 'hi' : 'en'));
-                          },
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'HI',
-                    style: TextStyle(
-                      color: _languageCode == 'hi' ? titleColor : bodyColor,
-                      fontWeight: _languageCode == 'hi' ? FontWeight.w800 : FontWeight.w600,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
+            _buildDrawerItem(
+              icon: Icons.account_balance_wallet_rounded,
+              label: 'Wallet',
+              index: 5,
+              isDark: isDark,
             ),
             Divider(color: dividerColor),
             SwitchListTile(
@@ -561,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
               ),
               title: Text(
-                widget.isDarkMode ? _tr('Dark theme', 'à¤¡à¤¾à¤°à¥à¤• à¤¥à¥€à¤®') : _tr('Light theme', 'à¤²à¤¾à¤‡à¤Ÿ à¤¥à¥€à¤®'),
+                widget.isDarkMode ? 'Dark theme' : 'Light theme',
                 style: TextStyle(color: titleColor, fontWeight: FontWeight.w700),
               ),
               value: widget.isDarkMode,
@@ -571,9 +400,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 8),
               leading: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444)),
-              title: Text(
-                _tr('Logout', 'à¤²à¥‰à¤—à¤†à¤‰à¤Ÿ'),
-                style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w800),
+              title: const Text(
+                'Logout',
+                style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w800),
               ),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               onTap: () {
@@ -614,538 +443,12 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         onTap: () {
           Navigator.of(context).pop();
-          unawaited(_selectTab(index));
-        },
-      ),
-    );
-  }
-
-  Future<void> _bootstrapNotifications() async {
-    try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      _lastSeenNotificationId = prefs.getInt(_kLastSeenNotificationId) ?? 0;
-    } catch (_) {}
-    await _checkNotifications();
-  }
-
-  Future<void> _loadLanguagePreference() async {
-    final String token = widget.accessToken.trim();
-    if (token.isEmpty) return;
-    try {
-      final http.Response response = await http.get(
-        Uri.parse('$_shellApiBaseUrl/api/v1/language/me'),
-        headers: <String, String>{
-          'X-API-Key': _shellApiAccessKey,
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (response.statusCode < 200 || response.statusCode >= 300) return;
-      final dynamic decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) return;
-      final String code = ('${decoded['language_code'] ?? 'en'}').trim().toLowerCase();
-      if (!mounted) return;
-      setState(() {
-        _languageCode = code == 'hi' ? 'hi' : 'en';
-      });
-    } catch (_) {}
-  }
-
-  Future<void> _setLanguagePreference(String nextCode) async {
-    if (_languageSaving) return;
-    final String token = widget.accessToken.trim();
-    if (token.isEmpty) return;
-    final String normalized = nextCode == 'hi' ? 'hi' : 'en';
-    final String previous = _languageCode;
-
-    setState(() {
-      _languageCode = normalized;
-      _languageSaving = true;
-    });
-    try {
-      final http.Response response = await http.post(
-        Uri.parse('$_shellApiBaseUrl/api/v1/language/set'),
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-          'X-API-Key': _shellApiAccessKey,
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(<String, dynamic>{'language_code': normalized}),
-      );
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        if (mounted) {
           setState(() {
-            _languageCode = previous;
+            _currentIndex = index;
           });
-        }
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _languageCode = previous;
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _languageSaving = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _saveLastSeenNotificationId(int id) async {
-    if (id <= _lastSeenNotificationId) return;
-    _lastSeenNotificationId = id;
-    try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_kLastSeenNotificationId, id);
-    } catch (_) {}
-  }
-
-  Future<void> _markNotificationRead(int id, {String source = 'broadcast'}) async {
-    final String token = widget.accessToken.trim();
-    if (token.isEmpty) return;
-    try {
-      await http.post(
-        Uri.parse('$_shellApiBaseUrl/api/v1/notifications/$id/read?source=$source'),
-        headers: <String, String>{
-          'X-API-Key': _shellApiAccessKey,
-          'Authorization': 'Bearer $token',
         },
-      );
-    } catch (_) {}
-  }
-
-  Future<void> _showBroadcastNotification({
-    required int id,
-    required String title,
-    required String body,
-  }) async {
-    if (!mounted) return;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    await showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF111827) : const Color(0xFFFFFFFF),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: Row(
-            children: [
-              const Icon(Icons.notifications_active_rounded, color: Color(0xFFB45309)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-              ),
-            ],
-          ),
-          content: Text(body),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Later'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                unawaited(_markNotificationRead(id));
-              },
-              child: const Text('Got it'),
-            ),
-          ],
-        );
-      },
-    );
-    await _saveLastSeenNotificationId(id);
-  }
-
-  Future<void> _checkNotifications() async {
-    if (_notificationFetching) return;
-    final String token = widget.accessToken.trim();
-    if (token.isEmpty) return;
-    _notificationFetching = true;
-    try {
-      final http.Response response = await http.get(
-        Uri.parse('$_shellApiBaseUrl/api/v1/notifications/inbox?limit=25'),
-        headers: <String, String>{
-          'X-API-Key': _shellApiAccessKey,
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (response.statusCode < 200 || response.statusCode >= 300) return;
-      final dynamic decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) return;
-      final dynamic rawItems = decoded['items'];
-      if (rawItems is! List<dynamic>) return;
-
-      final List<Map<String, dynamic>> parsed = <Map<String, dynamic>>[];
-      int unread = 0;
-      for (final dynamic item in rawItems) {
-        if (item is! Map) continue;
-        final Map<String, dynamic> row = item.map<String, dynamic>(
-          (dynamic k, dynamic v) => MapEntry<String, dynamic>('$k', v),
-        );
-        if (row['is_read'] != true) unread += 1;
-        parsed.add(row);
-      }
-      if (mounted) {
-        setState(() {
-          _notifications
-            ..clear()
-            ..addAll(parsed);
-          _unreadNotifications = unread;
-        });
-      }
-      if (parsed.isEmpty) return;
-
-      Map<String, dynamic>? candidate;
-      for (final Map<String, dynamic> row in parsed) {
-        final int id = int.tryParse('${row['id'] ?? 0}') ?? 0;
-        final bool isRead = row['is_read'] == true;
-        final String source = ('${row['source'] ?? 'broadcast'}').trim().toLowerCase();
-        if (source == 'broadcast' && id > _lastSeenNotificationId && !isRead) {
-          candidate = row;
-          break;
-        }
-      }
-      if (candidate == null) return;
-      final int id = int.tryParse('${candidate['id'] ?? 0}') ?? 0;
-      if (id <= 0) return;
-      final String title = ('${candidate['title'] ?? ''}').trim();
-      final String body = ('${candidate['body'] ?? ''}').trim();
-      if (title.isEmpty && body.isEmpty) return;
-      await _showBroadcastNotification(
-        id: id,
-        title: title.isEmpty ? 'Notification' : title,
-        body: body.isEmpty ? 'You have a new update.' : body,
-      );
-    } catch (_) {
-      // Silent fail: notifications should never block main app flow.
-    } finally {
-      _notificationFetching = false;
-    }
-  }
-
-  Future<void> _openPostDetailFromNotification(int postId) async {
-    final String token = widget.accessToken.trim();
-    if (token.isEmpty) return;
-    try {
-      final http.Response res = await http.get(
-        Uri.parse('$_shellApiBaseUrl/api/v1/posts/$postId'),
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-          'X-API-Key': _shellApiAccessKey,
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (res.statusCode != 200) return;
-      final dynamic decoded = jsonDecode(res.body);
-      if (decoded is! Map<String, dynamic>) return;
-
-      final String author = ('${decoded['author_display'] ?? 'Rider'}').trim();
-      final String problem = ('${decoded['body'] ?? ''}').trim();
-      final String city = ('${decoded['city'] ?? ''}').trim();
-      final String company = ('${decoded['company'] ?? ''}').trim();
-      final bool isAnonymous = decoded['is_anonymous'] == true;
-      final List<String> tags = decoded['tags'] is List<dynamic>
-          ? (decoded['tags'] as List<dynamic>)
-              .whereType<String>()
-              .map((e) => e.trim())
-              .where((e) => e.isNotEmpty)
-              .toList()
-          : <String>[];
-      final int commentsCount = decoded['comments_count'] is int
-          ? decoded['comments_count'] as int
-          : int.tryParse('${decoded['comments_count']}') ?? 0;
-      final int likesCount = decoded['likes_count'] is int
-          ? decoded['likes_count'] as int
-          : int.tryParse('${decoded['likes_count']}') ?? 0;
-      final int dislikesCount = decoded['dislikes_count'] is int
-          ? decoded['dislikes_count'] as int
-          : int.tryParse('${decoded['dislikes_count']}') ?? 0;
-      final String? imageUrl = decoded['image_url'] is String ? decoded['image_url'] as String : null;
-      final String? bodyFull = decoded['body_full'] is String ? decoded['body_full'] as String : null;
-      final String? authorAvatarUrl =
-          decoded['author_avatar_url'] is String ? decoded['author_avatar_url'] as String : null;
-      final String authorInitial = ('${decoded['author_initial'] ?? '?'}').trim().isEmpty
-          ? '?'
-          : '${decoded['author_initial']}';
-      final String? viewerReaction =
-          decoded['viewer_reaction'] is String ? decoded['viewer_reaction'] as String : null;
-
-      if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (context) => PostDetailScreen(
-            postId: postId,
-            apiBaseUrl: _shellApiBaseUrl,
-            author: author.isEmpty ? 'Rider' : author,
-            problem: problem.isEmpty ? 'Post detail' : problem,
-            city: city,
-            company: company,
-            tags: tags,
-            commentsCount: commentsCount,
-            isAnonymous: isAnonymous,
-            imageUrl: imageUrl,
-            bodyFull: bodyFull,
-            authorAvatarUrl: authorAvatarUrl,
-            authorInitial: authorInitial,
-            likesCount: likesCount,
-            dislikesCount: dislikesCount,
-            viewerReaction: viewerReaction,
-          ),
-        ),
-      );
-    } catch (_) {}
-  }
-
-  String _formatNotificationTime(String? iso) {
-    if (iso == null || iso.trim().isEmpty) return '';
-    final DateTime? dt = DateTime.tryParse(iso);
-    if (dt == null) return '';
-    final DateTime local = dt.toLocal();
-    final Duration diff = DateTime.now().difference(local);
-    if (diff.isNegative || diff.inSeconds < 45) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    final String day = local.day.toString().padLeft(2, '0');
-    final String month = local.month.toString().padLeft(2, '0');
-    final String year = local.year.toString();
-    return '$day/$month/$year';
-  }
-
-  Future<void> _openNotificationsSheet() async {
-    await _checkNotifications();
-    if (!mounted) return;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFFFF),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (BuildContext sheetContext) {
-        return SafeArea(
-          top: false,
-          child: SizedBox(
-            height: MediaQuery.of(sheetContext).size.height * 0.78,
-            child: Column(
-              children: [
-                const SizedBox(height: 10),
-                Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                  child: Row(
-                    children: [
-                      Container(
-                        height: 34,
-                        width: 34,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
-                          ),
-                        ),
-                        child: const Icon(Icons.notifications_rounded, color: Color(0xFF0B1F3A), size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Notifications',
-                          style: TextStyle(
-                            color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                      if (_unreadNotifications > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: isDark ? const Color(0x335B6B88) : const Color(0x332563EB),
-                            ),
-                          ),
-                          child: Text(
-                            'Unread $_unreadNotifications',
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFFBFDBFE) : const Color(0xFF1D4ED8),
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: _notifications.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No notifications yet.',
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(14, 0, 14, 18),
-                          itemBuilder: (context, index) {
-                            final Map<String, dynamic> row = _notifications[index];
-                            final int id = int.tryParse('${row['id'] ?? 0}') ?? 0;
-                            final String source = ('${row['source'] ?? 'broadcast'}').trim().toLowerCase();
-                            final bool isRead = row['is_read'] == true;
-                            final String title = ('${row['title'] ?? ''}').trim();
-                            final String body = ('${row['body'] ?? ''}').trim();
-                            final int postId = int.tryParse('${row['post_id'] ?? 0}') ?? 0;
-                            final String timeText = _formatNotificationTime('${row['created_at'] ?? ''}');
-                            return Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(16),
-                                onTap: () async {
-                                  await _markNotificationRead(id, source: source);
-                                  if (!mounted) return;
-                                  Navigator.of(sheetContext).pop();
-                                  await _checkNotifications();
-                                  if (postId > 0) {
-                                    await _openPostDetailFromNotification(postId);
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    color: isRead
-                                        ? (isDark ? const Color(0xFF111827) : const Color(0xFFFFFFFF))
-                                        : (isDark ? const Color(0xFF1E293B) : const Color(0xFFFFF5D8)),
-                                    border: Border.all(
-                                      color: isDark ? const Color(0x335B6B88) : const Color(0x33F4B400),
-                                    ),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Color(0x100F172A),
-                                        blurRadius: 10,
-                                        offset: Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        width: 34,
-                                        height: 34,
-                                        decoration: BoxDecoration(
-                                          color: isRead
-                                              ? (isDark ? const Color(0xFF1F2937) : const Color(0xFFF8FAFC))
-                                              : (isDark ? const Color(0xFF334155) : const Color(0xFFFFE9A8)),
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Icon(
-                                          postId > 0 ? Icons.forum_rounded : Icons.notifications_active_rounded,
-                                          size: 18,
-                                          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    title.isEmpty ? 'Notification' : title,
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: TextStyle(
-                                                      fontWeight: isRead ? FontWeight.w700 : FontWeight.w900,
-                                                      color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  timeText,
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            if (body.isNotEmpty) ...[
-                                              const SizedBox(height: 3),
-                                              Text(
-                                                body,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                      if (!isRead)
-                                        const Padding(
-                                          padding: EdgeInsets.only(left: 8, top: 6),
-                                          child: Icon(
-                                            Icons.brightness_1_rounded,
-                                            size: 9,
-                                            color: Color(0xFF2563EB),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                          separatorBuilder: (_, __) => const SizedBox(height: 9),
-                          itemCount: _notifications.length,
-                        ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
-  }
-
-  Future<void> _selectTab(int index) async {
-    if (!mounted) return;
-    setState(() {
-      _currentIndex = index;
-    });
   }
 
   Widget _buildNavItem({
@@ -1159,7 +462,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Expanded(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => unawaited(_selectTab(index)),
+        onTap: () {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 260),
           curve: Curves.easeOutCubic,
@@ -1213,22 +520,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               SizedBox(height: compact ? 2 : 4),
-              SizedBox(
-                height: compact ? 13 : 14,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: TextStyle(
-                      fontSize: compact ? 11 : 12,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      color: isSelected
-                          ? (isDark ? Colors.white : const Color(0xFF0B1F3A))
-                          : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF4B5563)),
-                    ),
-                  ),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: compact ? 11 : 12,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected
+                      ? (isDark ? Colors.white : const Color(0xFF0B1F3A))
+                      : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF4B5563)),
                 ),
               ),
             ],
@@ -1278,17 +579,11 @@ class CommunityFeedScreen extends StatefulWidget {
     super.key,
     this.initialCity = '',
     required this.accessToken,
-    this.languageCode = 'en',
-    required this.onOpenCreatePost,
-    required this.onOpenRefer,
   });
 
   /// Prefills city filter when it matches API/meta options.
   final String initialCity;
   final String accessToken;
-  final String languageCode;
-  final VoidCallback onOpenCreatePost;
-  final VoidCallback onOpenRefer;
 
   @override
   State<CommunityFeedScreen> createState() => _CommunityFeedScreenState();
@@ -1684,13 +979,16 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isHindi = widget.languageCode.trim().toLowerCase() == 'hi';
     final List<Widget> children = <Widget>[
-      _CommunityOverviewCard(isHindi: isHindi),
+      const _CommunityOverviewCard(),
       const SizedBox(height: 10),
-      _CreatePostEntryCard(
-        isHindi: isHindi,
-        onOpenCreatePost: widget.onOpenCreatePost,
+      _WalletReferralBanner(
+        loading: _walletBannerLoading,
+        balanceCredits: _walletBannerBalance,
+        referralCode: _walletBannerCode,
+        onCopyReferral: () {
+          unawaited(_copyReferralCode());
+        },
       ),
       const SizedBox(height: 14),
       _CommunityFeedFilters(
@@ -1813,7 +1111,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 24, 8, 24),
           child: Text(
-            'Abhi koi post nahi dikhega â€” pehla post tum banao ya filters clear karke dekho.',
+            'Abhi koi post nahi dikhega — pehla post tum banao ya filters clear karke dekho.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).brightness == Brightness.dark
@@ -1885,15 +1183,14 @@ class _CommunityFeedFilters extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        color: isDark ? null : const Color(0xFFFFFFFF),
-        gradient: isDark
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xEE1F2937), Color(0xE6141F2F)],
-              )
-            : null,
-        border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x33F4B400)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? const [Color(0xEE1F2937), Color(0xE6141F2F)]
+              : const [Color(0xF2FFFFFF), Color(0xE8EEF4FF)],
+        ),
+        border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x331D4ED8)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x120F172A),
@@ -1914,7 +1211,7 @@ class _CommunityFeedFilters extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.tune_rounded, size: 14, color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A)),
+                      Icon(Icons.tune_rounded, size: 14, color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF3154B5)),
                       const SizedBox(width: 6),
                       Text(
                         'Smart filters',
@@ -1922,7 +1219,7 @@ class _CommunityFeedFilters extends StatelessWidget {
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.2,
-                          color: isDark ? const Color(0xFFBFDBFE) : const Color(0xFF0B1F3A),
+                          color: isDark ? const Color(0xFFBFDBFE) : const Color(0xFF3154B5),
                         ),
                       ),
                     ],
@@ -1941,7 +1238,7 @@ class _CommunityFeedFilters extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? const Color(0xFF93C5FD) : const Color(0xFFB45309),
+                    color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
                   ),
                 ),
               ),
@@ -1950,25 +1247,25 @@ class _CommunityFeedFilters extends StatelessWidget {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF111827) : const Color(0xFFFFFFFF),
+              color: isDark ? const Color(0xFF111827) : Colors.white.withValues(alpha: 0.78),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x44F4B400)),
+              border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x2A1D4ED8)),
             ),
             child: TextField(
               controller: searchController,
-              style: TextStyle(color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF0B1F3A)),
+              style: TextStyle(color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF1E293B)),
               decoration: InputDecoration(
                 isDense: true,
                 hintText: 'Search text, #tag, city, company...',
                 hintStyle: TextStyle(
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84).withValues(alpha: 0.9),
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF5D7190).withValues(alpha: 0.9),
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
                 prefixIcon: Icon(
                   Icons.search_rounded,
                   size: 18,
-                  color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A),
+                  color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF3154B5),
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -2007,16 +1304,19 @@ class _CommunityFeedFilters extends StatelessWidget {
 }
 
 class _CommunityOverviewCard extends StatelessWidget {
-  const _CommunityOverviewCard({required this.isHindi});
-
-  final bool isHindi;
+  const _CommunityOverviewCard();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 164,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1D4ED8), Color(0xFF14B8A6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x331D4ED8),
@@ -2025,69 +1325,40 @@ class _CommunityOverviewCard extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              'https://images.unsplash.com/photo-1751222177131-90948c33243f?auto=format&fit=crop&fm=jpg&q=80&w=1600',
-              fit: BoxFit.cover,
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xCC0B1F3A),
-                    const Color(0x991D4ED8),
-                  ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.bolt_rounded, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'NCR Rider Pulse',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(Icons.bolt_rounded, color: Colors.white),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          isHindi ? 'à¤°à¤¾à¤‡à¤¡à¤° à¤•à¤®à¥à¤¯à¥à¤¨à¤¿à¤Ÿà¥€' : 'Rider Community',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                              ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    isHindi
-                        ? 'à¤¡à¤¿à¤²à¥€à¤µà¤°à¥€ à¤°à¤¾à¤‡à¤¡à¤°à¥à¤¸ à¤•à¥‡ à¤¸à¤¾à¤¥ à¤ªà¥‚à¤›à¥‡à¤‚, à¤®à¤¦à¤¦ à¤•à¤°à¥‡à¤‚ à¤”à¤° à¤¸à¤¾à¤¥ à¤®à¥‡à¤‚ à¤†à¤—à¥‡ à¤¬à¤¢à¤¼à¥‡à¤‚à¥¤'
-                        : 'Ask, help and grow together with delivery riders.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Live community health for Delhi, Noida and Gurgaon riders.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.86),
+                ),
+          ),
+        ],
       ),
     );
   }
@@ -2098,22 +1369,20 @@ class _WalletReferralBanner extends StatelessWidget {
     required this.loading,
     required this.balanceCredits,
     required this.referralCode,
-    required this.onOpenRefer,
     required this.onCopyReferral,
   });
 
   final bool loading;
   final int balanceCredits;
   final String referralCode;
-  final VoidCallback onOpenRefer;
   final VoidCallback onCopyReferral;
 
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color borderColor = isDark ? const Color(0x335B6B88) : const Color(0x33F4B400);
-    final Color titleColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
-    final Color bodyColor = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF5B6B84);
+    final Color borderColor = isDark ? const Color(0x335B6B88) : const Color(0x33FFB300);
+    final Color titleColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF102A56);
+    final Color bodyColor = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -2124,7 +1393,7 @@ class _WalletReferralBanner extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: isDark
               ? const [Color(0xFF1E293B), Color(0xFF0F172A)]
-              : const [Color(0xFFFFF8E8), Color(0xFFFFFFFF)],
+              : const [Color(0xFFFFF7E1), Color(0xFFFFFDF5)],
         ),
         border: Border.all(color: borderColor),
       ),
@@ -2135,11 +1404,11 @@ class _WalletReferralBanner extends StatelessWidget {
             children: [
               Icon(
                 Icons.account_balance_wallet_rounded,
-                color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A),
+                color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
               ),
               const SizedBox(width: 8),
               Text(
-                'Wallet & Earn',
+                'Wallet',
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 16,
@@ -2156,35 +1425,12 @@ class _WalletReferralBanner extends StatelessWidget {
             )
           else ...[
             Text(
-              'Balance: â‚¹$balanceCredits',
+              'Balance: ₹$balanceCredits',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 15,
                 color: titleColor,
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Invite riders and earn referral rewards.',
-                    style: TextStyle(
-                      color: bodyColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: onOpenRefer,
-                  style: TextButton.styleFrom(
-                    foregroundColor: isDark ? const Color(0xFF93C5FD) : const Color(0xFFB45309),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  child: const Text('Refer now'),
-                ),
-              ],
             ),
             const SizedBox(height: 10),
             Material(
@@ -2196,7 +1442,7 @@ class _WalletReferralBanner extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFBF1),
+                    color: isDark ? const Color(0xFF0B1220) : Colors.white,
                     border: Border.all(color: borderColor),
                   ),
                   child: Row(
@@ -2216,7 +1462,7 @@ class _WalletReferralBanner extends StatelessWidget {
                       Icon(
                         Icons.copy_rounded,
                         size: 18,
-                        color: isDark ? const Color(0xFF93C5FD) : const Color(0xFFB45309),
+                        color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
                       ),
                     ],
                   ),
@@ -2233,64 +1479,6 @@ class _WalletReferralBanner extends StatelessWidget {
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _CreatePostEntryCard extends StatelessWidget {
-  const _CreatePostEntryCard({
-    required this.isHindi,
-    required this.onOpenCreatePost,
-  });
-
-  final bool isHindi;
-  final VoidCallback onOpenCreatePost;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? const [Color(0xFF1F2937), Color(0xFF111827)]
-              : const [Color(0xFFFFFFFF), Color(0xFFF8FBFF)],
-        ),
-        border: Border.all(
-          color: isDark ? const Color(0x335B6B88) : const Color(0x261D4ED8),
-        ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFFFF),
-            child: Icon(
-              Icons.edit_note_rounded,
-              color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              isHindi ? 'à¤…à¤ªà¤¨à¥€ à¤¸à¤®à¤¸à¥à¤¯à¤¾ à¤…à¤­à¥€ à¤°à¤¾à¤‡à¤¡à¤°à¥à¤¸ à¤•à¥‡ à¤¸à¤¾à¤¥ à¤¶à¥‡à¤¯à¤° à¤•à¤°à¥‡à¤‚à¥¤' : 'Share your issue with riders now.',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF102A56),
-              ),
-            ),
-          ),
-          FilledButton.icon(
-            onPressed: onOpenCreatePost,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: Text(isHindi ? 'à¤ªà¥‹à¤¸à¥à¤Ÿ à¤¬à¤¨à¤¾à¤à¤‚' : 'Create post'),
-          ),
         ],
       ),
     );
@@ -2321,13 +1509,13 @@ class _FilterDropdownChip extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: isDark
               ? const [Color(0xFF1F2937), Color(0xFF111827)]
-              : const [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
+              : const [Color(0xFFFFFFFF), Color(0xFFF4F7FF)],
         ),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x44F4B400), width: 1.0),
+        border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x401D4ED8), width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: isDark ? const Color(0x33000000) : const Color(0x120F172A),
+            color: isDark ? const Color(0x33000000) : const Color(0x141D4ED8),
             blurRadius: 12,
             offset: Offset(0, 4),
           ),
@@ -2336,7 +1524,7 @@ class _FilterDropdownChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A)),
+          Icon(icon, size: 15, color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8)),
           const SizedBox(width: 5),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -2346,12 +1534,12 @@ class _FilterDropdownChip extends StatelessWidget {
               icon: Icon(
                 Icons.keyboard_arrow_down_rounded,
                 size: 16,
-                color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A),
+                color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1A1D29),
               ),
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
-                color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF0B1F3A),
+                color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF1A1D29),
               ),
               dropdownColor: isDark ? const Color(0xFF1F2937) : null,
               items: options
@@ -2482,7 +1670,6 @@ class _PremiumPostCard extends StatefulWidget {
 
 class _PremiumPostCardState extends State<_PremiumPostCard> {
   static const String _reactionApiKey = ApiConfig.apiAccessKey;
-  static const int _feedPreviewMaxChars = 220;
 
   late int _likes;
   late int _dislikes;
@@ -2533,7 +1720,7 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
     if (token.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pehle login karo â€” phir like/dislike kar sakte ho.')),
+        const SnackBar(content: Text('Pehle login karo — phir like/dislike kar sakte ho.')),
       );
       return;
     }
@@ -2609,37 +1796,15 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
         height: 14,
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          color: selected ? Colors.white : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A)),
+          color: selected ? Colors.white : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF3154B5)),
         ),
       );
     }
     return Icon(
       selected ? filled : outlined,
       size: 14,
-      color: selected ? Colors.white : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A)),
+      color: selected ? Colors.white : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF3154B5)),
     );
-  }
-
-  String _cleanAuthorDisplay(String rawAuthor, String city) {
-    String author = rawAuthor.trim().replaceAll('â€¢', '•').replaceAll(RegExp(r'\s+'), ' ');
-    final String cleanCity = city.trim();
-    if (cleanCity.isNotEmpty) {
-      author = author
-          .replaceFirst(
-            RegExp(r'\s*(,|•|-|\|)\s*' + RegExp.escape(cleanCity) + r'\s*$', caseSensitive: false),
-            '',
-          )
-          .trim();
-    }
-    return author.isEmpty ? 'Rider' : author;
-  }
-
-  String _postMetaText() {
-    final List<String> parts = <String>[
-      widget.company.trim(),
-      widget.city.trim(),
-    ].where((String value) => value.isNotEmpty).toList();
-    return parts.join(' • ');
   }
 
   @override
@@ -2647,11 +1812,7 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final List<Color> avatarColors = widget.isAnonymous
         ? const [Color(0xFF64748B), Color(0xFF334155)]
-        : const [Color(0xFF0B1F3A), Color(0xFFFFC928)];
-    final String visibleProblem = _translated ? (_translatedText ?? widget.problem) : widget.problem;
-    final bool hasLongContent = _isLongPostText(visibleProblem);
-    final String displayAuthor = _cleanAuthorDisplay(widget.author, widget.city);
-    final String metaText = _postMetaText();
+        : const [Color(0xFF1D4ED8), Color(0xFF14B8A6)];
 
     return Material(
       color: Colors.transparent,
@@ -2662,12 +1823,17 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1F2937) : Colors.white,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x26FFB300)),
+            border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x141D4ED8)),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x0D0F172A),
                 blurRadius: 24,
                 offset: Offset(0, 10),
+              ),
+              BoxShadow(
+                color: Color(0x061D4ED8),
+                blurRadius: 8,
+                offset: Offset(0, 2),
               ),
             ],
           ),
@@ -2675,6 +1841,14 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Top accent bar
+              Container(
+                height: 3.5,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: avatarColors),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                 child: Column(
@@ -2693,34 +1867,67 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            displayAuthor,
+                            widget.author,
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
-                              fontSize: 16,
+                              fontSize: 15,
                               color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF102A56),
                             ),
                           ),
-                          if (metaText.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF1E3A8A).withValues(alpha: 0.35)
-                                    : const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                metaText,
-                                style: TextStyle(
-                                  color: isDark ? const Color(0xFFBFDBFE) : const Color(0xFF0B1F3A),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF374151) : const Color(0xFFF0F4FF),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  widget.company,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark ? const Color(0xFFBFDBFE) : const Color(0xFF3154B5),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 6),
+                              Text(
+                                '• ${widget.timeLabel}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF8FA3BD),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1D4ED8), Color(0xFF3B82F6)],
+                        ),
+                        borderRadius: BorderRadius.circular(999),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x331D4ED8),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        widget.city,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -2730,9 +1937,7 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
 
                 // Problem text
                 Text(
-                  visibleProblem,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
+                  _translated ? (_translatedText ?? widget.problem) : widget.problem,
                   style: TextStyle(
                     height: 1.45,
                     fontSize: 16,
@@ -2740,25 +1945,6 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                if (hasLongContent)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: _openPostDetail,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.only(top: 6, bottom: 0),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        'Show more',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? Color(0xFF93C5FD) : Color(0xFF0B1F3A),
-                        ),
-                      ),
-                    ),
-                  ),
 
                 if (widget.imageUrl != null) ...[
                   const SizedBox(height: 12),
@@ -2774,6 +1960,35 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
                   ),
                 ],
 
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF111827) : const Color(0xFFF8FAFF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x221D4ED8)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.business_center_rounded,
+                        size: 14,
+                        color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF3154B5),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Related company: ${widget.company}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? const Color(0xFFBFDBFE) : const Color(0xFF3154B5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
                 const SizedBox(height: 12),
 
                 // Tags
@@ -2784,15 +1999,16 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
+                        color: isDark ? const Color(0xFF111827) : const Color(0xFFF0F5FF),
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x221D4ED8)),
                       ),
                       child: Text(
                         '# $tag',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 11.5,
-                          color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF1B2A44),
+                          color: isDark ? const Color(0xFFBFDBFE) : const Color(0xFF3154B5),
                         ),
                       ),
                     );
@@ -2800,7 +2016,10 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
                 ),
 
                 const SizedBox(height: 14),
-                const Divider(height: 1, color: Color(0x22FFB300)),
+                Divider(
+                  height: 1,
+                  color: isDark ? const Color(0x33E5E7EB) : const Color(0x0F000000),
+                ),
                 const SizedBox(height: 12),
 
                 // Responsive action row
@@ -2813,7 +2032,7 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
                       label: widget.commentsCount == 1
                           ? '1 reply'
                           : '${widget.commentsCount} replies',
-                      color: const Color(0xFF0B1F3A),
+                      color: const Color(0xFF3154B5),
                       onTap: _openPostDetail,
                     ),
                     GestureDetector(
@@ -2823,13 +2042,13 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                         decoration: BoxDecoration(
                           color: _viewer == 'like'
-                              ? const Color(0xFF0B1F3A)
+                              ? const Color(0xFF1D4ED8)
                               : (isDark ? const Color(0xFF111827) : const Color(0xFFF0F5FF)),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: _viewer == 'like'
-                                ? const Color(0xFF0B1F3A)
-                                : (isDark ? const Color(0x335B6B88) : const Color(0x3394A3B8)),
+                                ? const Color(0xFF1D4ED8)
+                                : (isDark ? const Color(0x335B6B88) : const Color(0x221D4ED8)),
                           ),
                         ),
                         child: Row(
@@ -2850,7 +2069,7 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
                                 fontWeight: FontWeight.w700,
                                 color: _viewer == 'like'
                                     ? Colors.white
-                                    : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A)),
+                                    : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF3154B5)),
                               ),
                             ),
                           ],
@@ -2870,7 +2089,7 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
                           border: Border.all(
                             color: _viewer == 'dislike'
                                 ? const Color(0xFFDC2626)
-                                : (isDark ? const Color(0x335B6B88) : const Color(0x3394A3B8)),
+                                : (isDark ? const Color(0x335B6B88) : const Color(0x221D4ED8)),
                           ),
                         ),
                         child: Row(
@@ -2891,7 +2110,7 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
                                 fontWeight: FontWeight.w700,
                                 color: _viewer == 'dislike'
                                     ? Colors.white
-                                    : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A)),
+                                    : (isDark ? const Color(0xFF93C5FD) : const Color(0xFF3154B5)),
                               ),
                             ),
                           ],
@@ -3018,7 +2237,7 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
         builder: (context) => PostDetailScreen(
           postId: widget.postId,
           apiBaseUrl: widget.apiBaseUrl,
-          author: _cleanAuthorDisplay(widget.author, widget.city),
+          author: widget.author,
           problem: widget.problem,
           bodyFull: widget.bodyFull,
           city: widget.city,
@@ -3086,13 +2305,6 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
     final RegExp devanagariRegex = RegExp(r'[\u0900-\u097F]');
     return devanagariRegex.hasMatch(text) ? 'hi' : 'en';
   }
-
-  bool _isLongPostText(String text) {
-    final String normalized = text.trim();
-    if (normalized.length > _feedPreviewMaxChars) return true;
-    final int newlines = '\n'.allMatches(normalized).length;
-    return newlines >= 3;
-  }
 }
 
 class _PostActionButton extends StatelessWidget {
@@ -3144,1527 +2356,11 @@ class _PostActionButton extends StatelessWidget {
   }
 }
 
-class RiderOnboardingDetailsScreen extends StatefulWidget {
-  const RiderOnboardingDetailsScreen({
-    super.key,
-    required this.apiBaseUrl,
-    required this.apiAccessKey,
-    required this.accessToken,
-    this.languageCode = 'en',
-    required this.onCompleted,
-  });
-
-  final String apiBaseUrl;
-  final String apiAccessKey;
-  final String accessToken;
-  final String languageCode;
-  final VoidCallback onCompleted;
-
-  @override
-  State<RiderOnboardingDetailsScreen> createState() => _RiderOnboardingDetailsScreenState();
-}
-
-class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScreen> {
-  static const List<String> _fallbackCompanies = <String>[
-    'Blinkit',
-    'Zepto',
-    'Swiggy',
-    'Zomato',
-    'Other',
-  ];
-  static const Map<String, List<String>> _companyCategorySeeds = <String, List<String>>{
-    'Food Delivery': <String>['Zomato', 'Swiggy', 'FNP', 'Other'],
-    'Bike Taxi': <String>['Ola', 'Uber', 'Rapido'],
-    'Ecommerce': <String>['Zepto', 'Blinkit', 'BigBasket', 'Amazon', 'Flipkart'],
-    'Parcel': <String>['Porter', 'Borzo', 'Delhivery', 'Dunzo'],
-  };
-  static const String _apiAccessKey = ApiConfig.apiAccessKey;
-
-  final TextEditingController _riderIdController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _otherCompanyController = TextEditingController();
-  final TextEditingController _evModelController = TextEditingController();
-  final TextEditingController _evNumberController = TextEditingController();
-  final TextEditingController _purchaseYearController = TextEditingController();
-
-  List<String> _companies = List<String>.from(_fallbackCompanies);
-  String _company = _fallbackCompanies.first;
-  String _vehicleType = 'ev_scooter';
-  bool _hasEv = false;
-  bool _loading = true;
-  bool _saving = false;
-  bool _detailsLocked = false;
-  String _selectedCategory = 'Food Delivery';
-  List<Map<String, dynamic>> _companyMetaList = <Map<String, dynamic>>[];
-  bool _formVisible = false;
-
-  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';
-  String _tr(String en, String hi) => _isHindi ? hi : en;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-    _loadCompaniesFromMeta();
-  }
-
-  @override
-  void dispose() {
-    _riderIdController.dispose();
-    _cityController.dispose();
-    _otherCompanyController.dispose();
-    _evModelController.dispose();
-    _evNumberController.dispose();
-    _purchaseYearController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String company = (prefs.getString('onboarding_company') ?? _fallbackCompanies.first).trim();
-    setState(() {
-      _company = _companies.contains(company) ? company : _companies.first;
-      _selectedCategory = _categoryForCompany(_company);
-      _riderIdController.text = (prefs.getString('onboarding_rider_id') ?? '').trim();
-      _cityController.text = (prefs.getString('onboarding_city') ?? '').trim();
-      _otherCompanyController.text = (prefs.getString('onboarding_other_company') ?? '').trim();
-      _hasEv = prefs.getBool('onboarding_has_ev') ?? false;
-      _evModelController.text = (prefs.getString('onboarding_ev_model') ?? '').trim();
-      _evNumberController.text = (prefs.getString('onboarding_ev_number') ?? '').trim();
-      _purchaseYearController.text = (prefs.getString('onboarding_purchase_year') ?? '').trim();
-      final String savedVehicleType =
-          (prefs.getString('onboarding_vehicle_type') ?? 'ev_scooter').trim();
-      if (savedVehicleType.startsWith('ev_')) {
-        _vehicleType = 'ev_scooter';
-      } else if (savedVehicleType == 'bike' ||
-          savedVehicleType == 'scooter' ||
-          savedVehicleType == 'other') {
-        _vehicleType = 'bike';
-      } else {
-        _vehicleType = 'ev_scooter';
-      }
-      _hasEv = _vehicleType.startsWith('ev_');
-      _detailsLocked = prefs.getBool('onboarding_details_locked') ?? false;
-      _loading = false;
-      _formVisible = _detailsLocked ||
-          _riderIdController.text.trim().isNotEmpty ||
-          _cityController.text.trim().isNotEmpty ||
-          _evNumberController.text.trim().isNotEmpty;
-    });
-    await _loadRemoteOnboarding();
-  }
-
-  Future<void> _loadRemoteOnboarding() async {
-    final String token = widget.accessToken.trim();
-    if (token.isEmpty) return;
-
-    try {
-      String? riderCompany;
-      String? riderId;
-      String? city;
-      final http.Response profileResponse = await http.get(
-        Uri.parse('${widget.apiBaseUrl}/api/v1/auth/me'),
-        headers: <String, String>{
-          'X-API-Key': widget.apiAccessKey,
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (profileResponse.statusCode >= 200 && profileResponse.statusCode < 300) {
-        final dynamic decoded = jsonDecode(profileResponse.body);
-        if (decoded is Map<String, dynamic> && decoded['profile'] is Map<String, dynamic>) {
-          final Map<String, dynamic> profile = decoded['profile'] as Map<String, dynamic>;
-          riderCompany = ('${profile['rider_company'] ?? ''}').trim();
-          riderId = ('${profile['rider_id'] ?? ''}').trim();
-          city = ('${profile['city'] ?? ''}').trim();
-        }
-      }
-
-      Map<String, dynamic>? vehicle;
-      final http.Response vehicleResponse = await http.get(
-        Uri.parse('${widget.apiBaseUrl}/api/v1/vehicle/me'),
-        headers: <String, String>{
-          'X-API-Key': widget.apiAccessKey,
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (vehicleResponse.statusCode >= 200 && vehicleResponse.statusCode < 300) {
-        final dynamic decoded = jsonDecode(vehicleResponse.body);
-        if (decoded is Map<String, dynamic> && decoded['vehicle'] is Map<String, dynamic>) {
-          vehicle = decoded['vehicle'] as Map<String, dynamic>;
-        }
-      }
-
-      if (!mounted) return;
-      setState(() {
-        if ((riderId ?? '').isNotEmpty) {
-          _riderIdController.text = riderId!;
-        }
-        if ((city ?? '').isNotEmpty) {
-          _cityController.text = city!;
-        }
-        if ((riderCompany ?? '').isNotEmpty) {
-          final String company = riderCompany!;
-          if (!_companies.contains(company)) {
-            _companies = <String>[..._companies.where((String item) => item != 'Other'), company, 'Other'];
-          }
-          _company = company;
-          _selectedCategory = _categoryForCompany(company);
-        }
-        if (vehicle != null) {
-          _detailsLocked = true;
-          _formVisible = true;
-          final String type = ('${vehicle['vehicle_type'] ?? 'ev_scooter'}').trim();
-          if (type.startsWith('ev_')) {
-            _vehicleType = 'ev_scooter';
-          } else if (type == 'bike' || type == 'scooter' || type == 'other') {
-            _vehicleType = 'bike';
-          } else {
-            _vehicleType = 'ev_scooter';
-          }
-          _hasEv = _vehicleType.startsWith('ev_');
-          _evModelController.text = ('${vehicle['model_name'] ?? ''}').trim();
-          _evNumberController.text = ('${vehicle['registration_number'] ?? ''}').trim();
-          _purchaseYearController.text = ('${vehicle['purchase_year'] ?? ''}').trim();
-          final dynamic metadata = vehicle['metadata'];
-          if (_riderIdController.text.trim().isEmpty && metadata is Map) {
-            _riderIdController.text = ('${metadata['rider_id'] ?? ''}').trim();
-          }
-        }
-      });
-    } catch (_) {
-      // Keep local onboarding details editable if remote lookup fails.
-    }
-  }
-
-  static const List<String> _vehicleTypes = <String>[
-    'ev_scooter',
-    'bike',
-  ];
-
-  String _vehicleTypeLabel(String type) {
-    switch (type) {
-      case 'bike':
-        return _tr('Petrol', 'à¤ªà¥‡à¤Ÿà¥à¤°à¥‹à¤²');
-      case 'ev_scooter':
-      default:
-        return _tr('EV', 'à¤ˆà¤µà¥€');
-    }
-  }
-
-  Future<void> _loadCompaniesFromMeta() async {
-    try {
-      final Uri uri = Uri.parse('${ApiConfig.apiBaseUrl}/api/v1/posts/meta');
-      final http.Response res = await http.get(
-        uri,
-        headers: <String, String>{'X-API-Key': _apiAccessKey},
-      );
-      if (res.statusCode != 200 || !mounted) return;
-      final dynamic decoded = jsonDecode(res.body);
-      if (decoded is! Map<String, dynamic>) return;
-      final dynamic raw = decoded['companies'];
-      if (raw is! List<dynamic>) return;
-
-      final List<String> next = <String>[];
-      final List<Map<String, dynamic>> metaList = <Map<String, dynamic>>[];
-      for (final dynamic item in raw) {
-        if (item is Map && item['label'] is String) {
-          final String label = (item['label'] as String).trim();
-          if (label.isNotEmpty) {
-            next.add(label);
-            metaList.add(Map<String, dynamic>.from(item));
-          }
-        }
-      }
-      if (next.isEmpty) return;
-      if (!next.contains('Other')) {
-        next.add('Other');
-      }
-      if (_company.isNotEmpty && !next.contains(_company)) {
-        next.insert(next.length - 1, _company);
-      }
-      if (!mounted) return;
-      setState(() {
-        _companies = next;
-        _companyMetaList = metaList;
-        if (!_companies.contains(_company)) {
-          _company = _companies.first;
-        }
-        _selectedCategory = _categoryForCompany(_company);
-      });
-    } catch (_) {
-      // Keep fallback companies.
-    }
-  }
-
-  Future<void> _save() async {
-    if (_detailsLocked) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _tr(
-              'Onboarding details are already submitted and cannot be changed.',
-              'à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤— à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤ªà¤¹à¤²à¥‡ à¤¹à¥€ à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤¹à¥‹ à¤šà¥à¤•à¥€ à¤¹à¥ˆ à¤”à¤° à¤…à¤¬ à¤¬à¤¦à¤²à¥€ à¤¨à¤¹à¥€à¤‚ à¤œà¤¾ à¤¸à¤•à¤¤à¥€à¥¤',
-            ),
-          ),
-        ),
-      );
-      return;
-    }
-    final String riderId = _riderIdController.text.trim();
-    final String city = _cityController.text.trim();
-    final String riderCompany =
-        _company == 'Other' ? _otherCompanyController.text.trim() : _company.trim();
-    final String vehicleModel = _evModelController.text.trim();
-    final String registrationNumber = _evNumberController.text.trim();
-
-    final List<String> missing = <String>[];
-    if (riderCompany.isEmpty) missing.add('Company');
-    if (riderId.isEmpty) missing.add('Rider ID');
-    if (city.isEmpty) missing.add('City');
-    if (_vehicleType.trim().isEmpty) missing.add('Vehicle type');
-    if (registrationNumber.isEmpty) missing.add('Vehicle number');
-    if (missing.isNotEmpty) {
-      await _showRequiredInfoDialog(missing);
-      return;
-    }
-
-    final bool confirmed = await _confirmPermanentSave();
-    if (!confirmed || !mounted) return;
-
-    setState(() => _saving = true);
-    try {
-      final String token = widget.accessToken.trim();
-      if (token.isEmpty) {
-        throw Exception('Missing access token.');
-      }
-      final int? purchaseYear = int.tryParse(_purchaseYearController.text.trim());
-      final http.MultipartRequest profileRequest = http.MultipartRequest(
-        'PATCH',
-        Uri.parse('${widget.apiBaseUrl}/api/v1/auth/profile'),
-      )
-        ..headers.addAll(<String, String>{
-          'X-API-Key': widget.apiAccessKey,
-          'Authorization': 'Bearer $token',
-        })
-        ..fields['rider_id'] = riderId
-        ..fields['rider_company'] = riderCompany
-        ..fields['city'] = city;
-      final http.StreamedResponse profileStream = await profileRequest.send();
-      final String profileBody = await profileStream.stream.bytesToString();
-      if (profileStream.statusCode < 200 || profileStream.statusCode >= 300) {
-        String message = 'Could not save rider profile details.';
-        try {
-          final dynamic decoded = jsonDecode(profileBody);
-          if (decoded is Map && decoded['detail'] != null) {
-            message = '${decoded['detail']}';
-          }
-        } catch (_) {}
-        throw Exception(message);
-      }
-
-      final http.Response response = await http.put(
-        Uri.parse('${widget.apiBaseUrl}/api/v1/vehicle/me'),
-        headers: <String, String>{
-          'X-API-Key': widget.apiAccessKey,
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(<String, dynamic>{
-          'vehicle_type': _vehicleType,
-          'company_name': riderCompany,
-          'model_name': vehicleModel,
-          'registration_number': registrationNumber,
-          'chassis_number': '',
-          'battery_number': '',
-          'color': '',
-          'purchase_year': purchaseYear,
-          'is_active': true,
-          'metadata': <String, dynamic>{
-            'rider_id': riderId,
-            'rider_company': riderCompany,
-            'has_ev': _vehicleType.startsWith('ev_'),
-            'onboarding_category': _categoryForCompany(riderCompany),
-            'onboarding_partner': riderCompany,
-          },
-        }),
-      );
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        String message = 'Could not save vehicle details.';
-        try {
-          final dynamic decoded = jsonDecode(response.body);
-          if (decoded is Map && decoded['detail'] != null) {
-            message = '${decoded['detail']}';
-          }
-        } catch (_) {}
-        throw Exception(message);
-      }
-
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('onboarding_company', _company);
-      await prefs.setString('onboarding_category', _categoryForCompany(riderCompany));
-      await prefs.setString('onboarding_rider_id', riderId);
-      await prefs.setString('onboarding_city', city);
-      await prefs.setString('onboarding_other_company', _otherCompanyController.text.trim());
-      await prefs.setBool('onboarding_has_ev', _vehicleType.startsWith('ev_'));
-      await prefs.setString('onboarding_vehicle_type', _vehicleType);
-      await prefs.setString('onboarding_ev_model', vehicleModel);
-      await prefs.setString('onboarding_ev_number', registrationNumber);
-      await prefs.setString('onboarding_ev_range', '');
-      await prefs.setString('onboarding_battery_number', '');
-      await prefs.setString('onboarding_vehicle_color', '');
-      await prefs.setString('onboarding_purchase_year', _purchaseYearController.text.trim());
-      await prefs.setBool('onboarding_details_locked', true);
-      if (!mounted) return;
-      setState(() {
-        _detailsLocked = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Onboarding and vehicle details saved.', 'à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤— à¤”à¤° à¤µà¤¾à¤¹à¤¨ à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸à¥‡à¤µ à¤¹à¥‹ à¤—à¤ˆà¥¤'))),
-      );
-      widget.onCompleted();
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _saving = false);
-      }
-    }
-  }
-
-  Future<bool> _confirmPermanentSave() async {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bool? result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF111827) : const Color(0xFFFFFFFF),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(_tr('Submit onboarding details?', 'à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤— à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤•à¤°à¥‡à¤‚?')),
-          content: Text(
-            _tr(
-              'Ek baar details submit hone ke baad aap inhe app se change nahi kar paoge.\n\nOnce submitted, these onboarding and vehicle details cannot be changed from the app.',
-              'à¤à¤• à¤¬à¤¾à¤° à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤¹à¥‹à¤¨à¥‡ à¤•à¥‡ à¤¬à¤¾à¤¦ à¤†à¤ª à¤‡à¤¨à¥à¤¹à¥‡à¤‚ à¤à¤ª à¤¸à¥‡ à¤¬à¤¦à¤² à¤¨à¤¹à¥€à¤‚ à¤ªà¤¾à¤à¤‚à¤—à¥‡à¥¤',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(_tr('Review again', 'à¤«à¤¿à¤° à¤¸à¥‡ à¤¦à¥‡à¤–à¥‡à¤‚')),
-            ),
-            FilledButton.icon(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              icon: const Icon(Icons.lock_rounded),
-              label: Text(_tr('Submit & lock', 'à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤”à¤° à¤²à¥‰à¤• à¤•à¤°à¥‡à¤‚')),
-            ),
-          ],
-        );
-      },
-    );
-    return result ?? false;
-  }
-
-  Future<void> _showRequiredInfoDialog(List<String> missing) async {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    await showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF111827) : const Color(0xFFFFFFFF),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Complete required details'),
-          content: Text(
-            'Submit karne se pehle ye information bharni zaroori hai:\n\n'
-            '${missing.map((String item) => 'â€¢ $item').join('\n')}\n\n'
-            'Please fill these details before submitting.',
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Okay'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  InputDecoration _fieldDecoration({
-    required String label,
-    required bool isDark,
-    IconData? icon,
-    String? hint,
-  }) {
-    final Color border = isDark ? const Color(0x335B6B88) : const Color(0x33FFB300);
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      isDense: true,
-      prefixIcon: icon == null ? null : Icon(icon, size: 18),
-      filled: true,
-      fillColor: isDark ? const Color(0xFF111827) : Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: border),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF0B1F3A), width: 1.2),
-      ),
-    );
-  }
-
-  Color _parseHexColor(String? hexString, Color fallback) {
-    if (hexString == null || hexString.trim().isEmpty) return fallback;
-    String hex = hexString.trim().replaceAll('#', '');
-    if (hex.length == 6) {
-      hex = 'FF$hex';
-    }
-    if (hex.length == 8) {
-      final int? val = int.tryParse(hex, radix: 16);
-      if (val != null) {
-        return Color(val);
-      }
-    }
-    return fallback;
-  }
-
-  Map<String, dynamic>? _getCompanyMeta(String company) {
-    final String normalized = company.trim().toLowerCase();
-    for (final dynamic item in _companyMetaList) {
-      if (item is Map && item['label'] != null && item['label'].toString().trim().toLowerCase() == normalized) {
-        return Map<String, dynamic>.from(item);
-      }
-    }
-    return null;
-  }
-
-  String _categoryForCompany(String company) {
-    final String normalized = company.trim().toLowerCase();
-    if (normalized.isEmpty) return _selectedCategory;
-    final Map<String, dynamic>? meta = _getCompanyMeta(company);
-    if (meta != null && meta['category'] is String && (meta['category'] as String).trim().isNotEmpty) {
-      final String cat = (meta['category'] as String).trim();
-      if (cat == 'Other Services') {
-        return 'Food Delivery';
-      }
-      return cat;
-    }
-    for (final entry in _companyCategorySeeds.entries) {
-      for (final String item in entry.value) {
-        if (item.trim().toLowerCase() == normalized) {
-          return entry.key;
-        }
-      }
-    }
-    return 'Food Delivery';
-  }
-
-  Map<String, List<String>> _categorizedCompanies() {
-    final Map<String, List<String>> result = <String, List<String>>{};
-    
-    // 1. Initialize with static categories to preserve custom UI order
-    for (final String category in _companyCategorySeeds.keys) {
-      result[category] = <String>[];
-    }
-    
-    // 2. Add dynamic categories found in metadata
-    for (final Map<String, dynamic> item in _companyMetaList) {
-      if (item['category'] is String) {
-        final String cat = (item['category'] as String).trim();
-        if (cat.isNotEmpty && cat != 'Other Services' && !result.containsKey(cat)) {
-          result[cat] = <String>[];
-        }
-      }
-    }
-
-    // 3. Group companies
-    for (final String company in _companies) {
-      final String clean = company.trim();
-      if (clean.isEmpty) continue;
-      final String category = _categoryForCompany(clean);
-      final List<String> bucket = result.putIfAbsent(category, () => <String>[]);
-      if (!bucket.contains(clean)) bucket.add(clean);
-    }
-
-    // Remove empty categories to keep the UI clean
-    final List<String> keys = result.keys.toList();
-    for (final String key in keys) {
-      if (result[key]!.isEmpty && key != _selectedCategory) {
-        result.remove(key);
-      }
-    }
-
-    result.forEach((_, List<String> bucket) {
-      bucket.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-    });
-    return result;
-  }
-
-  IconData _categoryIcon(String category) {
-    switch (category) {
-      case 'Bike Taxi':
-        return Icons.two_wheeler_rounded;
-      case 'Ecommerce':
-        return Icons.shopping_bag_outlined;
-      case 'Parcel':
-        return Icons.inventory_2_outlined;
-      case 'Other Services':
-        return Icons.widgets_outlined;
-      case 'Food Delivery':
-      default:
-        return Icons.room_service_outlined;
-    }
-  }
-
-  void _selectCompany(String company) {
-    setState(() {
-      _company = company;
-      _selectedCategory = _categoryForCompany(company);
-    });
-  }
-
-  Widget _buildCompanyLogo(String company, bool selected) {
-    final Map<String, dynamic>? meta = _getCompanyMeta(company);
-    final String? logoUrl = meta != null ? meta['logo_image_url'] as String? : null;
-
-    if (logoUrl != null && logoUrl.trim().isNotEmpty) {
-      return Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-          border: Border.all(
-            color: selected ? const Color(0xFF0B1F3A) : const Color(0xFFE2E8F0),
-            width: selected ? 1.5 : 1.0,
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.network(
-            logoUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildLocalCompanyLogo(company, selected);
-            },
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: SizedBox(
-                  width: 10,
-                  height: 10,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 1.0,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      selected ? const Color(0xFF0B1F3A) : const Color(0xFF94A3B8),
-                    ),
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                        : null,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      );
-    }
-
-    return _buildLocalCompanyLogo(company, selected);
-  }
-
-  Widget _buildLocalCompanyLogo(String company, bool selected) {
-    final String option = company;
-    final String clean = option.trim().toLowerCase();
-    
-    switch (clean) {
-      case 'zomato':
-        return Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(
-            color: Color(0xFFCB202D),
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'z',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-              fontFamily: 'serif',
-            ),
-          ),
-        );
-      case 'swiggy':
-        return Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(
-            color: Color(0xFFFC8019),
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Icon(
-            Icons.restaurant_menu_rounded,
-            color: Colors.white,
-            size: 12,
-          ),
-        );
-      case 'popeyes':
-        return Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF15A24),
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'P',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
-        );
-      case 'fnp':
-        return Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(
-            color: Color(0xFF4A773C),
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Icon(
-            Icons.card_giftcard_rounded,
-            color: Colors.white,
-            size: 12,
-          ),
-        );
-      case 'ola':
-        return Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(
-            color: Colors.black,
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: Container(
-            width: 10,
-            height: 10,
-            decoration: const BoxDecoration(
-              color: Color(0xFFD4E157),
-              shape: BoxShape.circle,
-            ),
-          ),
-        );
-      case 'uber':
-        return Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(
-            color: Colors.black,
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'Uber',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 6,
-            ),
-          ),
-        );
-      case 'rapido':
-        return Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFE000),
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'R',
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-            ),
-          ),
-        );
-      case 'zepto':
-        return Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(
-            color: Color(0xFF5E2B97),
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'zepto',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 5.5,
-            ),
-          ),
-        );
-      case 'blinkit':
-        return Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF7EC13),
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'blinkit',
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w900,
-              fontSize: 5.5,
-            ),
-          ),
-        );
-      case 'porter':
-        return Container(
-          width: 24,
-          height: 24,
-          decoration: const BoxDecoration(
-            color: Color(0xFF421EAE),
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'P',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-        );
-      default:
-        return CircleAvatar(
-          radius: 12,
-          backgroundColor: selected
-              ? const Color(0xFF0B1F3A)
-              : const Color(0xFFE2E8F0),
-          child: Text(
-            option.isEmpty ? '?' : option.substring(0, 1).toUpperCase(),
-            style: TextStyle(
-              color: selected ? Colors.white : const Color(0xFF0B1F3A),
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bool compact = MediaQuery.of(context).size.width < 390;
-    final bool hasOtherCompany = _company == 'Other';
-    final Map<String, List<String>> categorized = _categorizedCompanies();
-
-    int completed = 0;
-    completed += 1; // company chosen
-    if (_riderIdController.text.trim().isNotEmpty) completed += 1;
-    if (_cityController.text.trim().isNotEmpty) completed += 1;
-    if (_evModelController.text.trim().isNotEmpty) completed += 1;
-    if (_evNumberController.text.trim().isNotEmpty) {
-      completed += 1;
-    }
-    final double progress = (completed / 5).clamp(0.0, 1.0);
-
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return Material(
-      color: Colors.transparent,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? const [Color(0xFF1F2937), Color(0xFF0F172A)]
-                    : const [Color(0xFF0B1F3A), Color(0xFFB45309)],
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1A0F172A),
-                  blurRadius: 18,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  height: 44,
-                  width: 44,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.assignment_ind_rounded, color: Colors.white),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _tr('Rider Onboarding', 'à¤°à¤¾à¤‡à¤¡à¤° à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤—'),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x180F172A),
-                  blurRadius: 18,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            child: AspectRatio(
-              aspectRatio: 1.55,
-              child: Image.asset(
-                'assets/images/onboarding_rider_hero.png',
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 280),
-            curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? const [Color(0xFF1F2937), Color(0xFF111827)]
-                    : const [Color(0xFFFFFFFF), Color(0xFFFFF8E8)],
-              ),
-              border: Border.all(
-                color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x140F172A),
-                  blurRadius: 16,
-                  offset: Offset(0, 7),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    minHeight: 7,
-                    value: progress,
-                    backgroundColor: isDark ? const Color(0xFF111827) : const Color(0xFFF1F5F9),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0B1F3A)),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  _tr('Work Details', 'à¤•à¤¾à¤® à¤•à¥€ à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€'),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF102A56),
-                  ),
-                ),
-                if (_detailsLocked) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFF3D1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.lock_rounded,
-                          size: 18,
-                          color: isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _tr('Details submitted. Editing is locked.', 'à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤¹à¥‹ à¤šà¥à¤•à¥€ à¤¹à¥ˆà¥¤ à¤à¤¡à¤¿à¤Ÿ à¤²à¥‰à¤• à¤¹à¥ˆà¥¤'),
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF102A56),
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 14),
-
-                // ── All categories stacked vertically ──────────────────────
-                Text(
-                  _tr('Select your company', 'अपनी कंपनी चुनें'),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...categorized.entries.map((MapEntry<String, List<String>> entry) {
-                  final String category = entry.key;
-                  final List<String> options = entry.value;
-                  if (options.isEmpty) return const SizedBox.shrink();
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── Category section header ──
-                        Row(
-                          children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF1E293B)
-                                    : const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                _categoryIcon(category),
-                                size: 16,
-                                color: isDark
-                                    ? const Color(0xFF94A3B8)
-                                    : const Color(0xFF475569),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              category,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                                color: isDark
-                                    ? const Color(0xFFE2E8F0)
-                                    : const Color(0xFF0F172A),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Container(
-                                height: 1,
-                                color: isDark
-                                    ? const Color(0xFF1E293B)
-                                    : const Color(0xFFE2E8F0),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        // ── Company cards for this category ──
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: options.length,
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 0.88,
-                          ),
-                          itemBuilder: (context, i) {
-                            final String option = options[i];
-                            final bool selected = _company == option;
-                            final Map<String, dynamic>? meta = _getCompanyMeta(option);
-                            final Color brandColor = _parseHexColor(
-                              meta != null ? meta['brand_color'] as String? : null,
-                              const Color(0xFF0B1F3A),
-                            );
-
-                            return GestureDetector(
-                              onTap: _detailsLocked ? null : () => _selectCompany(option),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                curve: Curves.easeOut,
-                                decoration: BoxDecoration(
-                                  color: selected
-                                      ? (isDark
-                                          ? brandColor.withValues(alpha: 0.2)
-                                          : brandColor.withValues(alpha: 0.07))
-                                      : (isDark
-                                          ? const Color(0xFF1E293B)
-                                          : Colors.white),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: selected
-                                        ? brandColor
-                                        : (isDark
-                                            ? const Color(0xFF334155)
-                                            : const Color(0xFFE2E8F0)),
-                                    width: selected ? 2.0 : 1.0,
-                                  ),
-                                  boxShadow: selected
-                                      ? [
-                                          BoxShadow(
-                                            color: brandColor.withValues(alpha: 0.25),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          )
-                                        ]
-                                      : [
-                                          const BoxShadow(
-                                            color: Color(0x0A000000),
-                                            blurRadius: 6,
-                                            offset: Offset(0, 2),
-                                          )
-                                        ],
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      width: 48,
-                                      height: 48,
-                                      decoration: BoxDecoration(
-                                        color: selected
-                                            ? brandColor.withValues(alpha: isDark ? 0.3 : 0.12)
-                                            : (isDark
-                                                ? const Color(0xFF0F172A)
-                                                : const Color(0xFFF8FAFC)),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: selected
-                                              ? brandColor.withValues(alpha: 0.4)
-                                              : Colors.transparent,
-                                          width: 1.5,
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: _buildCompanyLogo(option, selected),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                                      child: Text(
-                                        option,
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                                          color: selected
-                                              ? brandColor
-                                              : (isDark
-                                                  ? const Color(0xFFCBD5E1)
-                                                  : const Color(0xFF334155)),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      width: selected ? 6 : 0,
-                                      height: selected ? 6 : 0,
-                                      decoration: BoxDecoration(
-                                        color: brandColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-
-                // ── Continue button: shown until user taps it ──────────────
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 350),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.18),
-                        end: Offset.zero,
-                      ).animate(CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                      )),
-                      child: FadeTransition(opacity: animation, child: child),
-                    );
-                  },
-                  child: _formVisible
-                      ? const SizedBox.shrink()
-                      : Padding(
-                          key: const ValueKey('continue_btn'),
-                          padding: const EdgeInsets.only(top: 4, bottom: 2),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                              onPressed: () => setState(() => _formVisible = true),
-                              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                              label: Text(
-                                _tr('Continue with $_company', '$_company के साथ जारी रखें'),
-                              ),
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                backgroundColor: const Color(0xFF0B1F3A),
-                                foregroundColor: Colors.white,
-                                textStyle: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                ),
-
-                // ── Step 1 Form: shown only after company confirmed ─────────
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.12),
-                        end: Offset.zero,
-                      ).animate(CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                      )),
-                      child: FadeTransition(opacity: animation, child: child),
-                    );
-                  },
-                  child: !_formVisible
-                      ? const SizedBox.shrink(key: ValueKey('form_hidden'))
-                      : Column(
-                          key: const ValueKey('form_visible'),
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 10),
-                            // Selected company badge with Change button
-                            Builder(builder: (context) {
-                              final Map<String, dynamic>? meta = _getCompanyMeta(_company);
-                              final Color brandColor = _parseHexColor(
-                                meta != null ? meta['brand_color'] as String? : null,
-                                const Color(0xFF0B1F3A),
-                              );
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: brandColor.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: brandColor.withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    _buildCompanyLogo(_company, true),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            _tr('Working with', 'काम करते हैं'),
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                            ),
-                                          ),
-                                          Text(
-                                            _company,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w800,
-                                              fontSize: 14,
-                                              color: brandColor,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (!_detailsLocked)
-                                      GestureDetector(
-                                        onTap: () => setState(() => _formVisible = false),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            _tr('Change', 'बदलें'),
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w700,
-                                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              );
-                            }),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: _riderIdController,
-                              enabled: !_detailsLocked,
-                              onChanged: (_) => setState(() {}),
-                              decoration: _fieldDecoration(
-                                label: _tr('Rider ID *', 'राइडर आईडी *'),
-                                hint: _tr('Enter your rider ID', 'अपनी राइडर आईडी लिखें'),
-                                isDark: isDark,
-                                icon: Icons.badge_rounded,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            TextField(
-                              controller: _cityController,
-                              enabled: !_detailsLocked,
-                              textCapitalization: TextCapitalization.words,
-                              onChanged: (_) => setState(() {}),
-                              decoration: _fieldDecoration(
-                                label: _tr('City *', 'शहर *'),
-                                hint: _tr('Enter your city', 'अपना शहर लिखें'),
-                                isDark: isDark,
-                                icon: Icons.location_city_rounded,
-                              ),
-                            ),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 220),
-                              child: hasOtherCompany
-                                  ? Padding(
-                                      padding: const EdgeInsets.only(top: 10),
-                                      child: TextField(
-                                        controller: _otherCompanyController,
-                                        enabled: !_detailsLocked,
-                                        decoration: _fieldDecoration(
-                                          label: _tr('Company name *', 'कंपनी का नाम *'),
-                                          isDark: isDark,
-                                          icon: Icons.storefront_rounded,
-                                        ),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                            const SizedBox(height: 14),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF111827) : const Color(0xFFFFF3D1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.two_wheeler_rounded,
-                                        color: isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          _tr('Vehicle Details', 'वाहन की जानकारी'),
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF102A56),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  DropdownButtonFormField<String>(
-                                    value: _vehicleTypes.contains(_vehicleType) ? _vehicleType : 'ev_scooter',
-                                    isExpanded: true,
-                                    items: _vehicleTypes
-                                        .map(
-                                          (String type) => DropdownMenuItem<String>(
-                                            value: type,
-                                            child: Text(_vehicleTypeLabel(type)),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: _detailsLocked
-                                        ? null
-                                        : (String? value) {
-                                            if (value == null) return;
-                                            setState(() {
-                                              _vehicleType = value;
-                                              _hasEv = value.startsWith('ev_');
-                                            });
-                                          },
-                                    decoration: _fieldDecoration(
-                                      label: _tr('Vehicle type *', 'वाहन का प्रकार *'),
-                                      isDark: isDark,
-                                      icon: Icons.category_rounded,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  TextField(
-                                    controller: _evModelController,
-                                    enabled: !_detailsLocked,
-                                    onChanged: (_) => setState(() {}),
-                                    decoration: _fieldDecoration(
-                                      label: _tr('Vehicle model', 'वाहन मॉडल'),
-                                      hint: _tr('e.g. Ola S1, Hero bike', 'जैसे Ola S1, Hero बाइक'),
-                                      isDark: isDark,
-                                      icon: Icons.electric_bike_rounded,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  TextField(
-                                    controller: _evNumberController,
-                                    enabled: !_detailsLocked,
-                                    textCapitalization: TextCapitalization.characters,
-                                    onChanged: (_) => setState(() {}),
-                                    decoration: _fieldDecoration(
-                                      label: _tr('Vehicle number *', 'वाहन नंबर *'),
-                                      hint: _tr('Registration number', 'रजिस्ट्रेशन नंबर'),
-                                      isDark: isDark,
-                                      icon: Icons.confirmation_number_rounded,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  TextField(
-                                    controller: _purchaseYearController,
-                                    enabled: !_detailsLocked,
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                    maxLength: 4,
-                                    decoration: _fieldDecoration(
-                                      label: _tr('Purchase year', 'खरीद का साल'),
-                                      isDark: isDark,
-                                      icon: Icons.calendar_month_rounded,
-                                    ).copyWith(counterText: ''),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            SizedBox(
-                              width: double.infinity,
-                              child: FilledButton.icon(
-                                onPressed: (_saving || _detailsLocked) ? null : _save,
-                                icon: _saving
-                                    ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                      )
-                                    : Icon(_detailsLocked ? Icons.lock_rounded : Icons.check_circle_rounded),
-                                label: Text(
-                                  _detailsLocked
-                                      ? _tr('Details submitted', 'जानकारी सबमिट हो गई')
-                                      : (_saving
-                                            ? _tr('Saving...', 'सेव हो रहा है...')
-                                            : _tr('Save onboarding details', 'ऑनबोर्डिंग जानकारी सेव करें')),
-                                ),
-                                style: FilledButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(vertical: compact ? 12 : 14),
-                                  backgroundColor: const Color(0xFF0B1F3A),
-                                  foregroundColor: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class CreatePostScreen extends StatefulWidget {
-  const CreatePostScreen({
-    super.key,
-    this.initialCity,
-    this.showAppBar = false,
-  });
+  const CreatePostScreen({super.key, this.initialCity});
 
   /// Prefills city when it matches a known option (e.g. from profile).
   final String? initialCity;
-  final bool showAppBar;
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -4812,7 +2508,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Login karo pehle â€” post bhejne ke liye access token chahiye.'),
+          content: Text('Login karo pehle — post bhejne ke liye access token chahiye.'),
         ),
       );
       return;
@@ -4891,11 +2587,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     final bool compact = MediaQuery.of(context).size.width < 390;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final Widget content = Material(
-      color: Colors.transparent,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-        children: [
+    return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+          children: [
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -4947,7 +2641,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   ],
                   const SizedBox(height: 4),
                   Text(
-                    'Issue clear likho â€” city, company, aur type se riders jaldi samajh lenge.',
+                    'Issue clear likho — city, company, aur type se riders jaldi samajh lenge.',
                     style: TextStyle(
                       color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       fontSize: 12,
@@ -4960,7 +2654,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     textCapitalization: TextCapitalization.sentences,
                     style: TextStyle(color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF1E293B)),
                     decoration: InputDecoration(
-                      hintText: 'Problem yahan likhoâ€¦',
+                      hintText: 'Problem yahan likho…',
                       filled: true,
                       fillColor: isDark ? const Color(0xFF111827) : Colors.white,
                       hintStyle: TextStyle(
@@ -5040,31 +2734,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             : (isDark ? const Color(0x335B6B88) : const Color(0x221D4ED8)),
                       ),
                     ),
-                    child: Material(
-                      type: MaterialType.transparency,
-                      child: SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        value: _anonymous,
-                        onChanged: (_submitting || _metaLoading)
-                            ? null
-                            : (v) => setState(() => _anonymous = v),
-                        title: Text(
-                          'Anonymous post',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? const Color(0xFFE5E7EB)
-                                : const Color(0xFF1E293B),
-                          ),
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      value: _anonymous,
+                      onChanged: (_submitting || _metaLoading) ? null : (v) => setState(() => _anonymous = v),
+                      title: Text(
+                        'Anonymous post',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF1E293B),
                         ),
-                        subtitle: Text(
-                          'Feed par naam hide; admin dekh sakta hai.',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isDark
-                                ? const Color(0xFF94A3B8)
-                                : const Color(0xFF64748B),
-                          ),
+                      ),
+                      subtitle: Text(
+                        'Feed par naam hide; admin dekh sakta hai.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                         ),
                       ),
                     ),
@@ -5124,7 +2809,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
                             : const Icon(Icons.send_rounded),
-                        label: Text(_submitting ? 'Bhej raheâ€¦' : 'Post karo'),
+                        label: Text(_submitting ? 'Bhej rahe…' : 'Post karo'),
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF1D4ED8),
                           foregroundColor: Colors.white,
@@ -5140,20 +2825,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 ],
               ),
             ),
-        ],
-      ),
-    );
-
-    if (!widget.showAppBar) {
-      return content;
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create post'),
-      ),
-      body: content,
-    );
+          ],
+        );
   }
 }
 
@@ -5217,14 +2890,12 @@ class EvScreen extends StatefulWidget {
     required this.apiBaseUrl,
     required this.apiAccessKey,
     required this.accessToken,
-    this.languageCode = 'en',
   });
 
   final String currentUserCity;
   final String apiBaseUrl;
   final String apiAccessKey;
   final String accessToken;
-  final String languageCode;
 
   @override
   State<EvScreen> createState() => _EvScreenState();
@@ -5232,14 +2903,12 @@ class EvScreen extends StatefulWidget {
 
 class _EvScreenState extends State<EvScreen> {
   static const List<List<Color>> _evTileGradients = <List<Color>>[
-    <Color>[Color(0xFF0B1F3A), Color(0xFF1E3A5F)],
-    <Color>[Color(0xFFB45309), Color(0xFFF59E0B)],
-    <Color>[Color(0xFF334155), Color(0xFF0B1F3A)],
+    <Color>[Color(0xFF1D4ED8), Color(0xFF06B6D4)],
+    <Color>[Color(0xFF7C3AED), Color(0xFF4F46E5)],
+    <Color>[Color(0xFF0F766E), Color(0xFF14B8A6)],
   ];
 
   late Future<ContactLayoutMeta> _layoutFuture;
-  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';
-  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   void initState() {
@@ -5279,7 +2948,6 @@ class _EvScreenState extends State<EvScreen> {
           apiBaseUrl: widget.apiBaseUrl,
           apiAccessKey: widget.apiAccessKey,
           accessToken: widget.accessToken,
-          languageCode: widget.languageCode,
         ),
       ),
     );
@@ -5292,7 +2960,6 @@ class _EvScreenState extends State<EvScreen> {
           apiBaseUrl: widget.apiBaseUrl,
           apiAccessKey: widget.apiAccessKey,
           accessToken: widget.accessToken,
-          languageCode: widget.languageCode,
         ),
       ),
     );
@@ -5301,10 +2968,7 @@ class _EvScreenState extends State<EvScreen> {
   void _openChargingStations(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => _ChargingStationsScreen(
-          initialCity: widget.currentUserCity,
-          languageCode: widget.languageCode,
-        ),
+        builder: (_) => _ChargingStationsScreen(initialCity: widget.currentUserCity),
       ),
     );
   }
@@ -5323,22 +2987,22 @@ class _EvScreenState extends State<EvScreen> {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF0B1F3A), Color(0xFFB45309)],
+              colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
             ),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x33B45309),
+                color: Color(0x332563EB),
                 blurRadius: 18,
                 offset: Offset(0, 8),
               ),
             ],
           ),
-            child: Column(
+            child: const Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _tr('EV Support Hub', 'à¤ˆà¤µà¥€ à¤¸à¤ªà¥‹à¤°à¥à¤Ÿ à¤¹à¤¬'),
+                  'EV Support Hub',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 20,
@@ -5347,10 +3011,7 @@ class _EvScreenState extends State<EvScreen> {
               ),
               SizedBox(height: 6),
               Text(
-                _tr(
-                  'Rent, buy and maintain EVs with rider-friendly plans.',
-                  'à¤°à¤¾à¤‡à¤¡à¤°-à¤«à¥à¤°à¥‡à¤‚à¤¡à¤²à¥€ à¤ªà¥à¤²à¤¾à¤¨à¥à¤¸ à¤•à¥‡ à¤¸à¤¾à¤¥ à¤ˆà¤µà¥€ à¤°à¥‡à¤‚à¤Ÿ à¤•à¤°à¥‡à¤‚, à¤–à¤°à¥€à¤¦à¥‡à¤‚ à¤”à¤° à¤®à¥‡à¤‚à¤Ÿà¥‡à¤¨ à¤•à¤°à¥‡à¤‚à¥¤',
-                ),
+                'Rent, buy and maintain EVs with rider-friendly plans.',
                 style: TextStyle(
                   color: Color(0xE6FFFFFF),
                   height: 1.35,
@@ -5409,11 +3070,11 @@ class _EvScreenState extends State<EvScreen> {
                       width: cardWidth,
                       height: cardHeight,
                       child: _EvQuickActionCard(
-                        title: _tr('Rent EV', 'à¤ˆà¤µà¥€ à¤•à¤¿à¤°à¤¾à¤ à¤ªà¤° à¤²à¥‡à¤‚'),
-                        subtitle: _tr('Daily plans', 'à¤¡à¥‡à¤²à¥€ à¤ªà¥à¤²à¤¾à¤¨à¥à¤¸'),
+                        title: 'Rent EV',
+                        subtitle: 'Daily plans',
                         icon: Icons.electric_scooter_rounded,
-                        colorA: const Color(0xFF0B1F3A),
-                        colorB: const Color(0xFF1E3A5F),
+                        colorA: const Color(0xFF1D4ED8),
+                        colorB: const Color(0xFF2563EB),
                         onTap: () => _openRentEv(context),
                       ),
                     ),
@@ -5421,11 +3082,11 @@ class _EvScreenState extends State<EvScreen> {
                       width: cardWidth,
                       height: cardHeight,
                       child: _EvQuickActionCard(
-                        title: _tr('Buy EV', 'à¤ˆà¤µà¥€ à¤–à¤°à¥€à¤¦à¥‡à¤‚'),
-                        subtitle: _tr('Best offers', 'à¤¬à¥‡à¤¸à¥à¤Ÿ à¤‘à¤«à¤°à¥à¤¸'),
+                        title: 'Buy EV',
+                        subtitle: 'Best offers',
                         icon: Icons.electric_bike_rounded,
-                        colorA: const Color(0xFFB45309),
-                        colorB: const Color(0xFFF59E0B),
+                        colorA: const Color(0xFF0F766E),
+                        colorB: const Color(0xFF14B8A6),
                         onTap: () => _openBuyEv(context),
                       ),
                     ),
@@ -5433,11 +3094,11 @@ class _EvScreenState extends State<EvScreen> {
                       width: cardWidth,
                       height: cardHeight,
                       child: _EvQuickActionCard(
-                        title: _tr('Charging', 'à¤šà¤¾à¤°à¥à¤œà¤¿à¤‚à¤—'),
-                        subtitle: _tr('Nearby points', 'à¤¨à¤œà¤¼à¤¦à¥€à¤•à¥€ à¤ªà¥‰à¤‡à¤‚à¤Ÿà¥à¤¸'),
+                        title: 'Charging',
+                        subtitle: 'Nearby points',
                         icon: Icons.ev_station_rounded,
-                        colorA: const Color(0xFF334155),
-                        colorB: const Color(0xFF0B1F3A),
+                        colorA: const Color(0xFF7C3AED),
+                        colorB: const Color(0xFF4F46E5),
                         onTap: () => _openChargingStations(context),
                       ),
                     ),
@@ -5454,13 +3115,9 @@ class _EvScreenState extends State<EvScreen> {
 }
 
 class _ChargingStationsScreen extends StatefulWidget {
-  const _ChargingStationsScreen({
-    required this.initialCity,
-    this.languageCode = 'en',
-  });
+  const _ChargingStationsScreen({required this.initialCity});
 
   final String initialCity;
-  final String languageCode;
 
   @override
   State<_ChargingStationsScreen> createState() => _ChargingStationsScreenState();
@@ -5468,8 +3125,6 @@ class _ChargingStationsScreen extends StatefulWidget {
 
 class _ChargingStationsScreenState extends State<_ChargingStationsScreen> {
   final ScrollController _scrollController = ScrollController();
-  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';
-  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   void dispose() {
@@ -5482,9 +3137,9 @@ class _ChargingStationsScreenState extends State<_ChargingStationsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_tr('Charging Stations', 'à¤šà¤¾à¤°à¥à¤œà¤¿à¤‚à¤— à¤¸à¥à¤Ÿà¥‡à¤¶à¤¨')),
+        title: const Text('Charging Stations'),
       ),
-      backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF),
+      backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFF4F8FF),
       body: ListView(
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
@@ -5506,12 +3161,12 @@ class _ChargingStationsScreenState extends State<_ChargingStationsScreen> {
                 ),
               ],
             ),
-            child: Column(
+            child: const Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _tr('Nearest EV Charging', 'à¤¨à¤œà¤¼à¤¦à¥€à¤•à¥€ à¤ˆà¤µà¥€ à¤šà¤¾à¤°à¥à¤œà¤¿à¤‚à¤—'),
+                  'Nearest EV Charging',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -5520,10 +3175,7 @@ class _ChargingStationsScreenState extends State<_ChargingStationsScreen> {
                 ),
                 SizedBox(height: 6),
                 Text(
-                  _tr(
-                    'Live location first, then city-wise lists - scroll for more stations.',
-                    'à¤ªà¤¹à¤²à¥‡ à¤²à¤¾à¤‡à¤µ à¤²à¥‹à¤•à¥‡à¤¶à¤¨, à¤«à¤¿à¤° à¤¶à¤¹à¤° à¤•à¥‡ à¤¹à¤¿à¤¸à¤¾à¤¬ à¤¸à¥‡ à¤²à¤¿à¤¸à¥à¤Ÿ - à¤”à¤° à¤¸à¥à¤Ÿà¥‡à¤¶à¤¨à¥‹à¤‚ à¤•à¥‡ à¤²à¤¿à¤ à¤¸à¥à¤•à¥à¤°à¥‰à¤² à¤•à¤°à¥‡à¤‚à¥¤',
-                  ),
+                  'Live location first, then city-wise lists — scroll for more stations.',
                   style: TextStyle(
                     color: Color(0xE6FFFFFF),
                     height: 1.35,
@@ -5537,7 +3189,6 @@ class _ChargingStationsScreenState extends State<_ChargingStationsScreen> {
           _EvChargingLocationsSection(
             initialCity: widget.initialCity,
             scrollController: _scrollController,
-            languageCode: widget.languageCode,
           ),
         ],
       ),
@@ -5632,12 +3283,10 @@ class _EvChargingLocationsSection extends StatefulWidget {
   const _EvChargingLocationsSection({
     required this.initialCity,
     this.scrollController,
-    this.languageCode = 'en',
   });
 
   final String initialCity;
   final ScrollController? scrollController;
-  final String languageCode;
 
   @override
   State<_EvChargingLocationsSection> createState() => _EvChargingLocationsSectionState();
@@ -5650,7 +3299,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
   String _selectedCity = 'All';
   double? _refLat;
   double? _refLon;
-  /// True when using a fresh device GPS fix for this screen visit (never persisted â€” riders move).
+  /// True when using a fresh device GPS fix for this screen visit (never persisted — riders move).
   bool _refFromGps = false;
   bool _isDetectingLocation = false;
 
@@ -5662,8 +3311,6 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
   String? _loadError;
 
   final Set<String> _cityChoices = {'All'};
-  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';
-  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   void initState() {
@@ -5693,7 +3340,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
     }
   }
 
-  /// Approximate city center for NCR â€” used so distances always show in km without pressing Detect me.
+  /// Approximate city center for NCR — used so distances always show in km without pressing Detect me.
   ({double lat, double lon}) _ncrApproxCenter(String raw) {
     final c = raw.trim().toLowerCase();
     if (c.contains('gurgaon') || c.contains('gurugram')) return (lat: 28.4595, lon: 77.0266);
@@ -5705,9 +3352,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
 
   String get _profileCity => widget.initialCity.trim();
   String get _profileFallbackLabel =>
-      _profileCity.isEmpty
-          ? _tr('default NCR area', 'à¤¡à¤¿à¤«à¤¼à¥‰à¤²à¥à¤Ÿ NCR à¤à¤°à¤¿à¤¯à¤¾')
-          : _tr('your profile city', 'à¤†à¤ªà¤•à¤¾ à¤ªà¥à¤°à¥‹à¤«à¤¾à¤‡à¤² à¤¶à¤¹à¤°');
+      _profileCity.isEmpty ? 'default NCR area' : 'your profile city';
 
   void _applyCityCenterFallbackIfNeeded() {
     if (_refLat != null && _refLon != null) return;
@@ -6025,7 +3670,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
     final String url = 'https://www.google.com/maps/search/?api=1&query=${item.latitude},${item.longitude}';
     final opened = await launchUrlString(url, mode: LaunchMode.externalApplication);
     if (!opened) {
-      _showHint(_tr('Could not open Google Maps right now.', 'à¤…à¤­à¥€ Google Maps à¤¨à¤¹à¥€à¤‚ à¤–à¥à¤² à¤ªà¤¾à¤¯à¤¾à¥¤'));
+      _showHint('Could not open Google Maps right now.');
     }
   }
 
@@ -6051,7 +3696,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _tr('Charging points from map', 'à¤®à¥ˆà¤ª à¤¸à¥‡ à¤šà¤¾à¤°à¥à¤œà¤¿à¤‚à¤— à¤ªà¥‰à¤‡à¤‚à¤Ÿà¥à¤¸'),
+            'Charging points from map',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w900,
@@ -6060,10 +3705,8 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
           ),
           const SizedBox(height: 4),
           Text(
-            _tr(
-              'We wait briefly for live GPS, then load your city in pages (scroll down for more). Nothing is cached - tap Detect me anytime to refresh.',
-              'à¤¹à¤® à¤ªà¤¹à¤²à¥‡ à¤¥à¥‹à¤¡à¤¼à¥€ à¤¦à¥‡à¤° à¤²à¤¾à¤‡à¤µ GPS à¤•à¤¾ à¤‡à¤‚à¤¤à¤œà¤¼à¤¾à¤° à¤•à¤°à¤¤à¥‡ à¤¹à¥ˆà¤‚, à¤«à¤¿à¤° à¤†à¤ªà¤•à¤¾ à¤¶à¤¹à¤° à¤ªà¥‡à¤œ à¤®à¥‡à¤‚ à¤²à¥‹à¤¡ à¤¹à¥‹à¤¤à¤¾ à¤¹à¥ˆ (à¤”à¤° à¤¦à¥‡à¤–à¤¨à¥‡ à¤•à¥‡ à¤²à¤¿à¤ à¤¨à¥€à¤šà¥‡ à¤¸à¥à¤•à¥à¤°à¥‰à¤² à¤•à¤°à¥‡à¤‚)à¥¤ à¤•à¥à¤› à¤­à¥€ à¤•à¥ˆà¤¶ à¤¨à¤¹à¥€à¤‚ à¤¹à¥‹à¤¤à¤¾ - à¤°à¤¿à¤«à¥à¤°à¥‡à¤¶ à¤•à¥‡ à¤²à¤¿à¤ à¤•à¤­à¥€ à¤­à¥€ Detect me à¤¦à¤¬à¤¾à¤à¤‚à¥¤',
-            ),
+            'We wait briefly for live GPS, then load your city in pages (scroll down for more). '
+            'Nothing is cached — tap Detect me anytime to refresh.',
             style: TextStyle(
               fontSize: 12,
               color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -6092,9 +3735,9 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                       SizedBox(
                         width: 190,
                         child: InputDecorator(
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             isDense: true,
-                            labelText: _tr('City filter', 'à¤¶à¤¹à¤° à¤«à¤¼à¤¿à¤²à¥à¤Ÿà¤°'),
+                            labelText: 'City filter',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.all(Radius.circular(12)),
                             ),
@@ -6131,12 +3774,12 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
                             : const Icon(Icons.my_location_rounded),
-                        label: Text(_tr('Detect me', 'à¤®à¥‡à¤°à¥€ à¤²à¥‹à¤•à¥‡à¤¶à¤¨')),
+                        label: const Text('Detect me'),
                       ),
                       if (_refFromGps)
                         OutlinedButton(
                           onPressed: _clearGpsReference,
-                          child: Text(_tr('Clear GPS', 'GPS à¤¹à¤Ÿà¤¾à¤à¤‚')),
+                          child: const Text('Clear GPS'),
                         ),
                     ],
                   ),
@@ -6145,19 +3788,10 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                     _loadError != null
                         ? _loadError!
                         : _loadingInitial && _items.isEmpty
-                            ? _tr(
-                                'Getting location & loading first page...',
-                                'à¤²à¥‹à¤•à¥‡à¤¶à¤¨ à¤²à¥€ à¤œà¤¾ à¤°à¤¹à¥€ à¤¹à¥ˆ à¤”à¤° à¤ªà¤¹à¤²à¤¾ à¤ªà¥‡à¤œ à¤²à¥‹à¤¡ à¤¹à¥‹ à¤°à¤¹à¤¾ à¤¹à¥ˆ...',
-                              )
+                            ? 'Getting location & loading first page…'
                             : _refFromGps
-                                ? _tr(
-                                    'Loaded ${_items.length} of $_totalCount - nearest first (GPS) - scroll for more',
-                                    '${_totalCount} à¤®à¥‡à¤‚ à¤¸à¥‡ ${_items.length} à¤²à¥‹à¤¡ - à¤ªà¤¹à¤²à¥‡ à¤¸à¤¬à¤¸à¥‡ à¤¨à¤œà¤¼à¤¦à¥€à¤•à¥€ (GPS) - à¤”à¤° à¤¦à¥‡à¤–à¤¨à¥‡ à¤•à¥‡ à¤²à¤¿à¤ à¤¸à¥à¤•à¥à¤°à¥‰à¤² à¤•à¤°à¥‡à¤‚',
-                                  )
-                                : _tr(
-                                    'Loaded ${_items.length} of $_totalCount - nearest first (approx.) - scroll for more',
-                                    '${_totalCount} à¤®à¥‡à¤‚ à¤¸à¥‡ ${_items.length} à¤²à¥‹à¤¡ - à¤ªà¤¹à¤²à¥‡ à¤¸à¤¬à¤¸à¥‡ à¤¨à¤œà¤¼à¤¦à¥€à¤•à¥€ (à¤…à¤¨à¥à¤®à¤¾à¤¨à¤¿à¤¤) - à¤”à¤° à¤¦à¥‡à¤–à¤¨à¥‡ à¤•à¥‡ à¤²à¤¿à¤ à¤¸à¥à¤•à¥à¤°à¥‰à¤² à¤•à¤°à¥‡à¤‚',
-                                  ),
+                                ? 'Loaded ${_items.length} of $_totalCount · nearest first (GPS) · scroll for more'
+                                : 'Loaded ${_items.length} of $_totalCount · nearest first (approx.) · scroll for more',
                     style: TextStyle(
                       fontSize: 12,
                       color: _loadError != null
@@ -6171,7 +3805,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: () => _fetchPage(reset: true),
-                      child: Text(_tr('Retry', 'à¤«à¤¿à¤° à¤•à¥‹à¤¶à¤¿à¤¶ à¤•à¤°à¥‡à¤‚')),
+                      child: const Text('Retry'),
                     ),
                   ],
                   const SizedBox(height: 10),
@@ -6182,7 +3816,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                     )
                   else if (!_loadingInitial && _items.isEmpty && _loadError == null)
                     Text(
-                      _tr('No charging points found for current filters.', 'à¤®à¥Œà¤œà¥‚à¤¦à¤¾ à¤«à¤¼à¤¿à¤²à¥à¤Ÿà¤° à¤•à¥‡ à¤²à¤¿à¤ à¤•à¥‹à¤ˆ à¤šà¤¾à¤°à¥à¤œà¤¿à¤‚à¤— à¤ªà¥‰à¤‡à¤‚à¤Ÿ à¤¨à¤¹à¥€à¤‚ à¤®à¤¿à¤²à¤¾à¥¤'),
+                      'No charging points found for current filters.',
                       style: TextStyle(color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334E68)),
                     )
                   else if (_items.isNotEmpty)
@@ -6267,7 +3901,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                                                   const SizedBox(width: 6),
                                                   Expanded(
                                                     child: Text(
-                                                      '${_formatDistanceKm(item.distanceKm!)} Â· ${_distanceSubtitleSuffix()}',
+                                                      '${_formatDistanceKm(item.distanceKm!)} · ${_distanceSubtitleSuffix()}',
                                                       style: TextStyle(
                                                         fontSize: 15,
                                                         fontWeight: FontWeight.w800,
@@ -6294,9 +3928,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                                                     ),
                                                   ),
                                                   child: Text(
-                                                    item.city.isNotEmpty
-                                                        ? item.city
-                                                        : _tr('City unknown', 'à¤¶à¤¹à¤° à¤…à¤œà¥à¤žà¤¾à¤¤'),
+                                                    item.city.isNotEmpty ? item.city : 'City unknown',
                                                     style: TextStyle(
                                                       fontSize: 11,
                                                       fontWeight: FontWeight.w800,
@@ -6336,7 +3968,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                                   child: FilledButton.tonalIcon(
                                     onPressed: () => _openInGoogleMaps(item),
                                     icon: const Icon(Icons.map_rounded, size: 18),
-                                    label: Text(_tr('Get directions on Maps', 'Maps à¤ªà¤° à¤¦à¤¿à¤¶à¤¾ à¤¦à¥‡à¤–à¥‡à¤‚')),
+                                    label: const Text('Get directions on Maps'),
                                     style: FilledButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -6394,7 +4026,7 @@ class _EvLocationItem {
   final String stationCode;
   final double? distanceKm;
 
-  /// Single friendly subtitle for list cards â€” never raw KML / QIS ID dumps.
+  /// Single friendly subtitle for list cards — never raw KML / QIS ID dumps.
   String get cardDetailLine {
     final addr = address.trim();
     if (addr.isNotEmpty && !_looksLikeTechnicalDump(addr)) return addr;
@@ -6417,7 +4049,7 @@ class _EvLocationItem {
     final qisName = details['QIS Name'] ?? '';
     final siteType = details['Site Type'] ?? '';
     final summaryParts = [if (qisName.isNotEmpty) qisName, if (siteType.isNotEmpty) siteType];
-    final summary = summaryParts.join(' â€¢ ');
+    final summary = summaryParts.join(' • ');
     final cleanedDescription = _stripHtml(rawDescription);
     return _EvLocationItem(
       name: (json['name'] as String? ?? 'Unknown location'),
@@ -6618,12 +4250,12 @@ class _EvActionDetailScreenState extends State<_EvActionDetailScreen> {
             ),
           ),
           title: Text(
-            '${widget.title} â€” received',
+            '${widget.title} — received',
             textAlign: TextAlign.center,
             style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
           ),
           content: Text(
-            'Your message is saved with our team. Weâ€™ll reply using your profile email or phone, usually within 1â€“2 business days.',
+            'Your message is saved with our team. We’ll reply using your profile email or phone, usually within 1–2 business days.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
@@ -6656,7 +4288,7 @@ class _EvActionDetailScreenState extends State<_EvActionDetailScreen> {
     if (!_loggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Log in to submit â€” we attach your profile automatically.'),
+          content: Text('Log in to submit — we attach your profile automatically.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -6747,30 +4379,6 @@ class _EvActionDetailScreenState extends State<_EvActionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    InputDecoration themedInput({
-      required String label,
-      bool alignWithHint = false,
-    }) {
-      final Color border = isDark ? const Color(0x335B6B88) : const Color(0x33FFB300);
-      return InputDecoration(
-        labelText: label,
-        alignLabelWithHint: alignWithHint,
-        filled: true,
-        fillColor: isDark ? const Color(0xFF111827) : Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF0B1F3A), width: 1.2),
-        ),
-      );
-    }
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
@@ -6781,12 +4389,10 @@ class _EvActionDetailScreenState extends State<_EvActionDetailScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: isDark
-                    ? const [Color(0xFF1F2937), Color(0xFF0F172A)]
-                    : const [Color(0xFF0B1F3A), Color(0xFFB45309)],
+                colors: [Color(0xFF1D4ED8), Color(0xFF06B6D4)],
               ),
             ),
             child: Row(
@@ -6814,7 +4420,7 @@ class _EvActionDetailScreenState extends State<_EvActionDetailScreen> {
             const SizedBox(height: 14),
             Text(
               _loggedIn
-                  ? 'Your name, email and phone come from your profile â€” just add your message below.'
+                  ? 'Your name, email and phone come from your profile — just add your message below.'
                   : 'Log in to send this to our team (we use your profile details automatically).',
               style: TextStyle(
                 fontSize: 14,
@@ -6828,12 +4434,18 @@ class _EvActionDetailScreenState extends State<_EvActionDetailScreen> {
             const SizedBox(height: 14),
             TextField(
               controller: _nameController,
-              decoration: themedInput(label: 'Name'),
+              decoration: InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+              ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _phoneController,
-              decoration: themedInput(label: 'Phone number'),
+              decoration: InputDecoration(
+                labelText: 'Phone number',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+              ),
               keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 10),
@@ -6847,9 +4459,10 @@ class _EvActionDetailScreenState extends State<_EvActionDetailScreen> {
                     unawaited(_persistContactDraft(_requirementController.text));
                   }
                 : null,
-            decoration: themedInput(
-              label: _contactMode ? 'Message' : 'Your requirement',
-              alignWithHint: true,
+            decoration: InputDecoration(
+              labelText: _contactMode ? 'Message' : 'Your requirement',
+              alignLabelWithHint: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
             ),
           ),
           const SizedBox(height: 14),
@@ -6887,7 +4500,7 @@ class _EvActionDetailScreenState extends State<_EvActionDetailScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
                   )
                 : const Icon(Icons.send_rounded),
-            label: Text(_contactMode && _submitting ? 'Sendingâ€¦' : 'Submit request'),
+            label: Text(_contactMode && _submitting ? 'Sending…' : 'Submit request'),
           ),
         ],
       ),
@@ -6901,13 +4514,11 @@ class HelpScreen extends StatefulWidget {
     required this.apiBaseUrl,
     required this.apiAccessKey,
     required this.accessToken,
-    this.languageCode = 'en',
   });
 
   final String apiBaseUrl;
   final String apiAccessKey;
   final String accessToken;
-  final String languageCode;
 
   @override
   State<HelpScreen> createState() => _HelpScreenState();
@@ -6915,8 +4526,6 @@ class HelpScreen extends StatefulWidget {
 
 class _HelpScreenState extends State<HelpScreen> {
   late Future<ContactLayoutMeta> _layoutFuture;
-  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';
-  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   void initState() {
@@ -6944,7 +4553,7 @@ class _HelpScreenState extends State<HelpScreen> {
     required IconData icon,
   }) {
     final String banner = description.trim().isEmpty
-        ? _tr('Tell us more so we can help you faster.', 'à¤¹à¤®à¥‡à¤‚ à¤¥à¥‹à¤¡à¤¼à¤¾ à¤”à¤° à¤¬à¤¤à¤¾à¤à¤‚ à¤¤à¤¾à¤•à¤¿ à¤¹à¤® à¤œà¤²à¥à¤¦à¥€ à¤®à¤¦à¤¦ à¤•à¤° à¤¸à¤•à¥‡à¤‚à¥¤')
+        ? 'Tell us more so we can help you faster.'
         : description;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -6963,7 +4572,6 @@ class _HelpScreenState extends State<HelpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return FutureBuilder<ContactLayoutMeta>(
       future: _layoutFuture,
       builder: (BuildContext context, AsyncSnapshot<ContactLayoutMeta> snapshot) {
@@ -6972,27 +4580,25 @@ class _HelpScreenState extends State<HelpScreen> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: isDark
-                    ? const <Color>[Color(0xFF1F2937), Color(0xFF0F172A)]
-                    : const <Color>[Color(0xFF0B1F3A), Color(0xFFB45309)],
+                colors: <Color>[Color(0xFF1D4ED8), Color(0xFF06B6D4)],
               ),
-              boxShadow: <BoxShadow>[
+              boxShadow: const <BoxShadow>[
                 BoxShadow(
-                  color: isDark ? const Color(0x33000000) : const Color(0x33B45309),
+                  color: Color(0x331D4ED8),
                   blurRadius: 18,
                   offset: Offset(0, 8),
                 ),
               ],
             ),
-            child: Column(
+            child: const Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  _tr('Help & Support', 'à¤®à¤¦à¤¦ à¤”à¤° à¤¸à¤ªà¥‹à¤°à¥à¤Ÿ'),
+                  'Help & Support',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -7001,10 +4607,7 @@ class _HelpScreenState extends State<HelpScreen> {
                 ),
                 SizedBox(height: 6),
                 Text(
-                  _tr(
-                    'Report issues, track progress and get quick rider support.',
-                    'à¤¸à¤®à¤¸à¥à¤¯à¤¾à¤à¤‚ à¤¬à¤¤à¤¾à¤à¤‚, à¤ªà¥à¤°à¤—à¤¤à¤¿ à¤Ÿà¥à¤°à¥ˆà¤• à¤•à¤°à¥‡à¤‚ à¤”à¤° à¤œà¤²à¥à¤¦à¥€ à¤°à¤¾à¤‡à¤¡à¤° à¤¸à¤ªà¥‹à¤°à¥à¤Ÿ à¤ªà¤¾à¤à¤‚à¥¤',
-                  ),
+                  'Report issues, track progress and get quick rider support.',
                   style: TextStyle(
                     color: Color(0xE6FFFFFF),
                     height: 1.35,
@@ -7016,8 +4619,8 @@ class _HelpScreenState extends State<HelpScreen> {
           ),
           const SizedBox(height: 14),
           _HelpActionTile(
-            title: _tr('Contact us', 'à¤¹à¤®à¤¸à¥‡ à¤¸à¤‚à¤ªà¤°à¥à¤• à¤•à¤°à¥‡à¤‚'),
-            subtitle: _tr('Message the team (topic, your details)', 'à¤Ÿà¥€à¤® à¤•à¥‹ à¤¸à¤‚à¤¦à¥‡à¤¶ à¤­à¥‡à¤œà¥‡à¤‚ (à¤Ÿà¥‰à¤ªà¤¿à¤•, à¤†à¤ªà¤•à¥€ à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€)'),
+            title: 'Contact us',
+            subtitle: 'Message the team (topic, your details)',
             icon: Icons.forward_to_inbox_rounded,
             onTap: () {
               Navigator.of(context).push<void>(
@@ -7026,7 +4629,6 @@ class _HelpScreenState extends State<HelpScreen> {
                     apiBaseUrl: widget.apiBaseUrl,
                     apiAccessKey: widget.apiAccessKey,
                     accessToken: widget.accessToken,
-                    languageCode: widget.languageCode,
                   ),
                 ),
               );
@@ -7051,10 +4653,7 @@ class _HelpScreenState extends State<HelpScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   Text(
-                    _tr(
-                      'Could not load help topics. Check connection and try again.',
-                      'à¤¹à¥‡à¤²à¥à¤ª à¤Ÿà¥‰à¤ªà¤¿à¤•à¥à¤¸ à¤²à¥‹à¤¡ à¤¨à¤¹à¥€à¤‚ à¤¹à¥à¤à¥¤ à¤•à¤¨à¥‡à¤•à¥à¤¶à¤¨ à¤šà¥‡à¤• à¤•à¤°à¥‡à¤‚ à¤”à¤° à¤«à¤¿à¤° à¤•à¥‹à¤¶à¤¿à¤¶ à¤•à¤°à¥‡à¤‚à¥¤',
-                    ),
+                    'Could not load help topics. Check connection and try again.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -7064,7 +4663,7 @@ class _HelpScreenState extends State<HelpScreen> {
                   const SizedBox(height: 8),
                   FilledButton.tonal(
                     onPressed: _reloadLayout,
-                    child: Text(_tr('Retry', 'à¤«à¤¿à¤° à¤•à¥‹à¤¶à¤¿à¤¶ à¤•à¤°à¥‡à¤‚')),
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
@@ -7116,7 +4715,6 @@ class _HelpActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -7126,11 +4724,9 @@ class _HelpActionTile extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: isDark ? const Color(0xFF1F2937) : Colors.white.withValues(alpha: 0.88),
-            border: Border.all(
-              color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
-            ),
-            boxShadow: [
+            color: Colors.white.withValues(alpha: 0.88),
+            border: Border.all(color: const Color(0x261D4ED8)),
+            boxShadow: const [
               BoxShadow(
                 color: Color(0x120F172A),
                 blurRadius: 12,
@@ -7142,12 +4738,8 @@ class _HelpActionTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 19,
-                backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFE9B5),
-                child: Icon(
-                  icon,
-                  color: isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
-                  size: 20,
-                ),
+                backgroundColor: const Color(0xFFE9EDFF),
+                child: Icon(icon, color: const Color(0xFF1D4ED8), size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -7157,8 +4749,8 @@ class _HelpActionTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
-                        color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF1E293B),
+                      style: const TextStyle(
+                        color: Color(0xFF1E293B),
                         fontWeight: FontWeight.w800,
                         fontSize: 15,
                       ),
@@ -7166,18 +4758,15 @@ class _HelpActionTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: TextStyle(
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-              ),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
             ],
           ),
         ),
@@ -7185,5 +4774,3 @@ class _HelpActionTile extends StatelessWidget {
     );
   }
 }
-
-

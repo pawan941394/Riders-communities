@@ -19,6 +19,7 @@ class ProfileScreen extends StatefulWidget {
     required this.displayName,
     required this.username,
     required this.profileImageUrl,
+    this.languageCode = 'en',
   });
 
   final VoidCallback onLogout;
@@ -29,6 +30,7 @@ class ProfileScreen extends StatefulWidget {
   final String displayName;
   final String username;
   final String profileImageUrl;
+  final String languageCode;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -57,6 +59,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _postsCount = 0;
 
   final List<Map<String, dynamic>> _myPosts = [];
+  bool get _isHindi => widget.languageCode.toLowerCase().startsWith('hi');
+  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   void initState() {
@@ -91,7 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _loadingProfile = false;
         _loadingPosts = false;
-        _loadError = 'Session missing — log in again.';
+        _loadError = _tr('Session missing - log in again.', 'सेशन नहीं मिला - दोबारा लॉगिन करें।');
       });
       return;
     }
@@ -116,7 +120,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (res.statusCode != 200) {
         setState(() {
           _loadingProfile = false;
-          _loadError = 'Profile load failed (${res.statusCode}).';
+          _loadError = _tr(
+            'Profile load failed (${res.statusCode}).',
+            'प्रोफाइल लोड नहीं हुआ (${res.statusCode})।',
+          );
         });
         return;
       }
@@ -124,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (decoded is! Map<String, dynamic>) {
         setState(() {
           _loadingProfile = false;
-          _loadError = 'Invalid profile response.';
+          _loadError = _tr('Invalid profile response.', 'प्रोफाइल का जवाब अमान्य है।');
         });
         return;
       }
@@ -133,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (profileRaw is! Map<String, dynamic>) {
         setState(() {
           _loadingProfile = false;
-          _loadError = 'Invalid profile payload.';
+          _loadError = _tr('Invalid profile payload.', 'प्रोफाइल डेटा अमान्य है।');
         });
         return;
       }
@@ -168,7 +175,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       setState(() {
         _loadingProfile = false;
-        _loadError = 'Network error loading profile.';
+        _loadError = _tr('Network error loading profile.', 'प्रोफाइल लोड करते समय नेटवर्क त्रुटि हुई।');
       });
     }
   }
@@ -190,7 +197,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (res.statusCode != 200) {
         setState(() {
           _loadingPosts = false;
-          if (_loadError == null) _loadError = 'Posts load failed (${res.statusCode}).';
+          if (_loadError == null) {
+            _loadError = _tr(
+              'Posts load failed (${res.statusCode}).',
+              'पोस्ट्स लोड नहीं हुए (${res.statusCode})।',
+            );
+          }
         });
         return;
       }
@@ -211,7 +223,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       setState(() {
         _loadingPosts = false;
-        if (_loadError == null) _loadError = 'Network error loading posts.';
+        if (_loadError == null) {
+          _loadError = _tr('Network error loading posts.', 'पोस्ट्स लोड करते समय नेटवर्क त्रुटि हुई।');
+        }
       });
     }
   }
@@ -234,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (x is String && x.trim().isNotEmpty) tags.add(x.trim());
       }
     }
-    if (tags.isEmpty) tags.add('Community');
+    if (tags.isEmpty) tags.add(_tr('Community', 'कम्युनिटी'));
     return tags;
   }
 
@@ -431,7 +445,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text(
                   _bio.isNotEmpty
                       ? _bio
-                      : 'Add a short bio so others know how you ride — tap Edit profile.',
+                      : _tr(
+                          'Add a short bio so others know how you ride - tap Edit profile.',
+                          'छोटी सी बायो जोड़ें ताकि लोग जान सकें आप कैसे राइड करते हैं - Edit profile दबाएं।',
+                        ),
                   style: TextStyle(
                     color: _bio.isNotEmpty
                         ? (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334E68))
@@ -445,7 +462,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   spacing: 16,
                   runSpacing: 10,
                   children: [
-                    _ProfileStatItem(label: 'Posts', value: _formatStat(_postsCount)),
+                    _ProfileStatItem(label: _tr('Posts', 'पोस्ट्स'), value: _formatStat(_postsCount)),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -456,7 +473,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     FilledButton.icon(
                       onPressed: _loadingProfile ? null : _openEditProfileModal,
                       icon: const Icon(Icons.edit_rounded),
-                      label: const Text('Edit profile'),
+                      label: Text(_tr('Edit profile', 'प्रोफाइल एडिट करें')),
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF1D4ED8),
                         foregroundColor: Colors.white,
@@ -465,7 +482,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     OutlinedButton.icon(
                       onPressed: widget.onLogout,
                       icon: const Icon(Icons.logout_rounded),
-                      label: const Text('Logout'),
+                      label: Text(_tr('Logout', 'लॉगआउट')),
                     ),
                   ],
                 ),
@@ -478,7 +495,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 14),
           Text(
-            'Your posts',
+            _tr('Your posts', 'आपकी पोस्ट्स'),
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -495,7 +512,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Text(
-                'Abhi tumhari koi post nahi — Community se pehla post banao.',
+                _tr(
+                  'You have no posts yet - create your first post in Community.',
+                  'अभी आपकी कोई पोस्ट नहीं है - कम्युनिटी में अपनी पहली पोस्ट बनाएं।',
+                ),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
@@ -531,8 +551,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: cardWidth,
                       height: cardHeight,
                       child: _ProfilePostCard(
-                        title: title.isEmpty ? 'Post' : title,
-                        subtitle: subtitle.trim().isEmpty ? '—' : subtitle.trim(),
+                        title: title.isEmpty ? _tr('Post', 'पोस्ट') : title,
+                        subtitle: subtitle.trim().isEmpty ? '-' : subtitle.trim(),
                         comments: '$comments',
                         likes: '$likes',
                         colorA: pair[0],
@@ -621,6 +641,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             widget.onProfileSynced?.call(decoded);
           },
           onSuccessfulSaveRefresh: _refreshAll,
+          languageCode: widget.languageCode,
         );
       },
     );
@@ -652,6 +673,7 @@ class _EditProfileModalContent extends StatefulWidget {
     required this.getProfileImageProvider,
     required this.onPatchSuccess,
     required this.onSuccessfulSaveRefresh,
+    this.languageCode = 'en',
   });
 
   final String initialBio;
@@ -669,6 +691,7 @@ class _EditProfileModalContent extends StatefulWidget {
     String? tempImagePath,
   ) onPatchSuccess;
   final Future<void> Function() onSuccessfulSaveRefresh;
+  final String languageCode;
 
   @override
   State<_EditProfileModalContent> createState() => _EditProfileModalContentState();
@@ -679,6 +702,8 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
   late String? _tempImagePath;
   Uint8List? _tempImageBytes;
   final ImagePicker _imagePicker = ImagePicker();
+  bool get _isHindi => widget.languageCode.toLowerCase().startsWith('hi');
+  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   void initState() {
@@ -744,7 +769,11 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
       }
       if (res.statusCode != 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Save failed (${res.statusCode})')),
+          SnackBar(
+            content: Text(
+              _tr('Save failed (${res.statusCode})', 'सेव नहीं हो पाया (${res.statusCode})'),
+            ),
+          ),
         );
         return;
       }
@@ -760,7 +789,7 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Network error — try again.')),
+          SnackBar(content: Text(_tr('Network error - try again.', 'नेटवर्क त्रुटि - फिर से कोशिश करें।'))),
         );
       }
     }
@@ -787,7 +816,7 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Edit profile',
+              _tr('Edit profile', 'प्रोफाइल एडिट करें'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
@@ -856,7 +885,7 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
                           });
                         },
                         icon: const Icon(Icons.photo_library_rounded),
-                        label: const Text('Gallery'),
+                        label: Text(_tr('Gallery', 'गैलरी')),
                       ),
                       OutlinedButton.icon(
                         onPressed: () async {
@@ -882,7 +911,7 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
                           });
                         },
                         icon: const Icon(Icons.camera_alt_rounded),
-                        label: const Text('Camera'),
+                        label: Text(_tr('Camera', 'कैमरा')),
                       ),
                     ],
                   ),
@@ -898,7 +927,7 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
                 color: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF1E293B),
               ),
               decoration: InputDecoration(
-                labelText: 'Bio',
+                labelText: _tr('Bio', 'बायो'),
                 labelStyle: TextStyle(
                   color: isDark ? const Color(0xFF94A3B8) : null,
                 ),
@@ -917,7 +946,7 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
             FilledButton.icon(
               onPressed: widget.accessToken.isEmpty ? null : _save,
               icon: const Icon(Icons.check_rounded),
-              label: const Text('Save'),
+              label: Text(_tr('Save', 'सेव करें')),
             ),
           ],
         ),

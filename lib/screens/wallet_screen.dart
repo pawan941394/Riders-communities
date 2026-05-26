@@ -9,11 +9,13 @@ class WalletScreen extends StatefulWidget {
     required this.apiBaseUrl,
     required this.apiAccessKey,
     required this.accessToken,
+    this.languageCode = 'en',
   });
 
   final String apiBaseUrl;
   final String apiAccessKey;
   final String accessToken;
+  final String languageCode;
 
   @override
   State<WalletScreen> createState() => _WalletScreenState();
@@ -28,6 +30,8 @@ class _WalletScreenState extends State<WalletScreen> {
   String _myReferralCode = '';
   final List<Map<String, dynamic>> _walletTransactions = [];
   final TextEditingController _applyReferralController = TextEditingController();
+  bool get _isHindi => widget.languageCode.toLowerCase().startsWith('hi');
+  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   void initState() {
@@ -59,7 +63,10 @@ class _WalletScreenState extends State<WalletScreen> {
       if (walletRes.statusCode != 200) {
         setState(() {
           _loading = false;
-          _loadError = 'Wallet load failed (${walletRes.statusCode}).';
+          _loadError = _tr(
+            'Wallet load failed (${walletRes.statusCode}).',
+            'वॉलेट लोड नहीं हुआ (${walletRes.statusCode})।',
+          );
         });
         return;
       }
@@ -67,7 +74,7 @@ class _WalletScreenState extends State<WalletScreen> {
       if (walletDecoded is! Map<String, dynamic>) {
         setState(() {
           _loading = false;
-          _loadError = 'Invalid wallet response.';
+          _loadError = _tr('Invalid wallet response.', 'वॉलेट का जवाब अमान्य है।');
         });
         return;
       }
@@ -116,7 +123,7 @@ class _WalletScreenState extends State<WalletScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _loadError = 'Network error loading wallet.';
+        _loadError = _tr('Network error loading wallet.', 'वॉलेट लोड करते समय नेटवर्क त्रुटि हुई।');
       });
     }
   }
@@ -125,7 +132,7 @@ class _WalletScreenState extends State<WalletScreen> {
     final String code = _applyReferralController.text.trim().toUpperCase();
     if (code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter referral code.')),
+        SnackBar(content: Text(_tr('Please enter referral code.', 'कृपया रेफरल कोड दर्ज करें।'))),
       );
       return;
     }
@@ -149,16 +156,17 @@ class _WalletScreenState extends State<WalletScreen> {
         _applyReferralController.clear();
         _hasRedeemedReferral = true;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Referral code applied successfully.')),
+          SnackBar(content: Text(_tr('Referral code applied successfully.', 'रेफरल कोड सफलतापूर्वक लागू हो गया।'))),
         );
         await _refresh();
         return;
       }
-      final String msg = ('${decoded['detail'] ?? 'Could not apply referral code.'}').trim();
+      final String msg =
+          ('${decoded['detail'] ?? _tr('Could not apply referral code.', 'रेफरल कोड लागू नहीं हो सका।')}').trim();
       if (msg.toLowerCase().contains('already used')) {
         _hasRedeemedReferral = true;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('One user can apply only one referral code.')),
+          SnackBar(content: Text(_tr('One user can apply only one referral code.', 'एक यूज़र केवल एक ही रेफरल कोड लागू कर सकता है।'))),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
@@ -166,7 +174,7 @@ class _WalletScreenState extends State<WalletScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Network error while applying referral code.')),
+        SnackBar(content: Text(_tr('Network error while applying referral code.', 'रेफरल कोड लागू करते समय नेटवर्क त्रुटि हुई।'))),
       );
     } finally {
       if (mounted) {
@@ -179,8 +187,8 @@ class _WalletScreenState extends State<WalletScreen> {
 
   String _transactionTitle(String source) {
     final String clean = source.trim();
-    if (clean.isEmpty) return 'Transaction';
-    if (clean == 'referral_reward') return 'Referral Reward';
+    if (clean.isEmpty) return _tr('Transaction', 'लेन-देन');
+    if (clean == 'referral_reward') return _tr('Referral Reward', 'रेफरल रिवॉर्ड');
     return clean.replaceAll('_', ' ');
   }
 
@@ -192,23 +200,23 @@ class _WalletScreenState extends State<WalletScreen> {
     final String name = ('${referredRaw['full_name'] ?? ''}').trim();
     final String phone = ('${referredRaw['phone_number'] ?? ''}').trim();
     if (name.isNotEmpty && phone.isNotEmpty) {
-      return 'From: $name | $phone';
+      return _tr('From: $name | $phone', 'से: $name | $phone');
     }
-    if (name.isNotEmpty) return 'From: $name';
-    if (phone.isNotEmpty) return 'From: $phone';
+    if (name.isNotEmpty) return _tr('From: $name', 'से: $name');
+    if (phone.isNotEmpty) return _tr('From: $phone', 'से: $phone');
     return '';
   }
 
   Future<void> _onWithdrawTap() async {
     if (_walletBalanceCredits < 100) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Minimum ₹100 required to withdraw.')),
+        SnackBar(content: Text(_tr('Minimum ₹100 required to withdraw.', 'निकासी के लिए कम से कम ₹100 चाहिए।'))),
       );
       return;
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Withdrawal feature is coming soon.')),
+      SnackBar(content: Text(_tr('Withdrawal feature is coming soon.', 'निकासी फीचर जल्द आ रहा है।'))),
     );
   }
 
@@ -229,7 +237,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 end: Alignment.bottomRight,
                 colors: isDark
                     ? const [Color(0xFF1F2937), Color(0xFF111827)]
-                    : const [Color(0xFFFFFFFF), Color(0xFFFFF8E8)],
+                    : const [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
               ),
               border: Border.all(
                 color: isDark ? const Color(0x335B6B88) : const Color(0x33F4B400),
@@ -254,7 +262,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Wallet',
+                        _tr('Wallet', 'वॉलेट'),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
@@ -270,7 +278,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFFFF3D1),
                       ),
                       child: Text(
-                        'Withdraw',
+                        _tr('Withdraw', 'निकालें'),
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFFB45309),
@@ -308,7 +316,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         const Icon(Icons.stars_rounded, color: Color(0xFFF59E0B)),
                         const SizedBox(width: 8),
                         Text(
-                          'Credits: ${_formatCurrency(_walletBalanceCredits)}',
+                          _tr('Credits: ${_formatCurrency(_walletBalanceCredits)}', 'क्रेडिट्स: ${_formatCurrency(_walletBalanceCredits)}'),
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
@@ -319,7 +327,9 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                   const SizedBox(height: 10),
                   SelectableText(
-                    _myReferralCode.isEmpty ? 'Referral code: loading...' : 'Your code: $_myReferralCode',
+                    _myReferralCode.isEmpty
+                        ? _tr('Referral code: loading...', 'रेफरल कोड: लोड हो रहा है...')
+                        : _tr('Your code: $_myReferralCode', 'आपका कोड: $_myReferralCode'),
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: isDark ? const Color(0xFFBFDBFE) : const Color(0xFF0B1F3A),
@@ -335,8 +345,8 @@ class _WalletScreenState extends State<WalletScreen> {
                           enabled: !_applyingReferral && !_hasRedeemedReferral,
                           decoration: InputDecoration(
                             hintText: _hasRedeemedReferral
-                                ? 'Referral already applied'
-                                : 'Apply referral code',
+                                ? _tr('Referral already applied', 'रेफरल पहले से लागू है')
+                                : _tr('Apply referral code', 'रेफरल कोड लागू करें'),
                             isDense: true,
                             filled: true,
                             fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFBF1),
@@ -375,7 +385,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                 height: 16,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF172033)),
                               )
-                            : const Text('Apply'),
+                            : Text(_tr('Apply', 'लागू करें')),
                       ),
                     ],
                   ),
@@ -383,7 +393,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
-                        'One user can apply only one referral code.',
+                        _tr('One user can apply only one referral code.', 'एक यूज़र केवल एक ही रेफरल कोड लागू कर सकता है।'),
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84),
@@ -392,7 +402,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     ),
                   const SizedBox(height: 12),
                   Text(
-                    'Recent wallet transactions',
+                    _tr('Recent wallet transactions', 'हाल के वॉलेट लेन-देन'),
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
@@ -401,7 +411,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   const SizedBox(height: 8),
                   if (_walletTransactions.isEmpty)
                     Text(
-                      'No wallet transactions yet.',
+                      _tr('No wallet transactions yet.', 'अभी तक कोई वॉलेट लेन-देन नहीं है।'),
                       style: TextStyle(
                         color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84),
                       ),

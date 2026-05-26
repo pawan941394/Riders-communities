@@ -1,0 +1,753 @@
+
+
+=========================================
+STEP 53: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\Desktop\assisment\app_codes\C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\implementation_plan.md
+--- CODE CONTENT ---
+"# Implementation Plan - Premium Rider Onboarding Redesign\n\nThis plan outlines the redesign of the Rider Onboarding Details Screen (`RiderOnboardingDetailsScreen`) in the Flutter application into a highly premium, beautifully animated, multi-step onboarding journey. It details the UX changes, visual enhancements, and how the current models will support the new interactive features.\n\n## Goal Description\n\nWe want to transform the current flat, long form-based onboarding into a highly engaging, interactive multi-step wizard. The new onboarding will WOW the user at first glance, featuring:\n1. **Interactive Glassmorphic Progress Tracker**: A beautiful visual stepper timeline that indicates progress with micro-animations.\n2. **Beautiful Partner Category Grid & Animated Expandable Company Cards**: Quick-select options with vibrant gradients and clean brand iconography instead of cramped list-views.\n3. **Interactive Delivery ID Card Badge Preview**: An animated custom card that displays the rider's name, selected company (e.g. Zomato Red, Swiggy Orange, Zepto Purple, Blinkit Yellow), and Rider ID, updating live as they type.\n4. **Interactive Petrol/EV Segment Switcher**: A high-end custom switch with physics-based sliding micro-animations.\n5. **Interactive License Plate visualizer**: A stylized license plate that renders the Delhi NCR state code (e.g., DL, HR, UP) and registration number in real-time.\n6. **Popular Model Suggestions**: Quick-tap chips of common EV and petrol models.\n7. **Robust Validation & Dialogs**: Sleek alerts and submission processes.\n\n---\n\n## User Review Required\n\n> [!NOTE]\n> All changes are fully backward-compatible with the backend auth and vehicle API schemas. No database migrations are required because the existing `Vehicle` model's JSON `metadata` field allows storing any richer data, while standard fields map perfectly to `RiderProfile` and `Vehicle` schemas.\n\n---\n\n## Proposed Changes\n\n### [Flutter Frontend Components]\n\n#### [MODIFY] [home_screen.dart](file:///c:/Us
+<truncated 2131 bytes>
+
+
+=========================================
+STEP 55: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\implementation_plan.md
+--- CODE CONTENT ---
+"# Implementation Plan - Premium Rider Onboarding Redesign\n\nThis plan outlines the redesign of the Rider Onboarding Details Screen (`RiderOnboardingDetailsScreen`) in the Flutter application into a highly premium, beautifully animated, multi-step onboarding journey. It details the UX changes, visual enhancements, and how the current models will support the new interactive features.\n\n## Goal Description\n\nWe want to transform the current flat, long form-based onboarding into a highly engaging, interactive multi-step wizard. The new onboarding will WOW the user at first glance, featuring:\n1. **Interactive Glassmorphic Progress Tracker**: A beautiful visual stepper timeline that indicates progress with micro-animations.\n2. **Beautiful Partner Category Grid & Animated Expandable Company Cards**: Quick-select options with vibrant gradients and clean brand iconography instead of cramped list-views.\n3. **Interactive Delivery ID Card Badge Preview**: An animated custom card that displays the rider's name, selected company (e.g. Zomato Red, Swiggy Orange, Zepto Purple, Blinkit Yellow), and Rider ID, updating live as they type.\n4. **Interactive Petrol/EV Segment Switcher**: A high-end custom switch with physics-based sliding micro-animations.\n5. **Interactive License Plate visualizer**: A stylized license plate that renders the Delhi NCR state code (e.g., DL, HR, UP) and registration number in real-time.\n6. **Popular Model Suggestions**: Quick-tap chips of common EV and petrol models.\n7. **Robust Validation & Dialogs**: Sleek alerts and submission processes.\n\n---\n\n## User Review Required\n\n> [!NOTE]\n> All changes are fully backward-compatible with the backend auth and vehicle API schemas. No database migrations are required because the existing `Vehicle` model's JSON `metadata` field allows storing any richer data, while standard fields map perfectly to `RiderProfile` and `Vehicle` schemas.\n\n---\n\n## Proposed Changes\n\n### [Flutter Frontend Components]\n\n#### [MODIFY] [home_screen.dart](file:///c:/Us
+<truncated 2131 bytes>
+
+
+=========================================
+STEP 61: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\frontend\lib\screens\home_screen.dart
+StartLine: 4049, EndLine: 4052
+--- TARGET CONTENT ---
+                ),`r`n                AnimatedSwitcher(
+--- REPLACEMENT CONTENT ---
+                ),
+                AnimatedSwitcher(
+
+
+=========================================
+STEP 63: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\task.md
+--- CODE CONTENT ---
+# Task: Premium Rider Onboarding Redesign
+
+- [x] Fix syntax error on line 4050 (`r`n text artifact) in `home_screen.dart`
+- [/] Design and implement the new `RiderOnboardingDetailsScreen` under `frontend/lib/screens/home_screen.dart`
+    - [ ] Create Step State tracker and dynamic stepper UI header
+    - [ ] Build Step 1: Category & Delivery Partner select grid with brand gradients and icons
+    - [ ] Build Step 2: Rider ID & City with Live Preview ID Card Badge
+    - [ ] Build Step 3: Vehicle details with EV/Petrol selector, Model chips, and Custom License Plate visualizer
+    - [ ] Add smooth transition animations and back navigation
+    - [ ] Perform field validation at each step and premium confirmation modal
+- [ ] Verify functionality (Light & Dark theme adaptability, validation rules, live preview inputs, persistent storage & API sync)
+- [ ] Create walkthrough artifact summary
+
+
+
+=========================================
+STEP 71: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\frontend\lib\screens\home_screen.dart
+StartLine: 3226, EndLine: 4199
+--- TARGET CONTENT ---
+"class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScreen> {\n  static const List<String> _fallbackCompanies = <String>[\n    'Blinkit',\n    'Zepto',\n    'Swiggy',\n    'Zomato',\n    'Other',\n  ];\n  static const Map<String, List<String>> _companyCategorySeeds = <String, List<String>>{\n    'Food Delivery': <String>['Zomato', 'Swiggy', 'FNP'],\n    'Bike Taxi': <String>['Ola', 'Uber', 'Rapido'],\n    'Ecommerce': <String>['Zepto', 'Blinkit', 'BigBasket', 'Amazon', 'Flipkart'],\n    'Parcel': <String>['Porter', 'Borzo', 'Delhivery', 'Dunzo'],\n    'Other Services': <String>['Other'],\n  };\n  static const String _apiAccessKey = ApiConfig.apiAccessKey;\n\n  final TextEditingController _riderIdController = TextEditingController();\n  final TextEditingController _cityController = TextEditingController();\n  final TextEditingController _otherCompanyController = TextEditingController();\n  final TextEditingController _evModelController = TextEditingController();\n  final TextEditingController _evNumberController = TextEditingController();\n  final TextEditingController _purchaseYearController = TextEditingController();\n\n  List<String> _companies = List<String>.from(_fallbackCompanies);\n  String _company = _fallbackCompanies.first;\n  String _vehicleType = 'ev_scooter';\n  bool _hasEv = false;\n  bool _loading = true;\n  bool _saving = false;\n  bool _detailsLocked = false;\n  String _selectedCategory = 'Food Delivery';\n\n  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';\n  String _tr(String en, String hi) => _isHindi ? hi : en;\n\n  @override\n  void initState() {\n    super.initState();\n    _load();\n    _loadCompaniesFromMeta();\n  }\n\n  @override\n  void dispose() {\n    _riderIdController.dispose();\n    _cityController.dispose();\n    _otherCompanyController.dispose();\n    _evModelController.dispose();\n    _evNumberController.dispose();\n    _purchaseYearController.dispose();\n    super.dispose();\n  }\n\n  Future<void> _load() async {\n    final Shared
+<truncated 40676 bytes>
+--- REPLACEMENT CONTENT ---
+"class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScreen> {\n  static const List<String> _fallbackCompanies = <String>[\n    'Blinkit',\n    'Zepto',\n    'Swiggy',\n    'Zomato',\n    'Other',\n  ];\n  static const Map<String, List<String>> _companyCategorySeeds = <String, List<String>>{\n    'Food Delivery': <String>['Zomato', 'Swiggy', 'FNP'],\n    'Bike Taxi': <String>['Ola', 'Uber', 'Rapido'],\n    'Ecommerce': <String>['Zepto', 'Blinkit', 'BigBasket', 'Amazon', 'Flipkart'],\n    'Parcel': <String>['Porter', 'Borzo', 'Delhivery', 'Dunzo'],\n    'Other Services': <String>['Other'],\n  };\n  static const String _apiAccessKey = ApiConfig.apiAccessKey;\n\n  final TextEditingController _riderIdController = TextEditingController();\n  final TextEditingController _cityController = TextEditingController();\n  final TextEditingController _otherCompanyController = TextEditingController();\n  final TextEditingController _evModelController = TextEditingController();\n  final TextEditingController _evNumberController = TextEditingController();\n  final TextEditingController _purchaseYearController = TextEditingController();\n\n  List<String> _companies = List<String>.from(_fallbackCompanies);\n  String _company = _fallbackCompanies.first;\n  String _vehicleType = 'ev_scooter';\n  bool _hasEv = false;\n  bool _loading = true;\n  bool _saving = false;\n  bool _detailsLocked = false;\n  String _selectedCategory = 'Food Delivery';\n\n  int _currentStep = 0;\n  String _sessionUserName = 'Rider';\n  String _sessionUserAvatarUrl = '';\n\n  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';\n  String _tr(String en, String hi) => _isHindi ? hi : en;\n\n  @override\n  void initState() {\n    super.initState();\n    _load();\n    _loadCompaniesFromMeta();\n  }\n\n  @override\n  void dispose() {\n    _riderIdController.dispose();\n    _cityController.dispose();\n    _otherCompanyController.dispose();\n    _evModelController.dispose();\n    _evNumberController.dispose();\n    _purchaseY
+<truncated 60400 bytes>
+
+
+=========================================
+STEP 81: replace_file_content
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\task.md
+StartLine: 4, EndLine: 10
+--- TARGET CONTENT ---
+- [/] Design and implement the new `RiderOnboardingDetailsScreen` under `frontend/lib/screens/home_screen.dart`
+    - [ ] Create Step State tracker and dynamic stepper UI header
+    - [ ] Build Step 1: Category & Delivery Partner select grid with brand gradients and icons
+    - [ ] Build Step 2: Rider ID & City with Live Preview ID Card Badge
+    - [ ] Build Step 3: Vehicle details with EV/Petrol selector, Model chips, and Custom License Plate visualizer
+    - [ ] Add smooth transition animations and back navigation
+    - [ ] Perform field validation at each step and premium confirmation modal
+--- REPLACEMENT CONTENT ---
+- [x] Design and implement the new `RiderOnboardingDetailsScreen` under `frontend/lib/screens/home_screen.dart`
+    - [x] Create Step State tracker and dynamic stepper UI header
+    - [x] Build Step 1: Category & Delivery Partner select grid with brand gradients and icons
+    - [x] Build Step 2: Rider ID & City with Live Preview ID Card Badge
+    - [x] Build Step 3: Vehicle details with EV/Petrol selector, Model chips, and Custom License Plate visualizer
+    - [x] Add smooth transition animations and back navigation
+    - [x] Perform field validation at each step and premium confirmation modal
+
+
+=========================================
+STEP 93: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\walkthrough.md
+--- CODE CONTENT ---
+"# Walkthrough - Premium Rider Onboarding Redesign\n\nThis walkthrough summarizes the changes made to the Rider Onboarding Details flow (`RiderOnboardingDetailsScreen` in `frontend/lib/screens/home_screen.dart`).\n\n## Changes Made\n\n### 1. Multi-Step Form Wizard (`_currentStep` flow)\n- Divided the long, cluttered onboarding form into **3 beautifully animated steps**:\n  - **Step 1: Partner Selection**: Category pickers (Food Delivery, Bike Taxi, E-commerce, Parcel, Other) and branded selection grids with responsive visual styling.\n  - **Step 2: Identification & City**: Styled Rider ID text input, custom choice chips for Delhi NCR cities (Delhi, Noida, Gurgaon), and an **Interactive live ID card preview**.\n  - **Step 3: Vehicle Profile**: High-end custom switcher to toggle between Petrol and EV, suggested model chips (Ola, Ather, Splendor, Activa), registration number input, purchase year input, and an **Interactive live commercial license plate preview**.\n- Stepper Progress Timeline: An elegant top progress indicator that animates steps (`Work`, `Identity`, `Vehicle`) with vibrant orange-gold gradients.\n- Persistent bottom navigation bar with Back / Continue controls.\n\n### 2. Live Interactive ID Badge Preview\n- Displays the rider's profile image and name (fetched from SharedPreferences session).\n- Matches the selected company's brand color dynamically (e.g., Swiggy Orange, Zomato Red, Zepto Purple, Blinkit Yellow).\n- Renders the Rider ID in real-time.\n- Displays an \"Active Community Member\" and \"Verified\" status.\n\n### 3. Live Indian Commercial License Plate Preview\n- Dynamically shifts style based on fuel choice:\n  - **EV**: Black font on commercial green background.\n  - **Petrol**: Black font on commercial yellow background.\n- Left HSRP blue strip containing `IND` and the yellow emblem circle.\n- Renders the vehicle number in high-security registration plate font style in real-time as they type.\n\n---\n\n## Verification Results\n\n### Lint & Compile Checks\n- Removed compile syntax errors
+<truncated 664 bytes>
+
+
+=========================================
+STEP 110: replace_file_content
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\task.md
+StartLine: 11, EndLine: 13
+--- TARGET CONTENT ---
+- [/] Verify functionality (Light & Dark theme adaptability, validation rules, live preview inputs, persistent storage & API sync)
+- [ ] Create walkthrough artifact summary
+--- REPLACEMENT CONTENT ---
+- [x] Verify functionality (Light & Dark theme adaptability, validation rules, live preview inputs, persistent storage & API sync)
+- [x] Create walkthrough artifact summary
+
+
+=========================================
+STEP 125: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\frontend\lib\screens\home_screen.dart
+StartLine: 4622, EndLine: 4661
+--- TARGET CONTENT ---
+                AnimatedSwitcher(
+                        ).copyWith(counterText: ''),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: (_saving || _detailsLocked) ? null : _save,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : Icon(_detailsLocked ? Icons.lock_rounded : Icons.check_circle_rounded),
+                    label: Text(
+                      _detailsLocked
+                          ? _tr('Details submitted', 'à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤¹à¥‹ à¤—à¤ˆ')
+                          : (_saving
+                                ? _tr('Saving...', 'à¤¸¥‡à¤µ à¤¹à¥‹ à¤°à¤¹à¤¾ à¤¹à¥ˆ...')
+                                : _tr('Save onboarding details', 'à¤‘à¤¨à¤¬à¥‹à¤°à¥ à¤¡à¤¿à¤‚à¤— à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸¥‡à¤µ à¤•à¤°à¥‡à¤‚')),
+                    ),
+                    style: FilledButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: compact ? 12 : 14),
+                      backgroundColor: const Color(0xFF0B1F3A),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+--- REPLACEMENT CONTENT ---
+"                AnimatedSwitcher(\n                  duration: const Duration(milliseconds: 300),\n                  child: _currentStep == 0\n                      ? _buildStep0_PartnerSelection(isDark, categorized, compact)\n                      : _currentStep == 1\n                          ? _buildStep1_IdentityDetails(isDark, compact)\n                          : _buildStep2_VehicleDetails(isDark, compact),\n                ),\n              ],\n            ),\n          ),\n          // Persistent Floating Bottom Bar\n          Container(\n            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),\n            decoration: BoxDecoration(\n              color: isDark ? const Color(0xFF0F172A) : Colors.white,\n              border: Border.all(\n                color: isDark ? const Color(0x1F5B6B88) : const Color(0xFFE2E8F0),\n              ),\n              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),\n              boxShadow: const [\n                BoxShadow(\n                  color: Color(0x1F000000),\n                  blurRadius: 10,\n                  offset: Offset(0, -4),\n                ),\n              ],\n            ),\n            child: Row(\n              children: [\n                if (_currentStep > 0) ...[\n                  Expanded(\n                    child: OutlinedButton.icon(\n                      onPressed: () {\n                        setState(() {\n                          _currentStep--;\n                        });\n                      },\n                      icon: const Icon(Icons.arrow_back_rounded),\n                      label: Text(_tr('Back', 'पीछे')),\n                      style: OutlinedButton.styleFrom(\n                        padding: const EdgeInsets.symmetric(vertical: 14),\n                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),\n                      ),\n                    ),\n                  ),\n                  const SizedBox(width: 10),\n               
+<truncated 3092 bytes>
+
+
+=========================================
+STEP 129: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\frontend\lib\screens\home_screen.dart
+StartLine: 4622, EndLine: 4661
+--- TARGET CONTENT ---
+                AnimatedSwitcher(
+                        ).copyWith(counterText: ''),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: (_saving || _detailsLocked) ? null : _save,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : Icon(_detailsLocked ? Icons.lock_rounded : Icons.check_circle_rounded),
+                    label: Text(
+                      _detailsLocked
+                          ? _tr('Details submitted', 'à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤¹à¥‹ à¤—à¤ˆ')
+                          : (_saving
+                                ? _tr('Saving...', 'à¤¸à¥‡à¤µ à¤¹à¥‹ à¤°à¤¹à¤¾ à¤¹à¥ˆ...')
+                                : _tr('Save onboarding details', 'à¤‘à¤¨à¤¬à¥‹à¤°à¥ à¤¡à¤¿à¤‚à¤— à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸à¥‡à¤µ à¤•à¤°à¥‡à¤‚')),
+                    ),
+                    style: FilledButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: compact ? 12 : 14),
+                      backgroundColor: const Color(0xFF0B1F3A),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+--- REPLACEMENT CONTENT ---
+"                AnimatedSwitcher(\n                  duration: const Duration(milliseconds: 300),\n                  child: _currentStep == 0\n                      ? _buildStep0_PartnerSelection(isDark, categorized, compact)\n                      : _currentStep == 1\n                          ? _buildStep1_IdentityDetails(isDark, compact)\n                          : _buildStep2_VehicleDetails(isDark, compact),\n                ),\n              ],\n            ),\n          ),\n          // Persistent Floating Bottom Bar\n          Container(\n            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),\n            decoration: BoxDecoration(\n              color: isDark ? const Color(0xFF0F172A) : Colors.white,\n              border: Border.all(\n                color: isDark ? const Color(0x1F5B6B88) : const Color(0xFFE2E8F0),\n              ),\n              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),\n              boxShadow: const [\n                BoxShadow(\n                  color: Color(0x1F000000),\n                  blurRadius: 10,\n                  offset: Offset(0, -4),\n                ),\n              ],\n            ),\n            child: Row(\n              children: [\n                if (_currentStep > 0) ...[\n                  Expanded(\n                    child: OutlinedButton.icon(\n                      onPressed: () {\n                        setState(() {\n                          _currentStep--;\n                        });\n                      },\n                      icon: const Icon(Icons.arrow_back_rounded),\n                      label: Text(_tr('Back', 'पीछे')),\n                      style: OutlinedButton.styleFrom(\n                        padding: const EdgeInsets.symmetric(vertical: 14),\n                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),\n                      ),\n                    ),\n                  ),\n                  const SizedBox(width: 10),\n               
+<truncated 3092 bytes>
+
+
+=========================================
+STEP 137: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\frontend\lib\screens\home_screen.dart
+StartLine: 3226, EndLine: 4737
+--- TARGET CONTENT ---
+"class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScreen> {\n  static const List<String> _fallbackCompanies = <String>[\n    'Blinkit',\n    'Zepto',\n    'Swiggy',\n    'Zomato',\n    'Other',\n  ];\n  static const Map<String, List<String>> _companyCategorySeeds = <String, List<String>>{\n    'Food Delivery': <String>['Zomato', 'Swiggy', 'FNP'],\n    'Bike Taxi': <String>['Ola', 'Uber', 'Rapido'],\n    'Ecommerce': <String>['Zepto', 'Blinkit', 'BigBasket', 'Amazon', 'Flipkart'],\n    'Parcel': <String>['Porter', 'Borzo', 'Delhivery', 'Dunzo'],\n    'Other Services': <String>['Other'],\n  };\n  static const String _apiAccessKey = ApiConfig.apiAccessKey;\n\n  final TextEditingController _riderIdController = TextEditingController();\n  final TextEditingController _cityController = TextEditingController();\n  final TextEditingController _otherCompanyController = TextEditingController();\n  final TextEditingController _evModelController = TextEditingController();\n  final TextEditingController _evNumberController = TextEditingController();\n  final TextEditingController _purchaseYearController = TextEditingController();\n\n  List<String> _companies = List<String>.from(_fallbackCompanies);\n  String _company = _fallbackCompanies.first;\n  String _vehicleType = 'ev_scooter';\n  bool _hasEv = false;\n  bool _loading = true;\n  bool _saving = false;\n  bool _detailsLocked = false;\n  String _selectedCategory = 'Food Delivery';\n\n  int _currentStep = 0;\n  String _sessionUserName = 'Rider';\n  String _sessionUserAvatarUrl = '';\n\n  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';\n  String _tr(String en, String hi) => _isHindi ? hi : en;\n\n  @override\n  void initState() {\n    super.initState();\n    _load();\n    _loadCompaniesFromMeta();\n  }\n\n  @override\n  void dispose() {\n    _riderIdController.dispose();\n    _cityController.dispose();\n    _otherCompanyController.dispose();\n    _evModelController.dispose();\n    _evNumberController.dispose();\n    _purchaseY
+<truncated 60400 bytes>
+--- REPLACEMENT CONTENT ---
+"class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScreen> {\n  static const List<String> _fallbackCompanies = <String>[\n    'Blinkit',\n    'Zepto',\n    'Swiggy',\n    'Zomato',\n    'Other',\n  ];\n  static const Map<String, List<String>> _companyCategorySeeds = <String, List<String>>{\n    'Food Delivery': <String>['Zomato', 'Swiggy', 'FNP'],\n    'Bike Taxi': <String>['Ola', 'Uber', 'Rapido'],\n    'Ecommerce': <String>['Zepto', 'Blinkit', 'BigBasket', 'Amazon', 'Flipkart'],\n    'Parcel': <String>['Porter', 'Borzo', 'Delhivery', 'Dunzo'],\n    'Other Services': <String>['Other'],\n  };\n  static const String _apiAccessKey = ApiConfig.apiAccessKey;\n\n  final TextEditingController _riderIdController = TextEditingController();\n  final TextEditingController _cityController = TextEditingController();\n  final TextEditingController _otherCompanyController = TextEditingController();\n  final TextEditingController _evModelController = TextEditingController();\n  final TextEditingController _evNumberController = TextEditingController();\n  final TextEditingController _purchaseYearController = TextEditingController();\n\n  List<String> _companies = List<String>.from(_fallbackCompanies);\n  String _company = _fallbackCompanies.first;\n  String _vehicleType = 'ev_scooter';\n  bool _hasEv = false;\n  bool _loading = true;\n  bool _saving = false;\n  bool _detailsLocked = false;\n  String _selectedCategory = 'Food Delivery';\n\n  int _currentStep = 0;\n  String _sessionUserName = 'Rider';\n  String _sessionUserAvatarUrl = '';\n\n  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';\n  String _tr(String en, String hi) => _isHindi ? hi : en;\n\n  @override\n  void initState() {\n    super.initState();\n    _load();\n    _loadCompaniesFromMeta();\n  }\n\n  @override\n  void dispose() {\n    _riderIdController.dispose();\n    _cityController.dispose();\n    _otherCompanyController.dispose();\n    _evModelController.dispose();\n    _evNumberController.dispose();\n    _purchaseY
+<truncated 60400 bytes>
+
+
+=========================================
+STEP 159: multi_replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\frontend\lib\screens\home_screen.dart
+Chunk 0:
+
+
+=========================================
+STEP 163: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\frontend\lib\screens\home_screen.dart
+StartLine: 4734, EndLine: 4782
+--- TARGET CONTENT ---
+        ],
+      ),
+    );
+  }
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                AnimatedSwitcher(
+                        ).copyWith(counterText: ''),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: (_saving || _detailsLocked) ? null : _save,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : Icon(_detailsLocked ? Icons.lock_rounded : Icons.check_circle_rounded),
+                    label: Text(
+                      _detailsLocked
+                          ? _tr('Details submitted', 'जानकारी सबमिट हो गई')
+                          : (_saving
+                                ? _tr('Saving...', 'सेव हो रहा है...')
+                                : _tr('Save onboarding details', 'ऑनबोर्डिंग जानकारी सेव करें')),
+                    ),
+                    style: FilledButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: compact ? 12 : 14),
+                      backgroundColor: const Color(0xFF0B1F3A),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+--- REPLACEMENT CONTENT ---
+        ],
+      ),
+    );
+  }
+}
+
+
+=========================================
+STEP 167: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\frontend\lib\screens\home_screen.dart
+StartLine: 4737, EndLine: 4782
+--- TARGET CONTENT ---
+  }
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                AnimatedSwitcher(
+                        ).copyWith(counterText: ''),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: (_saving || _detailsLocked) ? null : _save,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : Icon(_detailsLocked ? Icons.lock_rounded : Icons.check_circle_rounded),
+                    label: Text(
+                      _detailsLocked
+                          ? _tr('Details submitted', 'जानकारी सबमिट हो गई')
+                          : (_saving
+                                ? _tr('Saving...', 'सेव हो रहा है...')
+                                : _tr('Save onboarding details', 'ऑनबोर्डिंग जानकारी सेव करें')),
+                    ),
+                    style: FilledButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: compact ? 12 : 14),
+                      backgroundColor: const Color(0xFF0B1F3A),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+--- REPLACEMENT CONTENT ---
+  }
+}
+
+
+=========================================
+STEP 202: multi_replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\frontend\lib\screens\home_screen.dart
+Chunk 0:
+  StartLine: 3821, EndLine: 3825
+  --- TARGET ---
+                      fontWeight: isActive ? FontWeight.w950 : FontWeight.w700,
+  --- REPLACEMENT ---
+                      fontWeight: isActive ? FontWeight.w900 : FontWeight.w700,
+Chunk 1:
+  StartLine: 3988, EndLine: 3993
+  --- TARGET ---
+                              fontWeight: FontWeight.w850,
+  --- REPLACEMENT ---
+                              fontWeight: FontWeight.w800,
+Chunk 2:
+  StartLine: 4263, EndLine: 4267
+  --- TARGET ---
+                           fontWeight: isSelected ? FontWeight.w900 : FontWeight.w750,
+  --- REPLACEMENT ---
+                           fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+Chunk 3:
+  StartLine: 4487, EndLine: 4491
+  --- TARGET ---
+                labelStyle: const TextStyle(fontWeight: FontWeight.w750, fontSize: 12),
+  --- REPLACEMENT ---
+                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+
+
+=========================================
+STEP 261: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\backend\apps\posts\models.py
+StartLine: 166, EndLine: 168
+--- TARGET CONTENT ---
+    def __str__(self) -> str:
+        return f"{self.kind} on {self.post_id} by {self.user_id}"
+--- REPLACEMENT CONTENT ---
+    def __str__(self) -> str:
+        return f"{self.kind} on {self.post_id} by {self.user_id}"
+
+
+class OnboardingCategory(models.Model):
+    """Configurable work categories for rider onboarding."""
+
+    title = models.CharField(max_length=80, unique=True)
+    description = models.CharField(max_length=255, blank=True)
+    icon_name = models.CharField(
+        max_length=80,
+        blank=True,
+        help_text="Flutter icon name or identifier (e.g. restaurant_menu_rounded)",
+    )
+    accent_color = models.CharField(
+        max_length=10,
+        default="#FC8019",
+        help_text="Hex color code (e.g. #FC8019)",
+    )
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ["sort_order", "title"]
+        verbose_name = "onboarding category"
+        verbose_name_plural = "onboarding categories"
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class OnboardingCompany(models.Model):
+    """Configurable company brands under each category."""
+
+    category = models.ForeignKey(
+        OnboardingCategory,
+        on_delete=models.CASCADE,
+        related_name="companies",
+    )
+    label = models.CharField(max_length=120, unique=True)
+    logo_url = models.URLField(
+        blank=True,
+        null=True,
+        help_text="Optional web URL for company logo/icon",
+    )
+    brand_color = models.CharField(
+        max_length=10,
+        default="#000000",
+        help_text="Hex color code (e.g. #E23744)",
+    )
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        ordering = ["sort_order", "label"]
+        verbose_name = "onboarding company"
+        verbose_name_plural = "onboarding companies"
+
+    def __str__(self) -> str:
+        return f"{self.label} ({self.category.title})"
+
+
+=========================================
+STEP 263: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\backend\apps\posts\admin.py
+StartLine: 3, EndLine: 53
+--- TARGET CONTENT ---
+from apps.posts.models import Post, PostCityOption, PostComment, PostCompanyOption, PostIssueTypeOption, PostReaction
+--- REPLACEMENT CONTENT ---
+from apps.posts.models import OnboardingCategory, OnboardingCompany, Post, PostCityOption, PostComment, PostCompanyOption, PostIssueTypeOption, PostReaction
+
+
+class OnboardingCompanyInline(admin.TabularInline):
+    model = OnboardingCompany
+    extra = 1
+
+
+@admin.register(OnboardingCategory)
+class OnboardingCategoryAdmin(admin.ModelAdmin):
+    list_display = ("title", "description", "icon_name", "accent_color", "sort_order", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("title", "description")
+    inlines = [OnboardingCompanyInline]
+    ordering = ("sort_order", "title")
+
+
+@admin.register(OnboardingCompany)
+class OnboardingCompanyAdmin(admin.ModelAdmin):
+    list_display = ("label", "category", "brand_color", "sort_order", "is_active")
+    list_filter = ("is_active", "category")
+    search_fields = ("label",)
+    ordering = ("sort_order", "label")
+
+
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ("id", "author", "city", "company", "is_anonymous", "is_deleted", "created_at")
+    list_filter = ("is_deleted", "is_anonymous", "city", "company")
+    search_fields = ("body", "author__username", "author__email")
+    readonly_fields = ("created_at", "updated_at", "deleted_at")
+    raw_id_fields = ("author",)
+
+
+=========================================
+STEP 267: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\backend\apps\posts\admin.py
+StartLine: 76, EndLine: 84
+--- TARGET CONTENT ---
+
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ("id", "author", "city", "company", "is_anonymous", "is_deleted", "created_at")
+    list_filter = ("is_deleted", "is_anonymous", "city", "company")
+    search_fields = ("body", "author__username", "author__email")
+    readonly_fields = ("created_at", "updated_at", "deleted_at")
+    raw_id_fields = ("author",)
+
+--- REPLACEMENT CONTENT ---
+
+
+
+=========================================
+STEP 271: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\backend\apps\posts\api.py
+StartLine: 14, EndLine: 20
+--- TARGET CONTENT ---
+from apps.posts.models import Post, PostCityOption, PostComment, PostCompanyOption, PostIssueTypeOption, PostReaction
+--- REPLACEMENT CONTENT ---
+from apps.posts.models import OnboardingCategory, OnboardingCompany, Post, PostCityOption, PostComment, PostCompanyOption, PostIssueTypeOption, PostReaction
+
+
+=========================================
+STEP 275: replace_file_content
+=========================================
+TargetFile: c:\Users\Admin\Desktop\assisment\app_codes\backend\apps\posts\api.py
+StartLine: 93, EndLine: 98
+--- TARGET CONTENT ---
+class PostMetaResponse(BaseModel):
+    cities: list[PostMetaItem]
+    companies: list[PostMetaItem]
+    issue_types: list[PostMetaItem]
+
+--- REPLACEMENT CONTENT ---
+class PostMetaResponse(BaseModel):
+    cities: list[PostMetaItem]
+    companies: list[PostMetaItem]
+    issue_types: list[PostMetaItem]
+
+
+class OnboardingCompanyOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    label: str
+    logo_url: str | None = None
+    brand_color: str
+
+
+class OnboardingCategoryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    description: str
+    icon_name: str
+    accent_color: str
+    companies: list[OnboardingCompanyOut]
+
+
+
+=========================================
+STEP 283: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\scratch\update_api.py
+--- CODE CONTENT ---
+"import os\n\npath = r'c:\\Users\\Admin\\Desktop\\assisment\\app_codes\\backend\\apps\\posts\\api.py'\nwith open(path, 'r', encoding='utf-8') as f:\n    code = f.read()\n\n# 1. Replace imports\nold_import = 'from apps.posts.models import Post, PostCityOption, PostComment, PostCompanyOption, PostIssueTypeOption, PostReaction'\nnew_import = 'from apps.posts.models import OnboardingCategory, OnboardingCompany, Post, PostCityOption, PostComment, PostCompanyOption, PostIssueTypeOption, PostReaction'\nif old_import in code:\n    code = code.replace(old_import, new_import)\n    print(\"Imports updated.\")\n\n# 2. Insert Pydantic schemas after PostMetaResponse\npydantic_target = \"\"\"class PostMetaResponse(BaseModel):\n    cities: list[PostMetaItem]\n    companies: list[PostMetaItem]\n    issue_types: list[PostMetaItem]\"\"\"\n\npydantic_insert = \"\"\"class OnboardingCompanyOut(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n\n    id: int\n    label: str\n    logo_url: str | None = None\n    brand_color: str\n\n\nclass OnboardingCategoryOut(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n\n    id: int\n    title: str\n    description: str\n    icon_name: str\n    accent_color: str\n    companies: list[OnboardingCompanyOut]\"\"\"\n\nif pydantic_target in code:\n    code = code.replace(pydantic_target, pydantic_target + '\\n\\n\\n' + pydantic_insert)\n    print(\"Pydantic schemas inserted.\")\n\n# 3. Insert endpoint after post_meta\nendpoint_target = \"\"\"@router.get(\"/posts/meta\", response_model=PostMetaResponse)\ndef post_meta() -> PostMetaResponse:\n    cities = [\n        PostMetaItem(id=row.id, label=row.label)\n        for row in PostCityOption.objects.filter(is_active=True).order_by(\"sort_order\", \"label\")\n    ]\n    companies = [\n        PostMetaItem(id=row.id, label=row.label)\n        for row in PostCompanyOption.objects.filter(is_active=True).order_by(\"sort_order\", \"label\")\n    ]\n    issue_types = [\n        PostMetaItem(id=row.id, label=row.label)\n        for
+<truncated 964 bytes>
+
+
+=========================================
+STEP 293: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\scratch\seed_onboarding.py
+--- CODE CONTENT ---
+"import os\nimport sys\nimport django\n\n# Setup Django environment\nsys.path.append(r'c:\\Users\\Admin\\Desktop\\assisment\\app_codes\\backend')\nos.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')\ndjango.setup()\n\nfrom apps.posts.models import OnboardingCategory, OnboardingCompany\n\ndef seed():\n    print(\"Seeding onboarding data...\")\n    \n    # Define categories\n    categories_data = [\n        {\n            \"title\": \"Food Delivery\",\n            \"description\": \"Order from your favorite restaurants & get it delivered\",\n            \"icon_name\": \"restaurant_menu_rounded\",\n            \"accent_color\": \"#FC8019\",\n            \"sort_order\": 1,\n            \"companies\": [\n                {\"label\": \"Zomato\", \"brand_color\": \"#E23744\", \"logo_url\": \"https://raw.githubusercontent.com/pawan941394/Riders-communities/main/assets/zomato.png\", \"sort_order\": 1},\n                {\"label\": \"Swiggy\", \"brand_color\": \"#FC8019\", \"logo_url\": \"https://raw.githubusercontent.com/pawan941394/Riders-communities/main/assets/swiggy.png\", \"sort_order\": 2},\n                {\"label\": \"Popeyes\", \"brand_color\": \"#F15A24\", \"logo_url\": \"https://raw.githubusercontent.com/pawan941394/Riders-communities/main/assets/popeyes.png\", \"sort_order\": 3},\n                {\"label\": \"FNP\", \"brand_color\": \"#007E3A\", \"logo_url\": \"https://raw.githubusercontent.com/pawan941394/Riders-communities/main/assets/fnp.png\", \"sort_order\": 4},\n            ]\n        },\n        {\n            \"title\": \"Bike Taxi\",\n            \"description\": \"Book a ride & travel to your destination\",\n            \"icon_name\": \"motorcycle_rounded\",\n            \"accent_color\": \"#10B981\", # Teal/Green\n            \"sort_order\": 2,\n            \"companies\": [\n                {\"label\": \"Ola\", \"brand_color\": \"#D6EC1E\", \"logo_url\": \"https://raw.githubusercontent.com/pawan941394/Riders-communities/main/assets/ola.png\", \"sort_order\": 1},\n                {\"l
+<truncated 2691 bytes>
+
+
+=========================================
+STEP 307: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\scratch\update_frontend.py
+--- CODE CONTENT ---
+"import os\n\npath = r'c:\\Users\\Admin\\Desktop\\assisment\\app_codes\\frontend\\lib\\screens\\home_screen.dart'\nwith open(path, 'r', encoding='utf-8') as f:\n    code = f.read()\n\n# 1. Update _companyBrandColor to support Popeyes and FNP\nbrand_color_old = \"if (c.contains('zomato')) return const Color(0xFFE23744);\"\nbrand_color_new = \"\"\"if (c.contains('zomato')) return const Color(0xFFE23744);\n    if (c.contains('popeyes')) return const Color(0xFFF15A24);\n    if (c.contains('fnp')) return const Color(0xFF007E3A);\"\"\"\n\nif brand_color_old in code:\n    code = code.replace(brand_color_old, brand_color_new)\n    print(\"Brand colors updated.\")\n\n# 2. Add state variable and replace initState\nold_initstate = \"\"\"  @override\n  void initState() {\n    super.initState();\n    _load();\n    _loadCompaniesFromMeta();\n  }\"\"\"\n\nnew_initstate = \"\"\"  List<dynamic> _onboardingCategories = <dynamic>[];\n\n  @override\n  void initState() {\n    super.initState();\n    _load();\n    _loadOnboardingData();\n  }\"\"\"\n\nif old_initstate in code:\n    code = code.replace(old_initstate, new_initstate)\n    print(\"initState and onboarding state variable added.\")\n\n# 3. Add new helper methods right before Widget build\nbuild_target = \"\"\"  @override\n  Widget build(BuildContext context) {\"\"\"\n\nhelper_methods = \"\"\"  Future<void> _loadOnboardingData() async {\n    try {\n      final Uri uri = Uri.parse('${ApiConfig.apiBaseUrl}/api/v1/posts/onboarding');\n      final http.Response res = await http.get(\n        uri,\n        headers: <String, String>{'X-API-Key': _apiAccessKey},\n      );\n      if (res.statusCode == 200) {\n        final List<dynamic> decoded = jsonDecode(res.body);\n        if (decoded.isNotEmpty && mounted) {\n          setState(() {\n            _onboardingCategories = decoded;\n          });\n          return;\n        }\n      }\n    } catch (_) {\n      // Fallback below\n    }\n    _loadFallbackOnboarding();\n  }\n\n  void _loadFallbackOnboarding() {\n    if (!mounted) retur
+<truncated 5116 bytes>
+
+
+=========================================
+STEP 313: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\scratch\update_frontend.py
+--- CODE CONTENT ---
+"import os\n\npath = r'c:\\Users\\Admin\\Desktop\\assisment\\app_codes\\frontend\\lib\\screens\\home_screen.dart'\nwith open(path, 'r', encoding='utf-8') as f:\n    code = f.read()\n\n# 1. Update _companyBrandColor to support Popeyes and FNP\nbrand_color_old = \"if (c.contains('zomato')) return const Color(0xFFE23744);\"\nbrand_color_new = \"\"\"if (c.contains('zomato')) return const Color(0xFFE23744);\n    if (c.contains('popeyes')) return const Color(0xFFF15A24);\n    if (c.contains('fnp')) return const Color(0xFF007E3A);\"\"\"\n\nif brand_color_old in code:\n    code = code.replace(brand_color_old, brand_color_new)\n    print(\"Brand colors updated.\")\n\n# 2. Add state variable and replace initState\nold_initstate = \"\"\"  @override\n  void initState() {\n    super.initState();\n    _load();\n    _loadCompaniesFromMeta();\n  }\"\"\"\n\nnew_initstate = \"\"\"  List<dynamic> _onboardingCategories = <dynamic>[];\n\n  @override\n  void initState() {\n    super.initState();\n    _load();\n    _loadOnboardingData();\n  }\"\"\"\n\nif old_initstate in code:\n    code = code.replace(old_initstate, new_initstate)\n    print(\"initState and onboarding state variable added.\")\n\n# 3. Add new helper methods right before Widget build\nbuild_target = \"\"\"  @override\n  Widget build(BuildContext context) {\"\"\"\n\nhelper_methods = \"\"\"  Future<void> _loadOnboardingData() async {\n    try {\n      final Uri uri = Uri.parse('${ApiConfig.apiBaseUrl}/api/v1/posts/onboarding');\n      final http.Response res = await http.get(\n        uri,\n        headers: <String, String>{'X-API-Key': _apiAccessKey},\n      );\n      if (res.statusCode == 200) {\n        final List<dynamic> decoded = jsonDecode(res.body);\n        if (decoded.isNotEmpty && mounted) {\n          setState(() {\n            _onboardingCategories = decoded;\n          });\n          return;\n        }\n      }\n    } catch (_) {\n      // Fallback below\n    }\n    _loadFallbackOnboarding();\n  }\n\n  void _loadFallbackOnboarding() {\n    if (!mounted) retur
+<truncated 19103 bytes>
+
+
+=========================================
+STEP 327: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\scratch\update_frontend_safe.py
+--- CODE CONTENT ---
+"import os\n\npath = r'c:\\Users\\Admin\\Desktop\\assisment\\app_codes\\frontend\\lib\\screens\\home_screen.dart'\nwith open(path, 'r', encoding='utf-8') as f:\n    code = f.read()\n\n# 1. Update _companyBrandColor to support Popeyes and FNP (very specific match)\nbrand_color_old = \"if (c.contains('zomato')) return const Color(0xFFE23744);\"\nbrand_color_new = \"\"\"if (c.contains('zomato')) return const Color(0xFFE23744);\n    if (c.contains('popeyes')) return const Color(0xFFF15A24);\n    if (c.contains('fnp')) return const Color(0xFF007E3A);\"\"\"\n\nif brand_color_old in code:\n    code = code.replace(brand_color_old, brand_color_new)\n    print(\"Brand colors updated successfully.\")\n\n# 2. Add state variable and replace initState (very specific match)\nold_state_header = \"\"\"class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScreen> {\n  static const List<String> _fallbackCompanies = <String>[\n    'Blinkit',\n    'Zepto',\n    'Swiggy',\n    'Zomato',\n    'Other',\n  ];\"\"\"\n\nnew_state_header = \"\"\"class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScreen> {\n  static const List<String> _fallbackCompanies = <String>[\n    'Blinkit',\n    'Zepto',\n    'Swiggy',\n    'Zomato',\n    'Other',\n  ];\n  List<dynamic> _onboardingCategories = <dynamic>[];\"\"\"\n\nif old_state_header in code:\n    code = code.replace(old_state_header, new_state_header)\n    print(\"Onboarding categories state variable added.\")\n\nold_initstate = \"\"\"  @override\n  void initState() {\n    super.initState();\n    _load();\n    _loadCompaniesFromMeta();\n  }\"\"\"\n\nnew_initstate = \"\"\"  @override\n  void initState() {\n    super.initState();\n    _load();\n    _loadOnboardingData();\n  }\"\"\"\n\nif old_initstate in code:\n    code = code.replace(old_initstate, new_initstate)\n    print(\"initState updated to load onboarding data.\")\n\n# 3. Define helper methods and new Step 0 Partner Selection UI\nhelper_and_ui = \"\"\"  Future<void> _loadOnboardingData() async {
+<truncated 19506 bytes>
+
+
+=========================================
+STEP 339: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\scratch\find_previous_code.py
+--- CODE CONTENT ---
+import json
+
+log_path = r'C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\.system_generated\logs\transcript.jsonl'
+print(f"Reading logs from {log_path}...")
+
+with open(log_path, 'r', encoding='utf-8') as f:
+    for line in f:
+        try:
+            data = json.loads(line)
+            # Look for tool calls that modified home_screen.dart
+            if 'tool_calls' in data:
+                for tc in data['tool_calls']:
+                    args = tc.get('arguments', {})
+                    if 'TargetFile' in args and 'home_screen.dart' in args['TargetFile']:
+                        # Print step details
+                        print(f"Step {data.get('step_index')}: {tc.get('name')} to {args.get('TargetFile')}")
+                        if 'ReplacementContent' in args:
+                            content = args['ReplacementContent']
+                            print(f"  Content length: {len(content)}")
+                            # If it's the big multi-step change, save it!
+                            if 'class _RiderOnboardingDetailsScreenState' in content:
+                                print("  FOUND ONBOARDING STATE CODE!")
+                                with open('found_onboarding.dart', 'w', encoding='utf-8') as out:
+                                    out.write(content)
+                                print("  Saved to found_onboarding.dart")
+        except Exception as e:
+            pass
+
+
+
+=========================================
+STEP 353: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\scratch\find_previous_code.py
+--- CODE CONTENT ---
+import json
+
+log_path = r'C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\.system_generated\logs\transcript.jsonl'
+print(f"Reading logs from {log_path}...")
+
+with open(log_path, 'r', encoding='utf-8') as f:
+    for line in f:
+        try:
+            data = json.loads(line)
+            # Print any step that has home_screen.dart in the raw string
+            line_str = json.dumps(data)
+            if 'home_screen.dart' in line_str:
+                step_idx = data.get('step_index')
+                stype = data.get('type')
+                print(f"Step {step_idx}: Type={stype}")
+                
+                # Check tool calls
+                if 'tool_calls' in data:
+                    for tc in data['tool_calls']:
+                        name = tc.get('name')
+                        args = tc.get('arguments', {})
+                        print(f"  Tool={name}")
+                        for k, v in args.items():
+                            if isinstance(v, str) and 'home_screen.dart' in v:
+                                print(f"    Arg {k}: {v[:100]}")
+                            if k == 'ReplacementContent' or k == 'CodeContent':
+                                print(f"    Found content length: {len(v)}")
+                                if '_RiderOnboardingDetailsScreenState' in v and '_currentStep' in v:
+                                    print("    *** FOUND WIZARD CODE! ***")
+                                    with open('extracted_wizard.dart', 'w', encoding='utf-8') as out:
+                                        out.write(v)
+                                    print("    Saved to extracted_wizard.dart")
+        except Exception as e:
+            print("Error parsing line:", e)
+
+
+
+=========================================
+STEP 357: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\scratch\dump_replacements.py
+--- CODE CONTENT ---
+"import json\n\nlog_path = r'C:\\Users\\Admin\\.gemini\\antigravity\\brain\\4c34767f-e8bd-46d1-bce2-4ea24acffd67\\.system_generated\\logs\\transcript.jsonl'\n\nout_path = 'replacements_log.txt'\nwith open(out_path, 'w', encoding='utf-8') as out:\n    with open(log_path, 'r', encoding='utf-8') as f:\n        for line in f:\n            try:\n                data = json.loads(line)\n                if 'tool_calls' in data:\n                    for tc in data['tool_calls']:\n                        name = tc.get('name')\n                        if name in ('replace_file_content', 'multi_replace_file_content'):\n                            step = data.get('step_index')\n                            out.write(f\"\\n\\n=========================================\\n\")\n                            out.write(f\"STEP {step}: {name}\\n\")\n                            out.write(f\"=========================================\\n\")\n                            args = tc.get('arguments', {})\n                            \n                            if name == 'replace_file_content':\n                                out.write(f\"TargetFile: {args.get('TargetFile')}\\n\")\n                                out.write(f\"StartLine: {args.get('StartLine')}, EndLine: {args.get('EndLine')}\\n\")\n                                out.write(\"--- TARGET CONTENT ---\\n\")\n                                out.write(args.get('TargetContent', ''))\n                                out.write(\"\\n--- REPLACEMENT CONTENT ---\\n\")\n                                out.write(args.get('ReplacementContent', ''))\n                                out.write(\"\\n\")\n                            else:\n                                out.write(f\"TargetFile: {args.get('TargetFile')}\\n\")\n                                chunks = args.get('ReplacementChunks', [])\n                                for idx, chunk in enumerate(chunks):\n                                    out.write(f\"Chunk {idx}:\\n\")\n                                    out.write(f\"  StartL
+<truncated 553 bytes>
+
+
+=========================================
+STEP 361: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\scratch\find_wizard_step.py
+--- CODE CONTENT ---
+with open('replacements_log.txt', 'r', encoding='utf-8') as f:
+    text = f.read()
+
+import re
+steps = re.split(r'=========================================\n', text)
+print(f"Total steps found: {len(steps)}")
+
+for s in steps:
+    if 'STEP' in s:
+        header = s.split('\n')[0]
+        # Check if it has the wizard UI code
+        if '_currentStep' in s and '_RiderOnboardingDetailsScreenState' in s:
+            print(f"Match found in: {header}")
+            # Write it as a separate file
+            with open('found_wizard_step.txt', 'w', encoding='utf-8') as out:
+                out.write(s)
+            print("Saved to found_wizard_step.txt")
+
+
+
+=========================================
+STEP 365: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\scratch\find_wizard_step.py
+--- CODE CONTENT ---
+with open('replacements_log.txt', 'r', encoding='utf-8') as f:
+    text = f.read()
+
+import re
+steps = re.split(r'=========================================\n', text)
+print(f"Total steps found: {len(steps)}")
+
+for s in steps:
+    if 'STEP' in s:
+        header = s.split('\n')[0]
+        # Check if it has any indicator of the stepped wizard or license plate
+        keywords = ['_currentStep', '_buildStepIndicator', 'EV green vs Petrol yellow', 'license plate', 'Zomato Red', 'Swiggy Orange']
+        matched_keys = [k for k in keywords if k in s]
+        if matched_keys:
+            print(f"Match found in: {header} (Matched: {matched_keys})")
+            with open(f'found_step_{header.replace(":", "_").replace(" ", "_")}.txt', 'w', encoding='utf-8') as out:
+                out.write(s)
+            print(f"  Saved to file.")
+
+
+
+=========================================
+STEP 373: write_to_file
+=========================================
+TargetFile: C:\Users\Admin\.gemini\antigravity\brain\4c34767f-e8bd-46d1-bce2-4ea24acffd67\scratch\dump_replacements.py
+--- CODE CONTENT ---
+"import json\n\nlog_path = r'C:\\Users\\Admin\\.gemini\\antigravity\\brain\\4c34767f-e8bd-46d1-bce2-4ea24acffd67\\.system_generated\\logs\\transcript.jsonl'\n\nout_path = 'replacements_log.txt'\nwith open(out_path, 'w', encoding='utf-8') as out:\n    with open(log_path, 'r', encoding='utf-8') as f:\n        for line in f:\n            try:\n                data = json.loads(line)\n                if 'tool_calls' in data:\n                    for tc in data['tool_calls']:\n                        name = tc.get('name')\n                        if name in ('replace_file_content', 'multi_replace_file_content', 'write_to_file'):\n                            step = data.get('step_index')\n                            out.write(f\"\\n\\n=========================================\\n\")\n                            out.write(f\"STEP {step}: {name}\\n\")\n                            out.write(f\"=========================================\\n\")\n                            \n                            # Note: it's tc.get('args')\n                            raw_args = tc.get('args', {})\n                            args = {}\n                            for k, v in raw_args.items():\n                                try:\n                                    args[k] = json.loads(v)\n                                except Exception:\n                                    args[k] = v\n                            \n                            if name == 'replace_file_content':\n                                out.write(f\"TargetFile: {args.get('TargetFile')}\\n\")\n                                out.write(f\"StartLine: {args.get('StartLine')}, EndLine: {args.get('EndLine')}\\n\")\n                                out.write(\"--- TARGET CONTENT ---\\n\")\n                                out.write(args.get('TargetContent', ''))\n                                out.write(\"\\n--- REPLACEMENT CONTENT ---\\n\")\n                                out.write(args.get('ReplacementContent', ''))\n                                out.write(\"\\n\
+<truncated 1334 bytes>

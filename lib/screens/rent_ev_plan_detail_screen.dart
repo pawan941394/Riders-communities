@@ -116,7 +116,7 @@ class _RentEvPlanDetailScreenState extends State<RentEvPlanDetailScreen> {
     final Color themeAccent = isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFF9EA),
+      backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF),
       appBar: AppBar(
         title: Text(plan.companyName),
       ),

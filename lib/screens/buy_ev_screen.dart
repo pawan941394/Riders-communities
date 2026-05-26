@@ -12,11 +12,13 @@ class BuyEvScreen extends StatefulWidget {
     required this.apiBaseUrl,
     required this.apiAccessKey,
     required this.accessToken,
+    this.languageCode = 'en',
   });
 
   final String apiBaseUrl;
   final String apiAccessKey;
   final String accessToken;
+  final String languageCode;
 
   @override
   State<BuyEvScreen> createState() => _BuyEvScreenState();
@@ -28,6 +30,8 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
   List<BuyEvPlan> _plans = <BuyEvPlan>[];
   bool _loading = true;
   String? _error;
+  bool get _isHindi => widget.languageCode.toLowerCase().startsWith('hi');
+  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   void initState() {
@@ -73,7 +77,10 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
       }
       setState(() {
         _loading = false;
-        _error = 'Could not reach the server. Check your connection and try again.';
+        _error = _tr(
+          'Could not reach the server. Check your connection and try again.',
+          'सर्वर से कनेक्ट नहीं हो पाया। अपना कनेक्शन चेक करें और फिर कोशिश करें।',
+        );
       });
     }
   }
@@ -105,7 +112,7 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final String q = _search.text;
-    const Color lightPageBg = Color(0xFFFFF9EA);
+    const Color lightPageBg = Color(0xFFFFFFFF);
     const Color lightCardBg = Color(0xFFFFFFFF);
     const Color lightBorder = Color(0x33F4B400);
     const Color navy = Color(0xFF0B1F3A);
@@ -162,7 +169,7 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                       FilledButton.icon(
                         onPressed: _loadPlans,
                         icon: const Icon(Icons.refresh_rounded),
-                        label: const Text('Retry'),
+                        label: Text(_tr('Retry', 'फिर कोशिश करें')),
                         style: FilledButton.styleFrom(
                           backgroundColor: navy,
                           foregroundColor: Colors.white,
@@ -187,7 +194,7 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'No Buy EV partners yet.',
+                        _tr('No Buy EV partners yet.', 'अभी कोई Buy EV पार्टनर नहीं है।'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
@@ -197,7 +204,10 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Pull down to refresh once partners are added in admin.',
+                        _tr(
+                          'Pull down to refresh once partners are added in admin.',
+                          'एडमिन में पार्टनर जुड़ने के बाद रिफ्रेश करने के लिए नीचे खींचें।',
+                        ),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
@@ -236,8 +246,8 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Buy & finance partners',
+                            Text(
+                              _tr('Buy & finance partners', 'Buy और फाइनेंस पार्टनर्स'),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 22,
@@ -247,7 +257,10 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Ex-showroom starting prices here; EMI & down payment options are confirmed when you enquire — rates vary (purchase path only, not rent).',
+                              _tr(
+                                'Ex-showroom starting prices here; EMI & down payment options are confirmed when you enquire — rates vary (purchase path only, not rent).',
+                                'यहाँ एक्स-शोरूम शुरुआती कीमतें हैं; EMI और डाउन पेमेंट विकल्प पूछताछ पर कन्फर्म होते हैं — रेट्स अलग हो सकते हैं (सिर्फ खरीद के लिए, रेंट नहीं)।',
+                              ),
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.92),
                               height: 1.4,
@@ -267,7 +280,7 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                           fontWeight: FontWeight.w600,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Search brand or model line…',
+                          hintText: _tr('Search brand or model line...', 'ब्रांड या मॉडल लाइन खोजें...'),
                           hintStyle: TextStyle(
                             color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                             fontWeight: FontWeight.w500,
@@ -279,7 +292,7 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                           suffixIcon: q.isEmpty
                               ? null
                               : IconButton(
-                                  tooltip: 'Clear',
+                                  tooltip: _tr('Clear', 'साफ करें'),
                                   onPressed: () {
                                     _search.clear();
                                     setState(() {});
@@ -320,7 +333,9 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                   child: Row(
                     children: [
                       Text(
-                        q.trim().isEmpty ? 'All brands' : 'Results',
+                        q.trim().isEmpty
+                            ? _tr('All brands', 'सभी ब्रांड्स')
+                            : _tr('Results', 'रिजल्ट्स'),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -363,7 +378,7 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'No brand matches “$q”',
+                            _tr('No brand matches "$q"', '"$q" से कोई ब्रांड नहीं मिला'),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16,
@@ -377,7 +392,7 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                               _search.clear();
                               setState(() {});
                             },
-                            child: const Text('Clear search'),
+                            child: Text(_tr('Clear search', 'सर्च साफ करें')),
                           ),
                         ],
                       ),
@@ -394,6 +409,7 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                       final BuyEvPlan p = _filtered(q)[index];
                       return _BuyPartnerCard(
                         plan: p,
+                        languageCode: widget.languageCode,
                         onTap: () => _openDetail(p),
                       );
                     },
@@ -408,10 +424,17 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
 }
 
 class _BuyPartnerCard extends StatelessWidget {
-  const _BuyPartnerCard({required this.plan, required this.onTap});
+  const _BuyPartnerCard({
+    required this.plan,
+    required this.onTap,
+    this.languageCode = 'en',
+  });
 
   final BuyEvPlan plan;
   final VoidCallback onTap;
+  final String languageCode;
+  bool get _isHindi => languageCode.toLowerCase().startsWith('hi');
+  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   @override
   Widget build(BuildContext context) {
@@ -498,26 +521,30 @@ class _BuyPartnerCard extends StatelessWidget {
                         _BuyInfoPill(
                           icon: Icons.currency_rupee_rounded,
                           label:
-                              'From ${BuyEvPlanDetailScreen.rupee(plan.exShowroomFrom)} ex-showroom',
+                              _tr(
+                                'From ${BuyEvPlanDetailScreen.rupee(plan.exShowroomFrom)} ex-showroom',
+                                '${BuyEvPlanDetailScreen.rupee(plan.exShowroomFrom)} से शुरू (एक्स-शोरूम)',
+                              ),
                           isDark: isDark,
                           highlight: true,
                         ),
                         if (plan.emiAvailable)
                           _BuyInfoPill(
                             icon: Icons.payments_outlined,
-                            label: 'EMI available',
+                            label: _tr('EMI available', 'EMI उपलब्ध'),
                             isDark: isDark,
                           ),
                         if (plan.downPaymentOptionsAvailable)
                           _BuyInfoPill(
                             icon: Icons.account_balance_outlined,
-                            label: 'Down payment options',
+                            label: _tr('Down payment options', 'डाउन पेमेंट विकल्प'),
                             isDark: isDark,
                           ),
                         _BuyInfoPill(
                           icon: Icons.description_outlined,
-                          label:
-                              '${plan.documentCount} document${plan.documentCount == 1 ? '' : 's'}',
+                            label: _isHindi
+                                ? '${plan.documentCount} ${plan.documentCount == 1 ? 'डॉक्यूमेंट' : 'डॉक्यूमेंट्स'}'
+                                : '${plan.documentCount} document${plan.documentCount == 1 ? '' : 's'}',
                           isDark: isDark,
                         ),
                       ],
@@ -526,7 +553,7 @@ class _BuyPartnerCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          'Tap for finance & documents',
+                          _tr('Tap for finance & documents', 'फाइनेंस और डॉक्यूमेंट्स के लिए टैप करें'),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,

@@ -128,6 +128,7 @@ class PostDetailScreen extends StatefulWidget {
 }
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
+  static const int _detailLongTextThreshold = 220;
   static const String _apiKey = ApiConfig.apiAccessKey;
 
   final TextEditingController _replyController = TextEditingController();
@@ -867,6 +868,25 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           : const Color(0xFF1B2A44),
                     ),
                   ),
+                  if (_displayBody.trim().length > _detailLongTextThreshold)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.only(top: 6, bottom: 0),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Show less',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A),
+                          ),
+                        ),
+                      ),
+                    ),
                   if (_imageUrl != null) ...[
                     const SizedBox(height: 12),
                     Container(

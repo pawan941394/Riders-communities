@@ -9,11 +9,13 @@ class ContactScreen extends StatefulWidget {
     required this.apiBaseUrl,
     required this.apiAccessKey,
     required this.accessToken,
+    this.languageCode = 'en',
   });
 
   final String apiBaseUrl;
   final String apiAccessKey;
   final String accessToken;
+  final String languageCode;
 
   @override
   State<ContactScreen> createState() => _ContactScreenState();
@@ -27,6 +29,8 @@ class _ContactScreenState extends State<ContactScreen> {
   bool _loadingMeta = true;
   String? _metaError;
   bool _submitting = false;
+  bool get _isHindi => widget.languageCode.trim().toLowerCase() == 'hi';
+  String _tr(String en, String hi) => _isHindi ? hi : en;
 
   bool get _loggedIn => widget.accessToken.trim().isNotEmpty;
 
@@ -73,7 +77,7 @@ class _ContactScreenState extends State<ContactScreen> {
         return;
       }
       setState(() {
-        _metaError = 'Could not load form options.';
+        _metaError = _tr('Could not load form options.', 'फॉर्म विकल्प लोड नहीं हुए।');
         _loadingMeta = false;
       });
     }
@@ -101,8 +105,8 @@ class _ContactScreenState extends State<ContactScreen> {
               color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF059669),
             ),
           ),
-          title: const Text(
-            'We received your message',
+          title: Text(
+            _tr('We received your message', 'हमें आपका संदेश मिल गया'),
             textAlign: TextAlign.center,
             style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
           ),
@@ -112,7 +116,10 @@ class _ContactScreenState extends State<ContactScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Thank you for reaching out. Our support team will review what you sent and get back to you using the email and phone on your profile.',
+                  _tr(
+                    'Thank you for reaching out. Our support team will review what you sent and get back to you using the email and phone on your profile.',
+                    'संपर्क करने के लिए धन्यवाद। हमारी सपोर्ट टीम आपके संदेश की समीक्षा करेगी और प्रोफाइल के ईमेल/फोन पर आपसे संपर्क करेगी।',
+                  ),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -123,7 +130,10 @@ class _ContactScreenState extends State<ContactScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'You’ll usually hear from us within 1–2 business days.',
+                  _tr(
+                    "You'll usually hear from us within 1-2 business days.",
+                    'आमतौर पर 1-2 कार्यदिवस में हमारी तरफ से जवाब मिल जाएगा।',
+                  ),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
@@ -146,7 +156,7 @@ class _ContactScreenState extends State<ContactScreen> {
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
-              child: const Text('Sounds good', style: TextStyle(fontWeight: FontWeight.w800)),
+              child: Text(_tr('Sounds good', 'ठीक है'), style: const TextStyle(fontWeight: FontWeight.w800)),
             ),
           ],
         );
@@ -164,13 +174,13 @@ class _ContactScreenState extends State<ContactScreen> {
     }
     if (_selectedKind == null || _selectedKind!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choose a topic first.')),
+        SnackBar(content: Text(_tr('Choose a topic first.', 'पहले एक टॉपिक चुनें।'))),
       );
       return;
     }
     if (_message.text.trim().length < 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Message must be at least 10 characters.')),
+        SnackBar(content: Text(_tr('Message must be at least 10 characters.', 'संदेश कम से कम 10 अक्षरों का होना चाहिए।'))),
       );
       return;
     }
@@ -203,7 +213,7 @@ class _ContactScreenState extends State<ContactScreen> {
       }
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Network error. Try again.')),
+        SnackBar(content: Text(_tr('Network error. Try again.', 'नेटवर्क त्रुटि। फिर कोशिश करें।'))),
       );
     }
   }
@@ -216,9 +226,9 @@ class _ContactScreenState extends State<ContactScreen> {
 
     if (!_loggedIn) {
       return Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFF4F8FF),
+        backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF),
         appBar: AppBar(
-          title: const Text('Contact us', style: TextStyle(fontWeight: FontWeight.w800)),
+          title: Text(_tr('Contact us', 'हमसे संपर्क करें'), style: const TextStyle(fontWeight: FontWeight.w800)),
         ),
         body: Center(
           child: Padding(
@@ -234,7 +244,7 @@ class _ContactScreenState extends State<ContactScreen> {
                 ),
               const SizedBox(height: 20),
               Text(
-                'Log in to contact us',
+                _tr('Log in to contact us', 'हमसे संपर्क करने के लिए लॉगिन करें'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 18,
@@ -244,7 +254,10 @@ class _ContactScreenState extends State<ContactScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                'We use your profile name, email and phone automatically — no need to type them here.',
+                _tr(
+                  'We use your profile name, email and phone automatically - no need to type them here.',
+                  'हम आपके प्रोफाइल का नाम, ईमेल और फोन अपने-आप इस्तेमाल करते हैं - यहां टाइप करने की जरूरत नहीं है।',
+                ),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -261,9 +274,9 @@ class _ContactScreenState extends State<ContactScreen> {
     }
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFF4F8FF),
+      backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF),
       appBar: AppBar(
-        title: const Text('Contact us', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(_tr('Contact us', 'हमसे संपर्क करें'), style: const TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: _loadingMeta
           ? const Center(child: CircularProgressIndicator())
@@ -279,7 +292,7 @@ class _ContactScreenState extends State<ContactScreen> {
                         const SizedBox(height: 16),
                         FilledButton(
                           onPressed: _loadMeta,
-                          child: const Text('Retry'),
+                          child: Text(_tr('Retry', 'फिर कोशिश करें')),
                         ),
                       ],
                     ),
@@ -292,7 +305,10 @@ class _ContactScreenState extends State<ContactScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'We’ll attach your account name, email and phone from your profile to this message.',
+                          _tr(
+                            "We'll attach your account name, email and phone from your profile to this message.",
+                            'हम इस संदेश के साथ आपकी प्रोफाइल का नाम, ईमेल और फोन अपने-आप जोड़ देंगे।',
+                          ),
                           style: TextStyle(
                             fontSize: 14,
                             height: 1.4,
@@ -304,7 +320,7 @@ class _ContactScreenState extends State<ContactScreen> {
                         DropdownButtonFormField<String>(
                           // ignore: deprecated_member_use — controlled selection after meta loads.
                           value: _selectedKind,
-                          decoration: _fieldDecoration('Topic', border, fieldFill, isDark),
+                          decoration: _fieldDecoration(_tr('Topic', 'विषय'), border, fieldFill, isDark),
                           items: _kinds
                               .map(
                                 (InquiryKindOption o) => DropdownMenuItem<String>(
@@ -324,7 +340,7 @@ class _ContactScreenState extends State<ContactScreen> {
                             color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A),
                             fontWeight: FontWeight.w600,
                           ),
-                          decoration: _fieldDecoration('Message', border, fieldFill, isDark).copyWith(
+                          decoration: _fieldDecoration(_tr('Message', 'संदेश'), border, fieldFill, isDark).copyWith(
                             alignLabelWithHint: true,
                           ),
                         ),
@@ -344,7 +360,7 @@ class _ContactScreenState extends State<ContactScreen> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text('Send message', style: TextStyle(fontWeight: FontWeight.w800)),
+                              : Text(_tr('Send message', 'संदेश भेजें'), style: const TextStyle(fontWeight: FontWeight.w800)),
                         ),
                       ],
                     ),
