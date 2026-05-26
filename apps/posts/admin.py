@@ -13,9 +13,9 @@ class PostCityOptionAdmin(admin.ModelAdmin):
 
 @admin.register(PostCompanyOption)
 class PostCompanyOptionAdmin(admin.ModelAdmin):
-    list_display = ("label", "sort_order", "is_active")
-    list_filter = ("is_active",)
-    search_fields = ("label",)
+    list_display = ("label", "category", "brand_color", "sort_order", "is_active")
+    list_filter = ("is_active", "category")
+    search_fields = ("label", "category")
     ordering = ("sort_order", "label")
 
 

@@ -90,9 +90,19 @@ class PostMetaItem(BaseModel):
     label: str
 
 
+class PostCompanyMetaItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    label: str
+    category: str
+    brand_color: str | None = None
+    logo_image_url: str | None = None
+
+
 class PostMetaResponse(BaseModel):
     cities: list[PostMetaItem]
-    companies: list[PostMetaItem]
+    companies: list[PostCompanyMetaItem]
     issue_types: list[PostMetaItem]
 
 
@@ -268,15 +278,25 @@ def _author_avatar_for_feed(request: Request, post: Post) -> tuple[str | None, s
 
 
 @router.get("/posts/meta", response_model=PostMetaResponse)
-def post_meta() -> PostMetaResponse:
+def post_meta(request: Request) -> PostMetaResponse:
     cities = [
         PostMetaItem(id=row.id, label=row.label)
         for row in PostCityOption.objects.filter(is_active=True).order_by("sort_order", "label")
     ]
-    companies = [
-        PostMetaItem(id=row.id, label=row.label)
-        for row in PostCompanyOption.objects.filter(is_active=True).order_by("sort_order", "label")
-    ]
+    companies = []
+    for row in PostCompanyOption.objects.filter(is_active=True).order_by("sort_order", "label"):
+        logo_url = None
+        if row.logo_image:
+            logo_url = _absolute_media_url(request, row.logo_image.url)
+        companies.append(
+            PostCompanyMetaItem(
+                id=row.id,
+                label=row.label,
+                category=row.category,
+                brand_color=row.brand_color,
+                logo_image_url=logo_url,
+            )
+        )
     issue_types = [
         PostMetaItem(id=row.id, label=row.label)
         for row in PostIssueTypeOption.objects.filter(is_active=True).order_by("sort_order", "label")

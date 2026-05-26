@@ -22,6 +22,9 @@ class PostCompanyOption(models.Model):
     """Configurable company labels for posts (admin-managed)."""
 
     label = models.CharField(max_length=120, unique=True)
+    category = models.CharField(max_length=80, default="Food Delivery")
+    brand_color = models.CharField(max_length=20, default="#0B1F3A", blank=True)
+    logo_image = models.ImageField(upload_to="company_logos/", blank=True, null=True)
     sort_order = models.PositiveSmallIntegerField(default=0)
     is_active = models.BooleanField(default=True, db_index=True)
 
