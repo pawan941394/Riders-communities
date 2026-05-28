@@ -334,13 +334,7 @@ def patch_profile(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Rider ID is required.",
             )
-        current_rider_id = (profile.rider_id or "").strip()
-        if current_rider_id and next_rider_id and current_rider_id != next_rider_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Rider ID is already submitted and cannot be changed.",
-            )
-        if next_rider_id and current_rider_id != next_rider_id:
+        if (profile.rider_id or "").strip() != next_rider_id:
             profile.rider_id = next_rider_id
             changed = True
 
@@ -352,13 +346,7 @@ def patch_profile(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Rider company is required.",
             )
-        current_company = (profile.rider_company or "").strip()
-        if current_company and next_company and current_company != next_company:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Rider company is already submitted and cannot be changed.",
-            )
-        if next_company and current_company != next_company:
+        if (profile.rider_company or "").strip() != next_company:
             profile.rider_company = next_company
             changed = True
 
