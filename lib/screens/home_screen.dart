@@ -1,4 +1,4 @@
-﻿import 'dart:async' show Timer, unawaited;
+import 'dart:async' show Timer, unawaited;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -194,10 +194,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: BoxDecoration(
                             color: isDark
                                 ? const Color(0xFF1F2937).withValues(alpha: 0.92)
-                                : const Color(0xFFFFF3D1).withValues(alpha: 0.94),
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
+                              color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
                             ),
                             boxShadow: const [
                               BoxShadow(
@@ -211,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             tooltip: 'Open menu',
                             onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                             icon: _HamburgerGlyph(
-                              color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
+                              color: isDark ? const Color(0xFFE2E8F0) : Colors.black,
                             ),
                           ),
                         ),
@@ -224,8 +224,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               decoration: BoxDecoration(
                                 color: isDark
                                     ? const Color(0xFF1F2937).withValues(alpha: 0.92)
-                                    : const Color(0xFFFFF3D1).withValues(alpha: 0.9),
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isDark ? Colors.transparent : const Color(0x1F000000),
+                                ),
                                 boxShadow: const [
                                   BoxShadow(
                                     color: Color(0x12000000),
@@ -242,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     onPressed: _openNotificationsSheet,
                                     icon: Icon(
                                       Icons.notifications_rounded,
-                                      color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
+                                      color: isDark ? const Color(0xFFE2E8F0) : Colors.black,
                                     ),
                                   ),
                                   if (_unreadNotifications > 0)
@@ -272,8 +275,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               decoration: BoxDecoration(
                                 color: isDark
                                     ? const Color(0xFF1F2937).withValues(alpha: 0.92)
-                                    : const Color(0xFFFFF3D1).withValues(alpha: 0.9),
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isDark ? Colors.transparent : const Color(0x1F000000),
+                                ),
                                 boxShadow: const [
                                   BoxShadow(
                                     color: Color(0x12000000),
@@ -292,12 +298,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: CircleAvatar(
                                   radius: 20,
                                   backgroundColor:
-                                      isDark ? const Color(0xFF1E293B) : const Color(0xFFFFE39A),
+                                      isDark ? const Color(0xFF1E293B) : Colors.white,
                                   backgroundImage: widget.currentUserAvatarUrl.isNotEmpty
                                       ? NetworkImage(widget.currentUserAvatarUrl)
                                       : null,
                                   child: widget.currentUserAvatarUrl.isEmpty
-                                      ? const Icon(Icons.person_rounded, color: Color(0xFF0B1F3A))
+                                      ? const Icon(Icons.person_rounded, color: Colors.black)
                                       : null,
                                 ),
                               ),
@@ -311,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         'Rider',
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w900,
-                              color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
+                              color: isDark ? const Color(0xFFE2E8F0) : Colors.black,
                             ),
                       ),
                     ),
@@ -373,31 +379,31 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildNavItem(
                         index: 0,
                         icon: Icons.groups_rounded,
-                        label: _tr('Community', 'à¤•à¤®à¥à¤¯à¥à¤¨à¤¿à¤Ÿà¥€'),
+                        label: _tr('Community', 'कम्युनिटी'),
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 1,
                         icon: Icons.health_and_safety_rounded,
-                        label: _tr('RSA', 'à¤†à¤°à¤à¤¸à¤'),
+                        label: _tr('RSA', 'आरएसए'),
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 2,
                         icon: Icons.add_box_rounded,
-                        label: _tr('Onboarding', 'à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤—'),
+                        label: _tr('Onboarding', 'ऑनबोर्डिंग'),
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 3,
                         icon: Icons.electric_bike_rounded,
-                        label: _tr('EV', 'à¤ˆà¤µà¥€'),
+                        label: _tr('EV', 'ईवी'),
                         compact: compact,
                       ),
                       _buildNavItem(
                         index: 4,
                         icon: Icons.currency_rupee_rounded,
-                        label: _tr('Refer', 'à¤°à¥‡à¤«à¤°'),
+                        label: _tr('Refer', 'रेफर'),
                         compact: compact,
                       ),
                     ],
@@ -414,65 +420,122 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildAppDrawer(bool isDark) {
     final Color background = isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFFFF);
     final Color titleColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
-    final Color bodyColor = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
-    final Color dividerColor = isDark ? const Color(0x335B6B88) : const Color(0xFFFFE5A8);
+    final Color bodyColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+    final Color dividerColor = isDark ? const Color(0x1F5B6B88) : const Color(0x0F000000);
 
     return Drawer(
       backgroundColor: background,
       child: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFFFE39A),
-                  backgroundImage: widget.currentUserAvatarUrl.isNotEmpty
-                      ? NetworkImage(widget.currentUserAvatarUrl)
-                      : null,
-                  child: widget.currentUserAvatarUrl.isEmpty
-                      ? const Icon(Icons.person_rounded, color: Color(0xFF0B1F3A))
-                      : null,
+            // Premium Profile Cover Card
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                      : [const Color(0xFFFFF3D1), const Color(0xFFFFB300)], // Premium golden yellow theme!
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Ride With Garv',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: titleColor,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 18,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.currentUserName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: bodyColor, fontWeight: FontWeight.w600),
-                      ),
-                    ],
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark ? Colors.black38 : const Color(0xFFFFB300).withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(2.5),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark ? Colors.white : const Color(0xFF0B1F3A).withValues(alpha: 0.8), // elegant ring
+                    ),
+                    child: CircleAvatar(
+                      radius: 24,
+                      backgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFFFFFFF),
+                      backgroundImage: widget.currentUserAvatarUrl.isNotEmpty
+                          ? NetworkImage(widget.currentUserAvatarUrl)
+                          : null,
+                      child: widget.currentUserAvatarUrl.isEmpty
+                          ? Icon(Icons.person_rounded, color: isDark ? Colors.white : const Color(0xFF0B1F3A), size: 28)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Ride With Garv',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : const Color(0xFF0B1F3A),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 17,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.18)
+                                    : const Color(0xFF0B1F3A).withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                widget.currentUserName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : const Color(0xFF0B1F3A),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Active dot
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF10B981), // Green active dot
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 18),
-            Divider(color: dividerColor),
             _buildDrawerItem(
               icon: Icons.groups_rounded,
-              label: _tr('Community', 'à¤•à¤®à¥à¤¯à¥à¤¨à¤¿à¤Ÿà¥€'),
+              label: _tr('Community', 'कम्युनिटी'),
               index: 0,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.add_box_rounded,
-              label: _tr('Onboarding', 'à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤—'),
+              label: _tr('Onboarding', 'ऑनबोर्डिंग'),
               index: 2,
               isDark: isDark,
             ),
@@ -484,102 +547,144 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             _buildDrawerItem(
               icon: Icons.currency_rupee_rounded,
-              label: _tr('Refer n earn', 'à¤°à¥‡à¤«à¤° à¤”à¤° à¤•à¤®à¤¾à¤“'),
+              label: _tr('Refer n earn', 'रेफर और कमाओ'),
               index: 4,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.add_box_rounded,
-              label: _tr('Create post', 'à¤ªà¥‹à¤¸à¥à¤Ÿ à¤¬à¤¨à¤¾à¤à¤‚'),
+              label: _tr('Create post', 'पोस्ट बनाएं'),
               index: 7,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.support_agent_rounded,
-              label: _tr('Help', 'à¤®à¤¦à¤¦'),
+              label: _tr('Help', 'मदद'),
               index: 5,
               isDark: isDark,
             ),
             _buildDrawerItem(
               icon: Icons.person_rounded,
-              label: _tr('Profile', 'à¤ªà¥à¤°à¥‹à¤«à¤¾à¤‡à¤²'),
+              label: _tr('Profile', 'प्रोफाइल'),
               index: 6,
               isDark: isDark,
             ),
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              leading: Icon(
-                Icons.language_rounded,
-                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
-              ),
-              title: Text(
-                _tr('Language', 'à¤­à¤¾à¤·à¤¾'),
-                style: TextStyle(color: titleColor, fontWeight: FontWeight.w700),
-              ),
-              subtitle: Text(
-                _languageCode == 'hi' ? 'à¤¹à¤¿à¤‚à¤¦à¥€' : 'English',
-                style: TextStyle(color: bodyColor, fontWeight: FontWeight.w600),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'EN',
-                    style: TextStyle(
-                      color: _languageCode == 'en' ? titleColor : bodyColor,
-                      fontWeight: _languageCode == 'en' ? FontWeight.w800 : FontWeight.w600,
-                      fontSize: 11,
-                    ),
+            const SizedBox(height: 12),
+            Divider(color: dividerColor, thickness: 1),
+            const SizedBox(height: 8),
+            // Premium settings card blocks
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: Material(
+                color: isDark ? const Color(0x13FFFFFF) : const Color(0x06000000),
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: dividerColor),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                  leading: Icon(
+                    Icons.language_rounded,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                   ),
-                  const SizedBox(width: 6),
-                  Switch(
-                    value: _languageCode == 'hi',
-                    activeColor: const Color(0xFFFFC928),
-                    onChanged: _languageSaving
-                        ? null
-                        : (bool value) {
-                            unawaited(_setLanguagePreference(value ? 'hi' : 'en'));
-                          },
+                  title: Text(
+                    _tr('Language', 'भाषा'),
+                    style: TextStyle(color: titleColor, fontWeight: FontWeight.w800, fontSize: 14),
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'HI',
-                    style: TextStyle(
-                      color: _languageCode == 'hi' ? titleColor : bodyColor,
-                      fontWeight: _languageCode == 'hi' ? FontWeight.w800 : FontWeight.w600,
-                      fontSize: 11,
-                    ),
+                  subtitle: Text(
+                    _languageCode == 'hi' ? 'हिंदी' : 'English',
+                    style: TextStyle(color: bodyColor, fontWeight: FontWeight.w600, fontSize: 12),
                   ),
-                ],
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'EN',
+                        style: TextStyle(
+                          color: _languageCode == 'en' ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB)) : bodyColor,
+                          fontWeight: _languageCode == 'en' ? FontWeight.w900 : FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      SizedBox(
+                        height: 28,
+                        child: Transform.scale(
+                          scale: 0.85,
+                          child: Switch(
+                            value: _languageCode == 'hi',
+                            activeColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                            onChanged: _languageSaving
+                                ? null
+                                : (bool value) {
+                                    unawaited(_setLanguagePreference(value ? 'hi' : 'en'));
+                                  },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'HI',
+                        style: TextStyle(
+                          color: _languageCode == 'hi' ? (isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB)) : bodyColor,
+                          fontWeight: _languageCode == 'hi' ? FontWeight.w900 : FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            Divider(color: dividerColor),
-            SwitchListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              secondary: Icon(
-                widget.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: Material(
+                color: isDark ? const Color(0x13FFFFFF) : const Color(0x06000000),
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: dividerColor),
+                ),
+                child: SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                  secondary: Icon(
+                    widget.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    color: widget.isDarkMode ? const Color(0xFFF59E0B) : const Color(0xFF64748B),
+                  ),
+                  title: Text(
+                    widget.isDarkMode ? _tr('Dark theme', 'डार्क थीम') : _tr('Light theme', 'लाइट थीम'),
+                    style: TextStyle(color: titleColor, fontWeight: FontWeight.w800, fontSize: 14),
+                  ),
+                  value: widget.isDarkMode,
+                  activeColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                  onChanged: widget.onThemeChanged,
+                ),
               ),
-              title: Text(
-                widget.isDarkMode ? _tr('Dark theme', 'à¤¡à¤¾à¤°à¥à¤• à¤¥à¥€à¤®') : _tr('Light theme', 'à¤²à¤¾à¤‡à¤Ÿ à¤¥à¥€à¤®'),
-                style: TextStyle(color: titleColor, fontWeight: FontWeight.w700),
-              ),
-              value: widget.isDarkMode,
-              activeColor: const Color(0xFFFFC928),
-              onChanged: widget.onThemeChanged,
             ),
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              leading: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444)),
-              title: Text(
-                _tr('Logout', 'à¤²à¥‰à¤—à¤†à¤‰à¤Ÿ'),
-                style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w800),
+            const SizedBox(height: 8),
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: Material(
+                color: const Color(0x0AEF4444), // very soft red background
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: const BorderSide(color: Color(0x1AEF4444)),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                  leading: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444)),
+                  title: Text(
+                    _tr('Logout', 'लॉगआउट'),
+                    style: const TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w900, fontSize: 14),
+                  ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    widget.onLogout();
+                  },
+                ),
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              onTap: () {
-                Navigator.of(context).pop();
-                widget.onLogout();
-              },
             ),
           ],
         ),
@@ -595,27 +700,60 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     final bool isSelected = _currentIndex == index;
     final Color foreground = isSelected
-        ? (isDark ? const Color(0xFFEAF2FF) : const Color(0xFF0B1F3A))
+        ? (isDark ? Colors.white : const Color(0xFF0B1F3A))
         : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155));
-    final Color selectedBackground =
-        isDark ? const Color(0xFF1E3260) : const Color(0xFFFFE8B5);
+    final List<Color> selectedGradient = isDark
+        ? [const Color(0xFFD97706), const Color(0xFFB45309)]
+        : [const Color(0xFFFFF3D1), const Color(0xFFFFD54F)];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-        leading: Icon(icon, color: foreground),
-        title: Text(
-          label,
-          style: TextStyle(color: foreground, fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700),
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Container(
+        decoration: isSelected
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: LinearGradient(
+                  colors: selectedGradient,
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: selectedGradient[1].withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              )
+            : null,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 1),
+          leading: Icon(
+            icon,
+            color: foreground,
+            size: 22,
+          ),
+          title: Text(
+            label,
+            style: TextStyle(
+              color: foreground,
+              fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+              fontSize: 14.5,
+            ),
+          ),
+          trailing: isSelected
+              ? Icon(Icons.chevron_right_rounded, color: foreground, size: 20)
+              : Icon(
+                  Icons.chevron_right_rounded,
+                  color: isDark ? const Color(0x66CBD5E1) : const Color(0x66334155),
+                  size: 20,
+                ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          onTap: () {
+            Navigator.of(context).pop();
+            unawaited(_selectTab(index));
+          },
         ),
-        selected: isSelected,
-        selectedTileColor: selectedBackground,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        onTap: () {
-          Navigator.of(context).pop();
-          unawaited(_selectTab(index));
-        },
       ),
     );
   }
@@ -1687,7 +1825,15 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     final bool isHindi = widget.languageCode.trim().toLowerCase() == 'hi';
     final List<Widget> children = <Widget>[
       _CommunityOverviewCard(isHindi: isHindi),
-      const SizedBox(height: 10),
+      const SizedBox(height: 12),
+      _WalletReferralBanner(
+        loading: _walletBannerLoading,
+        balanceCredits: _walletBannerBalance,
+        referralCode: _walletBannerCode,
+        onOpenRefer: widget.onOpenRefer,
+        onCopyReferral: _copyReferralCode,
+      ),
+      const SizedBox(height: 12),
       _CreatePostEntryCard(
         isHindi: isHindi,
         onOpenCreatePost: widget.onOpenCreatePost,
@@ -2065,7 +2211,7 @@ class _CommunityOverviewCard extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          isHindi ? 'à¤°à¤¾à¤‡à¤¡à¤° à¤•à¤®à¥à¤¯à¥à¤¨à¤¿à¤Ÿà¥€' : 'Rider Community',
+                          isHindi ? 'राइडर कम्युनिटी' : 'Rider Community',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w900,
                                 color: Colors.white,
@@ -2077,7 +2223,7 @@ class _CommunityOverviewCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     isHindi
-                        ? 'à¤¡à¤¿à¤²à¥€à¤µà¤°à¥€ à¤°à¤¾à¤‡à¤¡à¤°à¥à¤¸ à¤•à¥‡ à¤¸à¤¾à¤¥ à¤ªà¥‚à¤›à¥‡à¤‚, à¤®à¤¦à¤¦ à¤•à¤°à¥‡à¤‚ à¤”à¤° à¤¸à¤¾à¤¥ à¤®à¥‡à¤‚ à¤†à¤—à¥‡ à¤¬à¤¢à¤¼à¥‡à¤‚à¥¤'
+                        ? 'डिलीवरी राइडर्स के साथ पूछें, मदद करें और साथ में आगे बढ़ें।'
                         : 'Ask, help and grow together with delivery riders.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
@@ -2111,129 +2257,295 @@ class _WalletReferralBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color borderColor = isDark ? const Color(0x335B6B88) : const Color(0x33F4B400);
-    final Color titleColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
-    final Color bodyColor = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF5B6B84);
+    
+    // Theme alignment: Yellow/Gold/Amber color palette
+    final Color primaryYellow = const Color(0xFFF4B400); // Main Theme Yellow
+    final Color deepAmber = const Color(0xFFB45309);    // Accent Amber
+    
+    final Color cardBorder = isDark ? const Color(0x44F4B400) : const Color(0x33B45309);
+    final Color cardBackground1 = isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFDF5);
+    final Color cardBackground2 = isDark ? const Color(0xFF0F172A) : const Color(0xFFFFF8E7);
+    
+    final Color textColor = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0B1F3A);
+    final Color subtextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDark
-              ? const [Color(0xFF1E293B), Color(0xFF0F172A)]
-              : const [Color(0xFFFFF8E8), Color(0xFFFFFFFF)],
+          colors: [cardBackground1, cardBackground2],
         ),
-        border: Border.all(color: borderColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.account_balance_wallet_rounded,
-                color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Wallet & Earn',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
-                  color: titleColor,
-                ),
-              ),
-            ],
+        border: Border.all(color: cardBorder, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? const Color(0x33000000) : const Color(0x11B45309),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
-          const SizedBox(height: 8),
-          if (loading)
-            const LinearProgressIndicator(
-              minHeight: 3,
-              borderRadius: BorderRadius.all(Radius.circular(99)),
-            )
-          else ...[
-            Text(
-              'Balance: â‚¹$balanceCredits',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                color: titleColor,
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // Decorative subtle background shimmer or light circle for creative flair
+            Positioned(
+              right: -40,
+              top: -40,
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: primaryYellow.withValues(alpha: isDark ? 0.06 : 0.08),
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Invite riders and earn referral rewards.',
-                    style: TextStyle(
-                      color: bodyColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+            Positioned(
+              left: -30,
+              bottom: -30,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: deepAmber.withValues(alpha: isDark ? 0.04 : 0.06),
                 ),
-                TextButton(
-                  onPressed: onOpenRefer,
-                  style: TextButton.styleFrom(
-                    foregroundColor: isDark ? const Color(0xFF93C5FD) : const Color(0xFFB45309),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  child: const Text('Refer now'),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 10),
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: onCopyReferral,
-                child: Ink(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFBF1),
-                    border: Border.all(color: borderColor),
-                  ),
-                  child: Row(
+            
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top Row: Chip, Contactless Wave, and Rider Gold Badge
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Text(
-                          referralCode.isEmpty ? 'Referral code loading...' : 'Code: $referralCode',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: referralCode.isEmpty ? bodyColor : titleColor,
+                      Row(
+                        children: [
+                          // Custom built card SIM chip
+                          Container(
+                            width: 38,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(6),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFCD34D), Color(0xFFD97706)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              border: Border.all(color: const Color(0xFF78350F), width: 1),
+                            ),
+                            child: Stack(
+                              children: [
+                                // Chip lines
+                                Center(
+                                  child: Container(
+                                    width: 18,
+                                    height: 1,
+                                    color: const Color(0xFF78350F).withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    width: 1,
+                                    height: 14,
+                                    color: const Color(0xFF78350F).withValues(alpha: 0.5),
+                                    margin: const EdgeInsets.only(left: 12),
+                                  ),
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Container(
+                                    width: 1,
+                                    height: 14,
+                                    color: const Color(0xFF78350F).withValues(alpha: 0.5),
+                                    margin: const EdgeInsets.only(right: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          // Wireless Contactless Sign
+                          Transform.rotate(
+                            angle: 1.5708, // Rotate 90 degrees
+                            child: Icon(
+                              Icons.wifi_rounded,
+                              size: 16,
+                              color: isDark ? primaryYellow.withValues(alpha: 0.6) : deepAmber.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.copy_rounded,
-                        size: 18,
-                        color: isDark ? const Color(0xFF93C5FD) : const Color(0xFFB45309),
+                      
+                      // Rider Gold / VIP club badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: primaryYellow.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: primaryYellow.withValues(alpha: 0.4), width: 1),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.workspace_premium_rounded,
+                              size: 14,
+                              color: isDark ? primaryYellow : deepAmber,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'RIDER CLUB',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.8,
+                                color: isDark ? primaryYellow : deepAmber,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Tap referral code to copy.',
-              style: TextStyle(
-                color: bodyColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Middle Section: Balance Credits
+                  if (loading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: LinearProgressIndicator(
+                        minHeight: 3,
+                        borderRadius: BorderRadius.all(Radius.circular(99)),
+                      ),
+                    )
+                  else ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          'Balance:',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: subtextColor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '₹$balanceCredits',
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w900,
+                            color: isDark ? primaryYellow : textColor,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'credits',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: subtextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 14),
+                    
+                    // Bottom Section: Embossed Referral Code Card-Number look & Copy/Refer action
+                    Row(
+                      children: [
+                        // Referral Code field (embossed credit card spacing)
+                        Expanded(
+                          child: InkWell(
+                            onTap: onCopyReferral,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFBF1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isDark ? const Color(0x22FFFFFF) : const Color(0xFFFDE68A),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.key_rounded,
+                                    size: 14,
+                                    color: isDark ? primaryYellow : deepAmber,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      referralCode.isEmpty ? 'Code loading...' : referralCode,
+                                      style: TextStyle(
+                                        fontFamily: 'monospace',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 1.5,
+                                        color: referralCode.isEmpty ? subtextColor : textColor,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.copy_rounded,
+                                    size: 15,
+                                    color: isDark ? primaryYellow : deepAmber,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(width: 10),
+                        
+                        // Action buttons
+                        ElevatedButton.icon(
+                          onPressed: onOpenRefer,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryYellow,
+                            foregroundColor: const Color(0xFF0B1F3A),
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.share_rounded, size: 14),
+                          label: const Text(
+                            'Refer Now',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -2251,47 +2563,124 @@ class _CreatePostEntryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? const [Color(0xFF1F2937), Color(0xFF111827)]
-              : const [Color(0xFFFFFFFF), Color(0xFFF8FBFF)],
-        ),
-        border: Border.all(
-          color: isDark ? const Color(0x335B6B88) : const Color(0x261D4ED8),
-        ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFFFF),
-            child: Icon(
-              Icons.edit_note_rounded,
-              color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
+    final Color primaryYellow = const Color(0xFFF4B400);
+    final Color deepAmber = const Color(0xFFB45309);
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onOpenCreatePost,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            border: Border.all(
+              color: isDark ? const Color(0x335B6B88) : primaryYellow.withValues(alpha: 0.3),
+              width: 1.2,
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              isHindi ? 'à¤…à¤ªà¤¨à¥€ à¤¸à¤®à¤¸à¥à¤¯à¤¾ à¤…à¤­à¥€ à¤°à¤¾à¤‡à¤¡à¤°à¥à¤¸ à¤•à¥‡ à¤¸à¤¾à¤¥ à¤¶à¥‡à¤¯à¤° à¤•à¤°à¥‡à¤‚à¥¤' : 'Share your issue with riders now.',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF102A56),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-            ),
+            ],
           ),
-          FilledButton.icon(
-            onPressed: onOpenCreatePost,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: Text(isHindi ? 'à¤ªà¥‹à¤¸à¥à¤Ÿ à¤¬à¤¨à¤¾à¤à¤‚' : 'Create post'),
+          child: Row(
+            children: [
+              // Glowing circular container for write icon
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      primaryYellow.withValues(alpha: 0.2),
+                      primaryYellow.withValues(alpha: 0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  border: Border.all(
+                    color: primaryYellow.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  Icons.edit_note_rounded,
+                  color: isDark ? primaryYellow : deepAmber,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isHindi ? 'समस्या शेयर करें' : 'Share your issue',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0B1F3A),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isHindi 
+                          ? 'अन्य डिलीवरी राइडर्स से राय लें...'
+                          : 'Ask and get help from fellow riders...',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Beautiful minimal plus badge / arrow indicating clickability
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: primaryYellow,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryYellow.withValues(alpha: 0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.add_circle_outline_rounded,
+                      size: 16,
+                      color: Color(0xFF0B1F3A),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      isHindi ? 'लिखें' : 'Post',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0B1F3A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -3344,10 +3733,10 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
   String _vehicleTypeLabel(String type) {
     switch (type) {
       case 'bike':
-        return _tr('Petrol', 'à¤ªà¥‡à¤Ÿà¥à¤°à¥‹à¤²');
+        return _tr('Petrol', 'पेट्रोल');
       case 'ev_scooter':
       default:
-        return _tr('EV', 'à¤ˆà¤µà¥€');
+        return _tr('EV', 'ईवी');
     }
   }
 
@@ -3403,7 +3792,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
           content: Text(
             _tr(
               'Onboarding details are already submitted and cannot be changed.',
-              'à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤— à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤ªà¤¹à¤²à¥‡ à¤¹à¥€ à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤¹à¥‹ à¤šà¥à¤•à¥€ à¤¹à¥ˆ à¤”à¤° à¤…à¤¬ à¤¬à¤¦à¤²à¥€ à¤¨à¤¹à¥€à¤‚ à¤œà¤¾ à¤¸à¤•à¤¤à¥€à¥¤',
+              'ऑनबोर्डिंग जानकारी पहले ही सबमिट हो चुकी है और अब बदली नहीं जा सकती।',
             ),
           ),
         ),
@@ -3519,7 +3908,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
         _detailsLocked = true;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Onboarding and vehicle details saved.', 'à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤— à¤”à¤° à¤µà¤¾à¤¹à¤¨ à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸à¥‡à¤µ à¤¹à¥‹ à¤—à¤ˆà¥¤'))),
+        SnackBar(content: Text(_tr('Onboarding and vehicle details saved.', 'ऑनबोर्डिंग और वाहन जानकारी सेव हो गई।'))),
       );
       widget.onCompleted();
     } catch (error) {
@@ -3543,22 +3932,22 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF111827) : const Color(0xFFFFFFFF),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(_tr('Submit onboarding details?', 'à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤— à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤•à¤°à¥‡à¤‚?')),
+          title: Text(_tr('Submit onboarding details?', 'ऑनबोर्डिंग जानकारी सबमिट करें?')),
           content: Text(
             _tr(
-              'Ek baar details submit hone ke baad aap inhe app se change nahi kar paoge.\n\nOnce submitted, these onboarding and vehicle details cannot be changed from the app.',
-              'à¤à¤• à¤¬à¤¾à¤° à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤¹à¥‹à¤¨à¥‡ à¤•à¥‡ à¤¬à¤¾à¤¦ à¤†à¤ª à¤‡à¤¨à¥à¤¹à¥‡à¤‚ à¤à¤ª à¤¸à¥‡ à¤¬à¤¦à¤² à¤¨à¤¹à¥€à¤‚ à¤ªà¤¾à¤à¤‚à¤—à¥‡à¥¤',
+              'Your details will be locked to prevent accidental changes, but you can unlock and edit them anytime if your work information changes.',
+              'आपकी जानकारी को गलती से बदलने से रोकने के लिए लॉक कर दिया जाएगा, लेकिन यदि आपका काम का विवरण बदलता है, तो आप इसे कभी भी अनलॉक और एडिट कर सकते हैं।',
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(_tr('Review again', 'à¤«à¤¿à¤° à¤¸à¥‡ à¤¦à¥‡à¤–à¥‡à¤‚')),
+              child: Text(_tr('Review again', 'फिर से देखें')),
             ),
             FilledButton.icon(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               icon: const Icon(Icons.lock_rounded),
-              label: Text(_tr('Submit & lock', 'à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤”à¤° à¤²à¥‰à¤• à¤•à¤°à¥‡à¤‚')),
+              label: Text(_tr('Submit & lock', 'सबमिट और लॉक करें')),
             ),
           ],
         );
@@ -3747,32 +4136,35 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
             width: selected ? 1.5 : 1.0,
           ),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.network(
-            logoUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildLocalCompanyLogo(company, selected);
-            },
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: SizedBox(
-                  width: 10,
-                  height: 10,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 1.0,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      selected ? const Color(0xFF0B1F3A) : const Color(0xFF94A3B8),
+        child: Padding(
+          padding: const EdgeInsets.all(2.0),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              logoUrl,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildLocalCompanyLogo(company, selected);
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Center(
+                  child: SizedBox(
+                    width: 10,
+                    height: 10,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.0,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        selected ? const Color(0xFF0B1F3A) : const Color(0xFF94A3B8),
+                      ),
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          : null,
                     ),
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                        : null,
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       );
@@ -3898,13 +4290,10 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: const Text(
-            'R',
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-            ),
+          child: const Icon(
+            Icons.motorcycle_rounded,
+            color: Colors.black,
+            size: 14,
           ),
         );
       case 'zepto':
@@ -3934,16 +4323,14 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: const Text(
-            'blinkit',
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w900,
-              fontSize: 5.5,
-            ),
+          child: const Icon(
+            Icons.shopping_basket_rounded,
+            color: Colors.black,
+            size: 13,
           ),
         );
       case 'porter':
+      case 'potter':
         return Container(
           width: 24,
           height: 24,
@@ -3979,12 +4366,280 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
     }
   }
 
+  Map<String, dynamic> _getCategoryVisuals(String category) {
+    final String clean = category.trim().toLowerCase();
+    
+    if (clean.contains('food') || clean.contains('delivery') || clean.contains('restaurant')) {
+      return {
+        'title': _tr('Food Delivery', 'फूड डिलीवरी'),
+        'subtitle': _tr('Order from your favorite restaurants & get it delivered', 'अपने पसंदीदा रेस्तरां से ऑर्डर करें और डिलीवरी पाएं'),
+        'iconBgColor': const Color(0xFFFFF2E6),
+        'iconColor': const Color(0xFFFC6011),
+        'iconData': Icons.room_service_outlined,
+      };
+    } else if (clean.contains('bike') || clean.contains('taxi') || clean.contains('texi') || clean.contains('moped')) {
+      return {
+        'title': _tr('Bike Taxi', 'बाइक टैक्सी'),
+        'subtitle': _tr('Book a ride & travel to your destination', 'राइड बुक करें और अपने गंतव्य तक यात्रा करें'),
+        'iconBgColor': const Color(0xFFE6F7F0),
+        'iconColor': const Color(0xFF059669),
+        'iconData': Icons.moped_rounded,
+      };
+    } else if (clean.contains('ecom') || clean.contains('grocer') || clean.contains('shop') || clean.contains('market')) {
+      return {
+        'title': _tr('Ecommerce', 'ई-कॉमर्स'),
+        'subtitle': _tr('Get groceries & essentials delivered in minutes', 'मिनटों में ग्रोसरी और जरूरी सामान डिलीवरी पाएं'),
+        'iconBgColor': const Color(0xFFF3E8FF),
+        'iconColor': const Color(0xFF8B5CF6),
+        'iconData': Icons.shopping_bag_outlined,
+      };
+    } else if (clean.contains('parcel') || clean.contains('package') || clean.contains('box') || clean.contains('delivery') || clean.contains('porter') || clean.contains('potter')) {
+      return {
+        'title': _tr('Parcel', 'पार्सल'),
+        'subtitle': _tr('Send packages & documents safely', 'पैकेज और दस्तावेज सुरक्षित रूप से भेजें'),
+        'iconBgColor': const Color(0xFFE0F2FE),
+        'iconColor': const Color(0xFF0284C7),
+        'iconData': Icons.inventory_2_outlined,
+      };
+    } else {
+      return {
+        'title': category,
+        'subtitle': _tr('Delivery and logistics services', 'डिलीवरी और लॉजिस्टिक्स सेवाएं'),
+        'iconBgColor': const Color(0xFFF1F5F9),
+        'iconColor': const Color(0xFF475569),
+        'iconData': Icons.widgets_outlined,
+      };
+    }
+  }
+
+  Widget _buildCompanyRow(String companyName, bool isDark) {
+    final bool selected = _company == companyName;
+    final Map<String, dynamic>? meta = _getCompanyMeta(companyName);
+    final Color brandColor = _parseHexColor(
+      meta != null ? meta['brand_color'] as String? : null,
+      const Color(0xFF0B1F3A),
+    );
+
+    return InkWell(
+      onTap: _detailsLocked ? null : () {
+        _selectCompany(companyName);
+        setState(() {
+          _formVisible = true;
+        });
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeInOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 8.0),
+        decoration: BoxDecoration(
+          color: selected
+              ? brandColor.withValues(alpha: isDark ? 0.12 : 0.05)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            // Left selection indicator pill
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeInOutCubic,
+              width: selected ? 3.5 : 0,
+              height: selected ? 20 : 0,
+              margin: EdgeInsets.only(right: selected ? 8 : 0),
+              decoration: BoxDecoration(
+                color: brandColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            _buildCompanyLogo(companyName, selected),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                companyName,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  color: selected
+                      ? (isDark ? Colors.white : brandColor)
+                      : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155)),
+                ),
+              ),
+            ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 240),
+              child: selected
+                  ? Icon(
+                      Icons.check_circle_rounded,
+                      key: const ValueKey('check'),
+                      size: 18,
+                      color: isDark ? Colors.white : brandColor,
+                    )
+                  : Icon(
+                      Icons.chevron_right_rounded,
+                      key: const ValueKey('chevron'),
+                      size: 18,
+                      color: isDark ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryCard({
+    required String category,
+    required String title,
+    required String subtitle,
+    required Color iconBgColor,
+    required Color iconColor,
+    required IconData iconData,
+    required List<String> companies,
+    required bool isDark,
+  }) {
+    if (companies.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? const Color(0x33000000) : const Color(0x060F172A),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Top accent gradient color bar
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 4,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    iconColor.withValues(alpha: 0.8),
+                    iconColor,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16.0, 20.0, 16.0, 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: isDark ? iconBgColor.withValues(alpha: 0.15) : iconBgColor,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: iconColor.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    iconData,
+                    color: iconColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.4,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    height: 1.3,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 16),
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: companies.length,
+                  separatorBuilder: (context, index) => Divider(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    height: 1,
+                    thickness: 1,
+                  ),
+                  itemBuilder: (context, index) {
+                    final String companyName = companies[index];
+                    return _buildCompanyRow(companyName, isDark);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final bool compact = MediaQuery.of(context).size.width < 390;
     final bool hasOtherCompany = _company == 'Other';
     final Map<String, List<String>> categorized = _categorizedCompanies();
+
+    final List<String> activeCategories = categorized.keys
+        .where((String k) => categorized[k]!.isNotEmpty)
+        .toList();
+
+    // Sort to keep standard premium order
+    activeCategories.sort((String a, String b) {
+      int score(String cat) {
+        final String c = cat.toLowerCase();
+        if (c.contains('food')) return 0;
+        if (c.contains('bike') || c.contains('texi') || c.contains('taxi')) return 1;
+        if (c.contains('ecom')) return 2;
+        if (c.contains('parcel')) return 3;
+        return 4;
+      }
+      return score(a).compareTo(score(b));
+    });
+
+    final List<String> leftCategories = <String>[];
+    final List<String> rightCategories = <String>[];
+    for (int i = 0; i < activeCategories.length; i++) {
+      if (i % 2 == 0) {
+        leftCategories.add(activeCategories[i]);
+      } else {
+        rightCategories.add(activeCategories[i]);
+      }
+    }
 
     int completed = 0;
     completed += 1; // company chosen
@@ -4041,8 +4696,8 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _tr('Rider Onboarding', 'à¤°à¤¾à¤‡à¤¡à¤° à¤‘à¤¨à¤¬à¥‹à¤°à¥à¤¡à¤¿à¤‚à¤—'),
-                        style: TextStyle(
+                        _tr('Rider Onboarding', 'राइडर ऑनबोर्डिंग'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 17,
                           fontWeight: FontWeight.w900,
@@ -4118,7 +4773,9 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  _tr('Work Details', 'à¤•à¤¾à¤® à¤•à¥€ à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€'),
+                  _formVisible 
+                      ? _tr('Verification Details', 'सत्यापन विवरण') 
+                      : _tr('Work Details', 'काम की जानकारी'),
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF102A56),
@@ -4146,7 +4803,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            _tr('Details submitted. Editing is locked.', 'à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤¸à¤¬à¤®à¤¿à¤Ÿ à¤¹à¥‹ à¤šà¥à¤•à¥€ à¤¹à¥ˆà¥¤ à¤à¤¡à¤¿à¤Ÿ à¤²à¥‰à¤• à¤¹à¥ˆà¥¤'),
+                            _tr('Details submitted. Editing is locked.', 'जानकारी सबमिट हो चुकी है। एडिट लॉक है।'),
                             style: TextStyle(
                               color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF102A56),
                               fontWeight: FontWeight.w800,
@@ -4160,257 +4817,75 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                 ],
                 const SizedBox(height: 14),
 
-                // ── All categories stacked vertically ──────────────────────
-                Text(
-                  _tr('Select your company', 'अपनी कंपनी चुनें'),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...categorized.entries.map((MapEntry<String, List<String>> entry) {
-                  final String category = entry.key;
-                  final List<String> options = entry.value;
-                  if (options.isEmpty) return const SizedBox.shrink();
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── Category section header ──
-                        Row(
-                          children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF1E293B)
-                                    : const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                _categoryIcon(category),
-                                size: 16,
-                                color: isDark
-                                    ? const Color(0xFF94A3B8)
-                                    : const Color(0xFF475569),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              category,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                                color: isDark
-                                    ? const Color(0xFFE2E8F0)
-                                    : const Color(0xFF0F172A),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Container(
-                                height: 1,
-                                color: isDark
-                                    ? const Color(0xFF1E293B)
-                                    : const Color(0xFFE2E8F0),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        // ── Company cards for this category ──
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: options.length,
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 0.88,
-                          ),
-                          itemBuilder: (context, i) {
-                            final String option = options[i];
-                            final bool selected = _company == option;
-                            final Map<String, dynamic>? meta = _getCompanyMeta(option);
-                            final Color brandColor = _parseHexColor(
-                              meta != null ? meta['brand_color'] as String? : null,
-                              const Color(0xFF0B1F3A),
-                            );
-
-                            return GestureDetector(
-                              onTap: _detailsLocked ? null : () => _selectCompany(option),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                curve: Curves.easeOut,
-                                decoration: BoxDecoration(
-                                  color: selected
-                                      ? (isDark
-                                          ? brandColor.withValues(alpha: 0.2)
-                                          : brandColor.withValues(alpha: 0.07))
-                                      : (isDark
-                                          ? const Color(0xFF1E293B)
-                                          : Colors.white),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: selected
-                                        ? brandColor
-                                        : (isDark
-                                            ? const Color(0xFF334155)
-                                            : const Color(0xFFE2E8F0)),
-                                    width: selected ? 2.0 : 1.0,
-                                  ),
-                                  boxShadow: selected
-                                      ? [
-                                          BoxShadow(
-                                            color: brandColor.withValues(alpha: 0.25),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          )
-                                        ]
-                                      : [
-                                          const BoxShadow(
-                                            color: Color(0x0A000000),
-                                            blurRadius: 6,
-                                            offset: Offset(0, 2),
-                                          )
-                                        ],
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      width: 48,
-                                      height: 48,
-                                      decoration: BoxDecoration(
-                                        color: selected
-                                            ? brandColor.withValues(alpha: isDark ? 0.3 : 0.12)
-                                            : (isDark
-                                                ? const Color(0xFF0F172A)
-                                                : const Color(0xFFF8FAFC)),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: selected
-                                              ? brandColor.withValues(alpha: 0.4)
-                                              : Colors.transparent,
-                                          width: 1.5,
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: _buildCompanyLogo(option, selected),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                                      child: Text(
-                                        option,
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                                          color: selected
-                                              ? brandColor
-                                              : (isDark
-                                                  ? const Color(0xFFCBD5E1)
-                                                  : const Color(0xFF334155)),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      width: selected ? 6 : 0,
-                                      height: selected ? 6 : 0,
-                                      decoration: BoxDecoration(
-                                        color: brandColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-
-                // ── Continue button: shown until user taps it ──────────────
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 350),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.18),
-                        end: Offset.zero,
-                      ).animate(CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                      )),
-                      child: FadeTransition(opacity: animation, child: child),
-                    );
-                  },
-                  child: _formVisible
-                      ? const SizedBox.shrink()
-                      : Padding(
-                          key: const ValueKey('continue_btn'),
-                          padding: const EdgeInsets.only(top: 4, bottom: 2),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                              onPressed: () => setState(() => _formVisible = true),
-                              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                              label: Text(
-                                _tr('Continue with $_company', '$_company के साथ जारी रखें'),
-                              ),
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                backgroundColor: const Color(0xFF0B1F3A),
-                                foregroundColor: Colors.white,
-                                textStyle: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                ),
-
-                // ── Step 1 Form: shown only after company confirmed ─────────
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.12),
-                        end: Offset.zero,
-                      ).animate(CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                      )),
-                      child: FadeTransition(opacity: animation, child: child),
-                    );
-                  },
                   child: !_formVisible
-                      ? const SizedBox.shrink(key: ValueKey('form_hidden'))
-                      : Column(
-                          key: const ValueKey('form_visible'),
+                      ? Column(
+                          key: const ValueKey('catalog_step'),
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 10),
+                            Text(
+                              _tr('Select your company', 'अपनी कंपनी चुनें'),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            
+                            // ── The beautiful 2-column catalog grid of categories ──
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Left Column
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: leftCategories.map((String cat) {
+                                      final Map<String, dynamic> visuals = _getCategoryVisuals(cat);
+                                      return _buildCategoryCard(
+                                        category: cat,
+                                        title: visuals['title'] as String,
+                                        subtitle: visuals['subtitle'] as String,
+                                        iconBgColor: visuals['iconBgColor'] as Color,
+                                        iconColor: visuals['iconColor'] as Color,
+                                        iconData: visuals['iconData'] as IconData,
+                                        companies: categorized[cat] ?? <String>[],
+                                        isDark: isDark,
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Right Column
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: rightCategories.map((String cat) {
+                                      final Map<String, dynamic> visuals = _getCategoryVisuals(cat);
+                                      return _buildCategoryCard(
+                                        category: cat,
+                                        title: visuals['title'] as String,
+                                        subtitle: visuals['subtitle'] as String,
+                                        iconBgColor: visuals['iconBgColor'] as Color,
+                                        iconColor: visuals['iconColor'] as Color,
+                                        iconData: visuals['iconData'] as IconData,
+                                        companies: categorized[cat] ?? <String>[],
+                                        isDark: isDark,
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Column(
+                          key: const ValueKey('form_step'),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             // Selected company badge with Change button
                             Builder(builder: (context) {
                               final Map<String, dynamic>? meta = _getCompanyMeta(_company);
@@ -4596,7 +5071,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                                     onChanged: (_) => setState(() {}),
                                     decoration: _fieldDecoration(
                                       label: _tr('Vehicle number *', 'वाहन नंबर *'),
-                                      hint: _tr('Registration number', 'रजिस्ट्रेशन नंबर'),
+                                      hint: _tr('Registration number', 'रजिस्ट्रेशन number'),
                                       isDark: isDark,
                                       icon: Icons.confirmation_number_rounded,
                                     ),
@@ -4621,25 +5096,29 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                             SizedBox(
                               width: double.infinity,
                               child: FilledButton.icon(
-                                onPressed: (_saving || _detailsLocked) ? null : _save,
+                                onPressed: _saving
+                                    ? null
+                                    : (_detailsLocked
+                                        ? () => setState(() => _detailsLocked = false)
+                                        : _save),
                                 icon: _saving
                                     ? const SizedBox(
                                         width: 16,
                                         height: 16,
                                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                       )
-                                    : Icon(_detailsLocked ? Icons.lock_rounded : Icons.check_circle_rounded),
+                                    : Icon(_detailsLocked ? Icons.lock_open_rounded : Icons.check_circle_rounded),
                                 label: Text(
                                   _detailsLocked
-                                      ? _tr('Details submitted', 'जानकारी सबमिट हो गई')
+                                      ? _tr('Unlock & Edit Details', 'अनलॉक और एडिट करें')
                                       : (_saving
                                             ? _tr('Saving...', 'सेव हो रहा है...')
                                             : _tr('Save onboarding details', 'ऑनबोर्डिंग जानकारी सेव करें')),
                                 ),
                                 style: FilledButton.styleFrom(
                                   padding: EdgeInsets.symmetric(vertical: compact ? 12 : 14),
-                                  backgroundColor: const Color(0xFF0B1F3A),
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: _detailsLocked ? const Color(0xFFF4B400) : const Color(0xFF0B1F3A),
+                                  foregroundColor: _detailsLocked ? const Color(0xFF0B1F3A) : Colors.white,
                                 ),
                               ),
                             ),
@@ -5232,9 +5711,10 @@ class EvScreen extends StatefulWidget {
 
 class _EvScreenState extends State<EvScreen> {
   static const List<List<Color>> _evTileGradients = <List<Color>>[
-    <Color>[Color(0xFF0B1F3A), Color(0xFF1E3A5F)],
-    <Color>[Color(0xFFB45309), Color(0xFFF59E0B)],
-    <Color>[Color(0xFF334155), Color(0xFF0B1F3A)],
+    <Color>[Color(0xFF4F46E5), Color(0xFF7C3AED)], // Indigo to Purple
+    <Color>[Color(0xFFEA580C), Color(0xFFF59E0B)], // Orange to Amber
+    <Color>[Color(0xFF0D9488), Color(0xFF10B981)], // Teal to Emerald
+    <Color>[Color(0xFF2563EB), Color(0xFF06B6D4)], // Blue to Cyan
   ];
 
   late Future<ContactLayoutMeta> _layoutFuture;
@@ -5316,58 +5796,146 @@ class _EvScreenState extends State<EvScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF0B1F3A), Color(0xFFB45309)],
+        ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0F172A), // Slate 900
+                  Color(0xFF1E3A8A), // Indigo Blue
+                  Color(0xFFEA580C), // Electric Orange
+                ],
+                stops: [0.0, 0.55, 1.0],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFEA580C).withValues(alpha: 0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x33B45309),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
               children: [
-                Text(
-                  _tr('EV Support Hub', 'à¤ˆà¤µà¥€ à¤¸à¤ªà¥‹à¤°à¥à¤Ÿ à¤¹à¤¬'),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
+                // Glowing abstract background circle 1
+                Positioned(
+                  right: -30,
+                  top: -30,
+                  child: Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.05),
+                    ),
+                  ),
                 ),
-              ),
-              SizedBox(height: 6),
-              Text(
-                _tr(
-                  'Rent, buy and maintain EVs with rider-friendly plans.',
-                  'à¤°à¤¾à¤‡à¤¡à¤°-à¤«à¥à¤°à¥‡à¤‚à¤¡à¤²à¥€ à¤ªà¥à¤²à¤¾à¤¨à¥à¤¸ à¤•à¥‡ à¤¸à¤¾à¤¥ à¤ˆà¤µà¥€ à¤°à¥‡à¤‚à¤Ÿ à¤•à¤°à¥‡à¤‚, à¤–à¤°à¥€à¤¦à¥‡à¤‚ à¤”à¤° à¤®à¥‡à¤‚à¤Ÿà¥‡à¤¨ à¤•à¤°à¥‡à¤‚à¥¤',
+                // Glowing abstract background circle 2
+                Positioned(
+                  left: -50,
+                  bottom: -50,
+                  child: Container(
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.amber.withValues(alpha: 0.04),
+                    ),
+                  ),
                 ),
-                style: TextStyle(
-                  color: Color(0xE6FFFFFF),
-                  height: 1.35,
-                  fontWeight: FontWeight.w500,
+                // Rotated background EV moped icon
+                Positioned(
+                  right: -10,
+                  bottom: -15,
+                  child: Transform.rotate(
+                    angle: -0.2,
+                    child: Icon(
+                      Icons.electric_moped_rounded,
+                      size: 110,
+                      color: Colors.white.withValues(alpha: 0.09),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                // Main content
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Premium Tag Pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.24),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.bolt_rounded,
+                              color: Color(0xFFF59E0B),
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _tr('EV HUB', 'ईवी हब'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        _tr('EV Support Hub', 'ईवी सपोर्ट हब'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _tr(
+                          'Rent, buy and maintain EVs with rider-friendly plans.',
+                          'राइडर-फ्रेंडली प्लान्स के साथ ईवी रेंट करें, खरीदें और मेंटेन करें।',
+                        ),
+                        style: const TextStyle(
+                          color: Color(0xF2FFFFFF),
+                          fontSize: 13,
+                          height: 1.4,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
             final int columns = compact ? 2 : 3;
-            final double spacing = 10;
+            final double spacing = 12;
             final double cardWidth =
                 (constraints.maxWidth - (spacing * (columns - 1))) / columns;
-            final double cardHeight = compact ? 124 : 116;
+            final double cardHeight = compact ? 130 : 122;
 
             return FutureBuilder<ContactLayoutMeta>(
               future: _layoutFuture,
@@ -5409,11 +5977,11 @@ class _EvScreenState extends State<EvScreen> {
                       width: cardWidth,
                       height: cardHeight,
                       child: _EvQuickActionCard(
-                        title: _tr('Rent EV', 'à¤ˆà¤µà¥€ à¤•à¤¿à¤°à¤¾à¤ à¤ªà¤° à¤²à¥‡à¤‚'),
-                        subtitle: _tr('Daily plans', 'à¤¡à¥‡à¤²à¥€ à¤ªà¥à¤²à¤¾à¤¨à¥à¤¸'),
+                        title: _tr('Rent EV', 'ईवी किराए पर लें'),
+                        subtitle: _tr('Daily plans', 'डेली प्लान्स'),
                         icon: Icons.electric_scooter_rounded,
-                        colorA: const Color(0xFF0B1F3A),
-                        colorB: const Color(0xFF1E3A5F),
+                        colorA: const Color(0xFF4F46E5), // Premium Indigo
+                        colorB: const Color(0xFF7C3AED), // Premium Violet
                         onTap: () => _openRentEv(context),
                       ),
                     ),
@@ -5421,11 +5989,11 @@ class _EvScreenState extends State<EvScreen> {
                       width: cardWidth,
                       height: cardHeight,
                       child: _EvQuickActionCard(
-                        title: _tr('Buy EV', 'à¤ˆà¤µà¥€ à¤–à¤°à¥€à¤¦à¥‡à¤‚'),
-                        subtitle: _tr('Best offers', 'à¤¬à¥‡à¤¸à¥à¤Ÿ à¤‘à¤«à¤°à¥à¤¸'),
+                        title: _tr('Buy EV', 'ईवी खरीदें'),
+                        subtitle: _tr('Best offers', 'बेस्ट ऑफर्स'),
                         icon: Icons.electric_bike_rounded,
-                        colorA: const Color(0xFFB45309),
-                        colorB: const Color(0xFFF59E0B),
+                        colorA: const Color(0xFFEA580C), // Premium Orange
+                        colorB: const Color(0xFFF59E0B), // Premium Amber
                         onTap: () => _openBuyEv(context),
                       ),
                     ),
@@ -5433,11 +6001,11 @@ class _EvScreenState extends State<EvScreen> {
                       width: cardWidth,
                       height: cardHeight,
                       child: _EvQuickActionCard(
-                        title: _tr('Charging', 'à¤šà¤¾à¤°à¥à¤œà¤¿à¤‚à¤—'),
-                        subtitle: _tr('Nearby points', 'à¤¨à¤œà¤¼à¤¦à¥€à¤•à¥€ à¤ªà¥‰à¤‡à¤‚à¤Ÿà¥à¤¸'),
+                        title: _tr('Charging', 'चार्जिंग'),
+                        subtitle: _tr('Nearby points', 'नज़दीकी पॉइंट्स'),
                         icon: Icons.ev_station_rounded,
-                        colorA: const Color(0xFF334155),
-                        colorB: const Color(0xFF0B1F3A),
+                        colorA: const Color(0xFF0D9488), // Premium Teal
+                        colorB: const Color(0xFF10B981), // Premium Emerald
                         onTap: () => _openChargingStations(context),
                       ),
                     ),
@@ -5482,7 +6050,7 @@ class _ChargingStationsScreenState extends State<_ChargingStationsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_tr('Charging Stations', 'à¤šà¤¾à¤°à¥à¤œà¤¿à¤‚à¤— à¤¸à¥à¤Ÿà¥‡à¤¶à¤¨')),
+        title: Text(_tr('Charging Stations', 'चार्जिंग स्टेशन')),
       ),
       backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF),
       body: ListView(
@@ -5511,7 +6079,7 @@ class _ChargingStationsScreenState extends State<_ChargingStationsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _tr('Nearest EV Charging', 'à¤¨à¤œà¤¼à¤¦à¥€à¤•à¥€ à¤ˆà¤µà¥€ à¤šà¤¾à¤°à¥à¤œà¤¿à¤‚à¤—'),
+                  _tr('Nearest EV Charging', 'नज़दीकी ईवी चार्जिंग'),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -5522,7 +6090,7 @@ class _ChargingStationsScreenState extends State<_ChargingStationsScreen> {
                 Text(
                   _tr(
                     'Live location first, then city-wise lists - scroll for more stations.',
-                    'à¤ªà¤¹à¤²à¥‡ à¤²à¤¾à¤‡à¤µ à¤²à¥‹à¤•à¥‡à¤¶à¤¨, à¤«à¤¿à¤° à¤¶à¤¹à¤° à¤•à¥‡ à¤¹à¤¿à¤¸à¤¾à¤¬ à¤¸à¥‡ à¤²à¤¿à¤¸à¥à¤Ÿ - à¤”à¤° à¤¸à¥à¤Ÿà¥‡à¤¶à¤¨à¥‹à¤‚ à¤•à¥‡ à¤²à¤¿à¤ à¤¸à¥à¤•à¥à¤°à¥‰à¤² à¤•à¤°à¥‡à¤‚à¥¤',
+                    'पहले लाइव लोकेशन, फिर शहर के हिसाब से लिस्ट - और स्टेशनों के लिए स्क्रॉल करें।',
                   ),
                   style: TextStyle(
                     color: Color(0xE6FFFFFF),
@@ -5564,63 +6132,130 @@ class _EvQuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [colorA, colorB],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: colorA.withValues(alpha: 0.30),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colorA.withValues(alpha: 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: const Color(0x32FFFFFF),
-                  borderRadius: BorderRadius.circular(11),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            child: Ink(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [colorA, colorB],
                 ),
-                child: Icon(icon, color: Colors.white, size: 20),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  width: 1.2,
                 ),
               ),
-              Text(
-                subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xD9FFFFFF),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11,
-                ),
+              child: Stack(
+                children: [
+                  // Subtle abstract background bubble
+                  Positioned(
+                    right: -15,
+                    bottom: -15,
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.06),
+                      ),
+                    ),
+                  ),
+                  // Clickable Chevron at the top right
+                  Positioned(
+                    right: 12,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.12),
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
+                  ),
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.28),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Icon(icon, color: Colors.white, size: 21),
+                        ),
+                        const SizedBox(height: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 15,
+                                letterSpacing: 0.1,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -5706,8 +6341,8 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
   String get _profileCity => widget.initialCity.trim();
   String get _profileFallbackLabel =>
       _profileCity.isEmpty
-          ? _tr('default NCR area', 'à¤¡à¤¿à¤«à¤¼à¥‰à¤²à¥à¤Ÿ NCR à¤à¤°à¤¿à¤¯à¤¾')
-          : _tr('your profile city', 'à¤†à¤ªà¤•à¤¾ à¤ªà¥à¤°à¥‹à¤«à¤¾à¤‡à¤² à¤¶à¤¹à¤°');
+          ? _tr('default NCR area', 'डिफ़ॉल्ट NCR एरिया')
+          : _tr('your profile city', 'आपका प्रोफाइल शहर');
 
   void _applyCityCenterFallbackIfNeeded() {
     if (_refLat != null && _refLon != null) return;
@@ -6025,7 +6660,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
     final String url = 'https://www.google.com/maps/search/?api=1&query=${item.latitude},${item.longitude}';
     final opened = await launchUrlString(url, mode: LaunchMode.externalApplication);
     if (!opened) {
-      _showHint(_tr('Could not open Google Maps right now.', 'à¤…à¤­à¥€ Google Maps à¤¨à¤¹à¥€à¤‚ à¤–à¥à¤² à¤ªà¤¾à¤¯à¤¾à¥¤'));
+      _showHint(_tr('Could not open Google Maps right now.', 'अभी Google Maps नहीं खुल पाया।'));
     }
   }
 
@@ -6051,7 +6686,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _tr('Charging points from map', 'à¤®à¥ˆà¤ª à¤¸à¥‡ à¤šà¤¾à¤°à¥à¤œà¤¿à¤‚à¤— à¤ªà¥‰à¤‡à¤‚à¤Ÿà¥à¤¸'),
+            _tr('Charging points from map', 'मैप से चार्जिंग पॉइंट्स'),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w900,
@@ -6062,7 +6697,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
           Text(
             _tr(
               'We wait briefly for live GPS, then load your city in pages (scroll down for more). Nothing is cached - tap Detect me anytime to refresh.',
-              'à¤¹à¤® à¤ªà¤¹à¤²à¥‡ à¤¥à¥‹à¤¡à¤¼à¥€ à¤¦à¥‡à¤° à¤²à¤¾à¤‡à¤µ GPS à¤•à¤¾ à¤‡à¤‚à¤¤à¤œà¤¼à¤¾à¤° à¤•à¤°à¤¤à¥‡ à¤¹à¥ˆà¤‚, à¤«à¤¿à¤° à¤†à¤ªà¤•à¤¾ à¤¶à¤¹à¤° à¤ªà¥‡à¤œ à¤®à¥‡à¤‚ à¤²à¥‹à¤¡ à¤¹à¥‹à¤¤à¤¾ à¤¹à¥ˆ (à¤”à¤° à¤¦à¥‡à¤–à¤¨à¥‡ à¤•à¥‡ à¤²à¤¿à¤ à¤¨à¥€à¤šà¥‡ à¤¸à¥à¤•à¥à¤°à¥‰à¤² à¤•à¤°à¥‡à¤‚)à¥¤ à¤•à¥à¤› à¤­à¥€ à¤•à¥ˆà¤¶ à¤¨à¤¹à¥€à¤‚ à¤¹à¥‹à¤¤à¤¾ - à¤°à¤¿à¤«à¥à¤°à¥‡à¤¶ à¤•à¥‡ à¤²à¤¿à¤ à¤•à¤­à¥€ à¤­à¥€ Detect me à¤¦à¤¬à¤¾à¤à¤‚à¥¤',
+              'हम पहले थोड़ी देर लाइव GPS का इंतज़ार करते हैं, फिर आपका शहर पेज में लोड होता है (और देखने के लिए नीचे स्क्रॉल करें)। कुछ भी कैश नहीं होता - रिफ्रेश के लिए कभी भी Detect me दबाएं।',
             ),
             style: TextStyle(
               fontSize: 12,
@@ -6094,7 +6729,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                         child: InputDecorator(
                           decoration: InputDecoration(
                             isDense: true,
-                            labelText: _tr('City filter', 'à¤¶à¤¹à¤° à¤«à¤¼à¤¿à¤²à¥à¤Ÿà¤°'),
+                            labelText: _tr('City filter', 'शहर फ़िल्टर'),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.all(Radius.circular(12)),
                             ),
@@ -6131,12 +6766,12 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
                             : const Icon(Icons.my_location_rounded),
-                        label: Text(_tr('Detect me', 'à¤®à¥‡à¤°à¥€ à¤²à¥‹à¤•à¥‡à¤¶à¤¨')),
+                        label: Text(_tr('Detect me', 'मेरी लोकेशन')),
                       ),
                       if (_refFromGps)
                         OutlinedButton(
                           onPressed: _clearGpsReference,
-                          child: Text(_tr('Clear GPS', 'GPS à¤¹à¤Ÿà¤¾à¤à¤‚')),
+                          child: Text(_tr('Clear GPS', 'GPS हटाएं')),
                         ),
                     ],
                   ),
@@ -6147,16 +6782,16 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                         : _loadingInitial && _items.isEmpty
                             ? _tr(
                                 'Getting location & loading first page...',
-                                'à¤²à¥‹à¤•à¥‡à¤¶à¤¨ à¤²à¥€ à¤œà¤¾ à¤°à¤¹à¥€ à¤¹à¥ˆ à¤”à¤° à¤ªà¤¹à¤²à¤¾ à¤ªà¥‡à¤œ à¤²à¥‹à¤¡ à¤¹à¥‹ à¤°à¤¹à¤¾ à¤¹à¥ˆ...',
+                                'लोकेशन ली जा रही है और पहला पेज लोड हो रहा है...',
                               )
                             : _refFromGps
                                 ? _tr(
                                     'Loaded ${_items.length} of $_totalCount - nearest first (GPS) - scroll for more',
-                                    '${_totalCount} à¤®à¥‡à¤‚ à¤¸à¥‡ ${_items.length} à¤²à¥‹à¤¡ - à¤ªà¤¹à¤²à¥‡ à¤¸à¤¬à¤¸à¥‡ à¤¨à¤œà¤¼à¤¦à¥€à¤•à¥€ (GPS) - à¤”à¤° à¤¦à¥‡à¤–à¤¨à¥‡ à¤•à¥‡ à¤²à¤¿à¤ à¤¸à¥à¤•à¥à¤°à¥‰à¤² à¤•à¤°à¥‡à¤‚',
+                                    '${_totalCount} में से ${_items.length} लोड - पहले सबसे नज़दीकी (GPS) - और देखने के लिए स्क्रॉल करें',
                                   )
                                 : _tr(
                                     'Loaded ${_items.length} of $_totalCount - nearest first (approx.) - scroll for more',
-                                    '${_totalCount} à¤®à¥‡à¤‚ à¤¸à¥‡ ${_items.length} à¤²à¥‹à¤¡ - à¤ªà¤¹à¤²à¥‡ à¤¸à¤¬à¤¸à¥‡ à¤¨à¤œà¤¼à¤¦à¥€à¤•à¥€ (à¤…à¤¨à¥à¤®à¤¾à¤¨à¤¿à¤¤) - à¤”à¤° à¤¦à¥‡à¤–à¤¨à¥‡ à¤•à¥‡ à¤²à¤¿à¤ à¤¸à¥à¤•à¥à¤°à¥‰à¤² à¤•à¤°à¥‡à¤‚',
+                                    '${_totalCount} में से ${_items.length} लोड - पहले सबसे नज़दीकी (अनुमानित) - और देखने के लिए स्क्रॉल करें',
                                   ),
                     style: TextStyle(
                       fontSize: 12,
@@ -6171,7 +6806,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: () => _fetchPage(reset: true),
-                      child: Text(_tr('Retry', 'à¤«à¤¿à¤° à¤•à¥‹à¤¶à¤¿à¤¶ à¤•à¤°à¥‡à¤‚')),
+                      child: Text(_tr('Retry', 'फिर कोशिश करें')),
                     ),
                   ],
                   const SizedBox(height: 10),
@@ -6182,7 +6817,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                     )
                   else if (!_loadingInitial && _items.isEmpty && _loadError == null)
                     Text(
-                      _tr('No charging points found for current filters.', 'à¤®à¥Œà¤œà¥‚à¤¦à¤¾ à¤«à¤¼à¤¿à¤²à¥à¤Ÿà¤° à¤•à¥‡ à¤²à¤¿à¤ à¤•à¥‹à¤ˆ à¤šà¤¾à¤°à¥à¤œà¤¿à¤‚à¤— à¤ªà¥‰à¤‡à¤‚à¤Ÿ à¤¨à¤¹à¥€à¤‚ à¤®à¤¿à¤²à¤¾à¥¤'),
+                      _tr('No charging points found for current filters.', 'मौजूदा फ़िल्टर के लिए कोई चार्जिंग पॉइंट नहीं मिला।'),
                       style: TextStyle(color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334E68)),
                     )
                   else if (_items.isNotEmpty)
@@ -6296,7 +6931,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                                                   child: Text(
                                                     item.city.isNotEmpty
                                                         ? item.city
-                                                        : _tr('City unknown', 'à¤¶à¤¹à¤° à¤…à¤œà¥à¤žà¤¾à¤¤'),
+                                                        : _tr('City unknown', 'शहर अज्ञात'),
                                                     style: TextStyle(
                                                       fontSize: 11,
                                                       fontWeight: FontWeight.w800,
@@ -6336,7 +6971,7 @@ class _EvChargingLocationsSectionState extends State<_EvChargingLocationsSection
                                   child: FilledButton.tonalIcon(
                                     onPressed: () => _openInGoogleMaps(item),
                                     icon: const Icon(Icons.map_rounded, size: 18),
-                                    label: Text(_tr('Get directions on Maps', 'Maps à¤ªà¤° à¤¦à¤¿à¤¶à¤¾ à¤¦à¥‡à¤–à¥‡à¤‚')),
+                                    label: Text(_tr('Get directions on Maps', 'Maps पर दिशा देखें')),
                                     style: FilledButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -6944,7 +7579,7 @@ class _HelpScreenState extends State<HelpScreen> {
     required IconData icon,
   }) {
     final String banner = description.trim().isEmpty
-        ? _tr('Tell us more so we can help you faster.', 'à¤¹à¤®à¥‡à¤‚ à¤¥à¥‹à¤¡à¤¼à¤¾ à¤”à¤° à¤¬à¤¤à¤¾à¤à¤‚ à¤¤à¤¾à¤•à¤¿ à¤¹à¤® à¤œà¤²à¥à¤¦à¥€ à¤®à¤¦à¤¦ à¤•à¤° à¤¸à¤•à¥‡à¤‚à¥¤')
+        ? _tr('Tell us more so we can help you faster.', 'हमें थोड़ा और बताएं ताकि हम जल्दी मदद कर सकें।')
         : description;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -6992,7 +7627,7 @@ class _HelpScreenState extends State<HelpScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  _tr('Help & Support', 'à¤®à¤¦à¤¦ à¤”à¤° à¤¸à¤ªà¥‹à¤°à¥à¤Ÿ'),
+                  _tr('Help & Support', 'मदद और सपोर्ट'),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -7003,7 +7638,7 @@ class _HelpScreenState extends State<HelpScreen> {
                 Text(
                   _tr(
                     'Report issues, track progress and get quick rider support.',
-                    'à¤¸à¤®à¤¸à¥à¤¯à¤¾à¤à¤‚ à¤¬à¤¤à¤¾à¤à¤‚, à¤ªà¥à¤°à¤—à¤¤à¤¿ à¤Ÿà¥à¤°à¥ˆà¤• à¤•à¤°à¥‡à¤‚ à¤”à¤° à¤œà¤²à¥à¤¦à¥€ à¤°à¤¾à¤‡à¤¡à¤° à¤¸à¤ªà¥‹à¤°à¥à¤Ÿ à¤ªà¤¾à¤à¤‚à¥¤',
+                    'समस्याएं बताएं, प्रगति ट्रैक करें और जल्दी राइडर सपोर्ट पाएं।',
                   ),
                   style: TextStyle(
                     color: Color(0xE6FFFFFF),
@@ -7016,8 +7651,8 @@ class _HelpScreenState extends State<HelpScreen> {
           ),
           const SizedBox(height: 14),
           _HelpActionTile(
-            title: _tr('Contact us', 'à¤¹à¤®à¤¸à¥‡ à¤¸à¤‚à¤ªà¤°à¥à¤• à¤•à¤°à¥‡à¤‚'),
-            subtitle: _tr('Message the team (topic, your details)', 'à¤Ÿà¥€à¤® à¤•à¥‹ à¤¸à¤‚à¤¦à¥‡à¤¶ à¤­à¥‡à¤œà¥‡à¤‚ (à¤Ÿà¥‰à¤ªà¤¿à¤•, à¤†à¤ªà¤•à¥€ à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€)'),
+            title: _tr('Contact us', 'हमसे संपर्क करें'),
+            subtitle: _tr('Message the team (topic, your details)', 'टीम को संदेश भेजें (टॉपिक, आपकी जानकारी)'),
             icon: Icons.forward_to_inbox_rounded,
             onTap: () {
               Navigator.of(context).push<void>(
@@ -7053,7 +7688,7 @@ class _HelpScreenState extends State<HelpScreen> {
                   Text(
                     _tr(
                       'Could not load help topics. Check connection and try again.',
-                      'à¤¹à¥‡à¤²à¥à¤ª à¤Ÿà¥‰à¤ªà¤¿à¤•à¥à¤¸ à¤²à¥‹à¤¡ à¤¨à¤¹à¥€à¤‚ à¤¹à¥à¤à¥¤ à¤•à¤¨à¥‡à¤•à¥à¤¶à¤¨ à¤šà¥‡à¤• à¤•à¤°à¥‡à¤‚ à¤”à¤° à¤«à¤¿à¤° à¤•à¥‹à¤¶à¤¿à¤¶ à¤•à¤°à¥‡à¤‚à¥¤',
+                      'हेल्प टॉपिक्स लोड नहीं हुए। कनेक्शन चेक करें और फिर कोशिश करें।',
                     ),
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -7064,7 +7699,7 @@ class _HelpScreenState extends State<HelpScreen> {
                   const SizedBox(height: 8),
                   FilledButton.tonal(
                     onPressed: _reloadLayout,
-                    child: Text(_tr('Retry', 'à¤«à¤¿à¤° à¤•à¥‹à¤¶à¤¿à¤¶ à¤•à¤°à¥‡à¤‚')),
+                    child: Text(_tr('Retry', 'फिर कोशिश करें')),
                   ),
                 ],
               ),
@@ -7185,5 +7820,4 @@ class _HelpActionTile extends StatelessWidget {
     );
   }
 }
-
 
