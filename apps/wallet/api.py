@@ -244,6 +244,14 @@ def wallet_create_withdrawal(
     )
 
 
+@router.post("/withdraw", response_model=WalletWithdrawalCreateResponse)
+def wallet_create_withdrawal_alias(
+    payload: WalletWithdrawalCreateIn,
+    user: User = Depends(current_user_dep),
+) -> WalletWithdrawalCreateResponse:
+    return wallet_create_withdrawal(payload=payload, user=user)
+
+
 @router.post("/credit", response_model=WalletMeResponse)
 def wallet_credit(
     payload: WalletAdjustIn,
