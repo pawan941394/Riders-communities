@@ -70,3 +70,55 @@ class WalletTransaction(models.Model):
             f"amount={self.amount}, after={self.balance_after})"
         )
 
+
+class WalletWithdrawalRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        PROCESSING = "processing", "Processing"
+        PAID = "paid", "Paid"
+        REJECTED = "rejected", "Rejected"
+
+    wallet = models.ForeignKey(
+        Wallet,
+        on_delete=models.CASCADE,
+        related_name="withdrawal_requests",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="wallet_withdrawal_requests",
+    )
+    debit_transaction = models.OneToOneField(
+        WalletTransaction,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="withdrawal_request",
+    )
+    amount = models.PositiveBigIntegerField()
+    upi_id = models.CharField(max_length=128)
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    user_note = models.CharField(max_length=255, blank=True, default="")
+    admin_note = models.CharField(max_length=255, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        indexes = [
+            models.Index(fields=["user", "-created_at"]),
+            models.Index(fields=["status", "-created_at"]),
+            models.Index(fields=["upi_id"]),
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"WalletWithdrawalRequest(user_id={self.user_id}, amount={self.amount}, "
+            f"status={self.status})"
+        )
+

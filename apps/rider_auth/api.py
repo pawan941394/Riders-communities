@@ -84,7 +84,7 @@ def optional_current_user_dep(
         return None
     token = authorization.removeprefix("Bearer ").strip()
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, _jwt_secret(), algorithms=[JWT_ALGORITHM])
     except jwt.PyJWTError:
         return None
     sub = payload.get("sub")

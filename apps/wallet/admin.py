@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.wallet.models import Wallet, WalletTransaction
+from apps.wallet.models import Wallet, WalletTransaction, WalletWithdrawalRequest
 
 
 @admin.register(Wallet)
@@ -32,4 +32,37 @@ class WalletTransactionAdmin(admin.ModelAdmin):
     list_filter = ("entry_type", "source", "created_at")
     search_fields = ("wallet__user__username", "reason", "reference_id")
     readonly_fields = ("created_at",)
+
+
+@admin.register(WalletWithdrawalRequest)
+class WalletWithdrawalRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "amount",
+        "upi_id",
+        "status",
+        "created_at",
+        "processed_at",
+    )
+    list_filter = ("status", "created_at", "processed_at")
+    search_fields = (
+        "user__username",
+        "user__email",
+        "user__first_name",
+        "user__last_name",
+        "upi_id",
+        "user_note",
+        "admin_note",
+    )
+    readonly_fields = (
+        "wallet",
+        "user",
+        "debit_transaction",
+        "amount",
+        "upi_id",
+        "user_note",
+        "created_at",
+        "updated_at",
+    )
 
