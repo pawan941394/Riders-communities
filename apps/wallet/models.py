@@ -109,6 +109,8 @@ class WalletWithdrawalRequest(models.Model):
     processed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        verbose_name = "Wallet withdrawal request"
+        verbose_name_plural = "Wallet withdrawal requests"
         ordering = ("-created_at", "-id")
         indexes = [
             models.Index(fields=["user", "-created_at"]),
