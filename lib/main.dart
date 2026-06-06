@@ -54,6 +54,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
   String _currentUserCity = '';
   String _currentUserPhone = '';
   String _accessToken = '';
+  DateTime? _sessionExpiresAt;
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
@@ -77,6 +78,8 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
   static const String _kUserAvatarUrl = 'session_user_avatar_url';
   static const String _kUserCity = 'session_user_city';
   static const String _kUserPhone = 'session_user_phone';
+  static const String _kSessionExpiresAtMs = 'session_expires_at_ms';
+  static const Duration _defaultSessionDuration = Duration(days: 30);
 
   @override
   void initState() {
@@ -101,11 +104,11 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_checkVersionAndApply());
-      _logoutIfAccessTokenExpired();
     }
   }
 
-  Future<(bool forceUpdate, String requiredVersion, String message)> _fetchVersionGate() async {
+  Future<(bool forceUpdate, String requiredVersion, String message)>
+  _fetchVersionGate() async {
     try {
       final Uri uri = Uri.parse('${ApiConfig.apiBaseUrl}/api/v1/update/check');
       final http.Response res = await http.post(
@@ -123,7 +126,8 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
         if (decoded is Map<String, dynamic>) {
           final bool upToDate = decoded['up_to_date'] == true;
           final bool forceUpdateFlag = decoded['force_update'] == true;
-          final String requiredVersion = ('${decoded['required_version'] ?? ''}').trim();
+          final String requiredVersion =
+              ('${decoded['required_version'] ?? ''}').trim();
           final String message = ('${decoded['message'] ?? ''}').trim();
           return (forceUpdateFlag || !upToDate, requiredVersion, message);
         }
@@ -145,7 +149,8 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     if (_isCheckingVersion || _isSessionLoading) return;
     _isCheckingVersion = true;
     try {
-      final (bool forceUpdate, String requiredVersion, String message) = await _fetchVersionGate();
+      final (bool forceUpdate, String requiredVersion, String message) =
+          await _fetchVersionGate();
       if (!mounted) return;
       setState(() {
         _forceUpdateRequired = forceUpdate;
@@ -161,7 +166,18 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     final prefs = await SharedPreferences.getInstance();
     final savedTheme = prefs.getString(_kThemeMode) ?? 'light';
     final accessToken = prefs.getString(_kAccessToken) ?? '';
-    final bool tokenExpired = _isAccessTokenExpired(accessToken);
+    final int savedExpiresAtMs = prefs.getInt(_kSessionExpiresAtMs) ?? 0;
+    final DateTime? savedExpiresAt = savedExpiresAtMs > 0
+        ? DateTime.fromMillisecondsSinceEpoch(savedExpiresAtMs)
+        : null;
+    final bool tokenExpired = _isAccessTokenExpired(
+      accessToken,
+      expiresAtOverride: savedExpiresAt,
+    );
+    final bool restoredLoggedIn =
+        (prefs.getBool(_kLoggedIn) ?? false) &&
+        accessToken.isNotEmpty &&
+        !tokenExpired;
     final (bool forceUpdate, String requiredVersion, String updateMessage) =
         await _fetchVersionGate();
 
@@ -169,7 +185,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     setState(() {
       _themeMode = savedTheme == 'dark' ? ThemeMode.dark : ThemeMode.light;
       _isOnboardingComplete = prefs.getBool(_kOnboardingDone) ?? false;
-      _isLoggedIn = (prefs.getBool(_kLoggedIn) ?? false) && accessToken.isNotEmpty && !tokenExpired;
+      _isLoggedIn = restoredLoggedIn;
       _forceUpdateRequired = forceUpdate;
       _requiredVersion = requiredVersion;
       _updateMessage = updateMessage;
@@ -178,20 +194,29 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       _currentUserAvatarUrl = prefs.getString(_kUserAvatarUrl) ?? '';
       _currentUserCity = prefs.getString(_kUserCity) ?? '';
       _currentUserPhone = prefs.getString(_kUserPhone) ?? '';
-      _accessToken = tokenExpired ? '' : accessToken;
+      _accessToken = restoredLoggedIn ? accessToken : '';
+      _sessionExpiresAt = restoredLoggedIn
+          ? _effectiveAccessTokenExpiry(
+              accessToken,
+              storedExpiresAt: savedExpiresAt,
+            )
+          : null;
       _isSessionLoading = false;
     });
-    if (tokenExpired) {
-      unawaited(_persistSession(
-        isLoggedIn: false,
-        accessToken: '',
-        userName: 'Rider',
-        userHandle: '@rider',
-        userAvatarUrl: '',
-        userCity: '',
-        userPhone: '',
-      ));
-    } else {
+    if (!restoredLoggedIn && accessToken.isNotEmpty) {
+      unawaited(
+        _persistSession(
+          isLoggedIn: false,
+          accessToken: '',
+          userName: 'Rider',
+          userHandle: '@rider',
+          userAvatarUrl: '',
+          userCity: '',
+          userPhone: '',
+          clearSessionExpiresAt: true,
+        ),
+      );
+    } else if (restoredLoggedIn) {
       _scheduleSessionExpiryLogout(accessToken);
     }
     if (_isLoggedIn && _fcmToken.isNotEmpty) {
@@ -211,6 +236,8 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     String? userAvatarUrl,
     String? userCity,
     String? userPhone,
+    DateTime? sessionExpiresAt,
+    bool clearSessionExpiresAt = false,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     if (isOnboardingComplete != null) {
@@ -220,7 +247,10 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       await prefs.setBool(_kLoggedIn, isLoggedIn);
     }
     if (themeMode != null) {
-      await prefs.setString(_kThemeMode, themeMode == ThemeMode.dark ? 'dark' : 'light');
+      await prefs.setString(
+        _kThemeMode,
+        themeMode == ThemeMode.dark ? 'dark' : 'light',
+      );
     }
     if (accessToken != null) {
       await prefs.setString(_kAccessToken, accessToken);
@@ -239,6 +269,14 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     }
     if (userPhone != null) {
       await prefs.setString(_kUserPhone, userPhone);
+    }
+    if (clearSessionExpiresAt) {
+      await prefs.remove(_kSessionExpiresAtMs);
+    } else if (sessionExpiresAt != null) {
+      await prefs.setInt(
+        _kSessionExpiresAtMs,
+        sessionExpiresAt.millisecondsSinceEpoch,
+      );
     }
   }
 
@@ -265,34 +303,71 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     final dynamic exp = payload?['exp'];
     final int? seconds = exp is int ? exp : int.tryParse('$exp');
     if (seconds == null || seconds <= 0) return null;
-    return DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true).toLocal();
+    return DateTime.fromMillisecondsSinceEpoch(
+      seconds * 1000,
+      isUtc: true,
+    ).toLocal();
   }
 
-  bool _isAccessTokenExpired(String token) {
+  Duration? _accessTokenLifetime(String token) {
+    final Map<String, dynamic>? payload = _decodeJwtPayload(token);
+    final dynamic iatRaw = payload?['iat'];
+    final dynamic expRaw = payload?['exp'];
+    final int? issuedAt = iatRaw is int ? iatRaw : int.tryParse('$iatRaw');
+    final int? expiresAt = expRaw is int ? expRaw : int.tryParse('$expRaw');
+    if (issuedAt == null || expiresAt == null || expiresAt <= issuedAt) {
+      return null;
+    }
+    return Duration(seconds: expiresAt - issuedAt);
+  }
+
+  DateTime? _effectiveAccessTokenExpiry(
+    String token, {
+    DateTime? storedExpiresAt,
+  }) {
+    if (storedExpiresAt != null) return storedExpiresAt;
+    final DateTime? absoluteExpiry = _accessTokenExpiry(token);
+    if (absoluteExpiry == null) return null;
+    final DateTime now = DateTime.now();
+    if (absoluteExpiry.isAfter(now)) return absoluteExpiry;
+
+    final Duration? tokenLifetime = _accessTokenLifetime(token);
+    if (tokenLifetime != null && tokenLifetime > const Duration(minutes: 5)) {
+      return now.add(tokenLifetime);
+    }
+    return absoluteExpiry;
+  }
+
+  DateTime _freshLoginSessionExpiry(String token) {
+    final Duration? tokenLifetime = _accessTokenLifetime(token);
+    final Duration sessionDuration =
+        tokenLifetime != null && tokenLifetime > const Duration(minutes: 5)
+        ? tokenLifetime
+        : _defaultSessionDuration;
+    return DateTime.now().add(sessionDuration);
+  }
+
+  bool _isAccessTokenExpired(String token, {DateTime? expiresAtOverride}) {
     if (token.trim().isEmpty) return false;
-    final DateTime? expiresAt = _accessTokenExpiry(token);
+    final DateTime? expiresAt =
+        expiresAtOverride ?? _effectiveAccessTokenExpiry(token);
     if (expiresAt == null) return false;
-    return DateTime.now().isAfter(expiresAt.subtract(const Duration(seconds: 30)));
+    return DateTime.now().isAfter(
+      expiresAt.subtract(const Duration(seconds: 30)),
+    );
   }
 
   void _scheduleSessionExpiryLogout(String token) {
     _sessionExpiryTimer?.cancel();
-    final DateTime? expiresAt = _accessTokenExpiry(token);
-    if (expiresAt == null) return;
-    final Duration delay = expiresAt.difference(DateTime.now());
-    if (delay <= Duration.zero) {
-      _logoutForExpiredSession();
-      return;
-    }
-    _sessionExpiryTimer = Timer(delay + const Duration(seconds: 1), _logoutForExpiredSession);
+    final DateTime? expiresAt = _effectiveAccessTokenExpiry(
+      token,
+      storedExpiresAt: _sessionExpiresAt,
+    );
+    _sessionExpiresAt = expiresAt;
   }
 
   void _logoutIfAccessTokenExpired() {
-    if (_isLoggedIn && _isAccessTokenExpired(_accessToken)) {
-      _logoutForExpiredSession();
-    } else if (_isLoggedIn) {
-      _scheduleSessionExpiryLogout(_accessToken);
-    }
+    if (_isLoggedIn) _scheduleSessionExpiryLogout(_accessToken);
   }
 
   void _toggleTheme(bool isDark) {
@@ -312,21 +387,36 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
 
   void _completeAuth(Map<String, dynamic> authData) {
     final String accessToken = (authData['access_token'] as String?) ?? '';
-    final Map<String, dynamic> profile = (authData['profile'] as Map<String, dynamic>?) ?? {};
+    if (accessToken.trim().isEmpty) {
+      _scaffoldMessengerKey.currentState?.showSnackBar(
+        const SnackBar(
+          content: Text('Login failed. Access token missing.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    final DateTime sessionExpiresAt = _freshLoginSessionExpiry(accessToken);
+    final Map<String, dynamic> profile =
+        (authData['profile'] as Map<String, dynamic>?) ?? {};
     final String fullName = ((profile['full_name'] as String?) ?? '').trim();
     final String username = ((profile['username'] as String?) ?? '').trim();
-    final String profilePhotoUrl = ((profile['profile_photo_url'] as String?) ?? '').trim();
+    final String profilePhotoUrl =
+        ((profile['profile_photo_url'] as String?) ?? '').trim();
     final String city = ((profile['city'] as String?) ?? '').trim();
     final String profilePhone = _phoneFromProfile(profile);
     final String authPhone = ('${authData['phone_number'] ?? ''}').trim();
     final String phone = profilePhone.isNotEmpty ? profilePhone : authPhone;
 
-    final String displayName = fullName.isNotEmpty ? fullName : (username.isNotEmpty ? username : 'Rider');
+    final String displayName = fullName.isNotEmpty
+        ? fullName
+        : (username.isNotEmpty ? username : 'Rider');
     final String handle = username.isNotEmpty ? '@$username' : '@rider';
 
     setState(() {
       _isLoggedIn = true;
       _accessToken = accessToken;
+      _sessionExpiresAt = sessionExpiresAt;
       _currentUserName = displayName;
       _currentUserHandle = handle;
       _currentUserAvatarUrl = profilePhotoUrl;
@@ -341,6 +431,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       userAvatarUrl: profilePhotoUrl,
       userCity: city,
       userPhone: phone,
+      sessionExpiresAt: sessionExpiresAt,
     );
     if (_fcmToken.isNotEmpty) {
       unawaited(_syncPushTokenToServer(_fcmToken));
@@ -354,6 +445,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     setState(() {
       _isLoggedIn = false;
       _accessToken = '';
+      _sessionExpiresAt = null;
       _currentUserName = 'Rider';
       _currentUserHandle = '@rider';
       _currentUserAvatarUrl = '';
@@ -368,11 +460,14 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       userAvatarUrl: '',
       userCity: '',
       userPhone: '',
+      clearSessionExpiresAt: true,
     );
   }
 
   void _logoutForExpiredSession() {
-    if (!_isLoggedIn && _accessToken.isEmpty) return;
+    if (!_isLoggedIn) return;
+    final DateTime? expiresAt = _sessionExpiresAt;
+    if (expiresAt == null || DateTime.now().isBefore(expiresAt)) return;
     _logout();
     _scaffoldMessengerKey.currentState?.showSnackBar(
       const SnackBar(
@@ -423,11 +518,17 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
         }
       });
 
-      _foregroundMessageSub = FirebaseMessaging.onMessage.listen((RemoteMessage msg) async {
+      _foregroundMessageSub = FirebaseMessaging.onMessage.listen((
+        RemoteMessage msg,
+      ) async {
         final String title = (msg.notification?.title ?? '').trim();
         final String body = (msg.notification?.body ?? '').trim();
         final int? postId = _extractPostIdFromData(msg.data);
-        await _showForegroundTrayNotification(title: title, body: body, postId: postId);
+        await _showForegroundTrayNotification(
+          title: title,
+          body: body,
+          postId: postId,
+        );
         final String text = [title, body].where((s) => s.isNotEmpty).join('\n');
         if (text.isEmpty) return;
         _scaffoldMessengerKey.currentState?.showSnackBar(
@@ -439,7 +540,9 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
         );
       });
 
-      _messageOpenedAppSub = FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage msg) {
+      _messageOpenedAppSub = FirebaseMessaging.onMessageOpenedApp.listen((
+        RemoteMessage msg,
+      ) {
         final int? postId = _extractPostIdFromData(msg.data);
         if (postId != null && postId > 0) {
           _openOrQueuePostFromNotification(postId);
@@ -460,7 +563,9 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
 
   Future<void> _initializeLocalNotifications() async {
     if (_localNotificationsReady || !_isPushSupportedPlatform()) return;
-    const androidSettings = AndroidInitializationSettings('@drawable/ic_stat_ridewithgarv');
+    const androidSettings = AndroidInitializationSettings(
+      '@drawable/ic_stat_ridewithgarv',
+    );
     const iosSettings = DarwinInitializationSettings();
     const settings = InitializationSettings(
       android: androidSettings,
@@ -482,7 +587,9 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       importance: Importance.high,
     );
     await _localNotifications
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(androidChannel);
     _localNotificationsReady = true;
   }
@@ -512,8 +619,16 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       ),
     );
     final int id = DateTime.now().millisecondsSinceEpoch.remainder(2147483647);
-    final String? payload = postId != null ? jsonEncode(<String, dynamic>{'post_id': postId}) : null;
-    await _localNotifications.show(id, finalTitle, finalBody, details, payload: payload);
+    final String? payload = postId != null
+        ? jsonEncode(<String, dynamic>{'post_id': postId})
+        : null;
+    await _localNotifications.show(
+      id,
+      finalTitle,
+      finalBody,
+      details,
+      payload: payload,
+    );
   }
 
   int? _extractPostIdFromData(Map<String, dynamic> data) {
@@ -549,7 +664,8 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
   void _drainPendingNotificationNavigation() {
     final int? pending = _pendingPostIdFromNotification;
     if (pending == null) return;
-    if (_isSessionLoading || !_isLoggedIn || _accessToken.trim().isEmpty) return;
+    if (_isSessionLoading || !_isLoggedIn || _accessToken.trim().isEmpty)
+      return;
     _pendingPostIdFromNotification = null;
     unawaited(_openPostDetailFromNotification(pending));
   }
@@ -582,10 +698,10 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       final bool isAnonymous = decoded['is_anonymous'] == true;
       final List<String> tags = decoded['tags'] is List<dynamic>
           ? (decoded['tags'] as List<dynamic>)
-              .whereType<String>()
-              .map((e) => e.trim())
-              .where((e) => e.isNotEmpty)
-              .toList()
+                .whereType<String>()
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList()
           : <String>[];
       final int commentsCount = decoded['comments_count'] is int
           ? decoded['comments_count'] as int
@@ -596,15 +712,22 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       final int dislikesCount = decoded['dislikes_count'] is int
           ? decoded['dislikes_count'] as int
           : int.tryParse('${decoded['dislikes_count']}') ?? 0;
-      final String? imageUrl = decoded['image_url'] is String ? decoded['image_url'] as String : null;
-      final String? bodyFull = decoded['body_full'] is String ? decoded['body_full'] as String : null;
-      final String? authorAvatarUrl =
-          decoded['author_avatar_url'] is String ? decoded['author_avatar_url'] as String : null;
-      final String authorInitial = ('${decoded['author_initial'] ?? '?'}').trim().isEmpty
+      final String? imageUrl = decoded['image_url'] is String
+          ? decoded['image_url'] as String
+          : null;
+      final String? bodyFull = decoded['body_full'] is String
+          ? decoded['body_full'] as String
+          : null;
+      final String? authorAvatarUrl = decoded['author_avatar_url'] is String
+          ? decoded['author_avatar_url'] as String
+          : null;
+      final String authorInitial =
+          ('${decoded['author_initial'] ?? '?'}').trim().isEmpty
           ? '?'
           : '${decoded['author_initial']}';
-      final String? viewerReaction =
-          decoded['viewer_reaction'] is String ? decoded['viewer_reaction'] as String : null;
+      final String? viewerReaction = decoded['viewer_reaction'] is String
+          ? decoded['viewer_reaction'] as String
+          : null;
 
       _lastOpenedPostId = postId;
       _lastOpenedPostAt = now;
@@ -644,7 +767,9 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     if (bearer.isEmpty || cleanToken.isEmpty) return;
     try {
       await http.post(
-        Uri.parse('${ApiConfig.apiBaseUrl}/api/v1/notifications/devices/register'),
+        Uri.parse(
+          '${ApiConfig.apiBaseUrl}/api/v1/notifications/devices/register',
+        ),
         headers: <String, String>{
           'Content-Type': 'application/json',
           'X-API-Key': ApiConfig.apiAccessKey,
@@ -666,11 +791,13 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
   void _applyProfileFromServer(Map<String, dynamic> profile) {
     final String fullName = ((profile['full_name'] as String?) ?? '').trim();
     final String username = ((profile['username'] as String?) ?? '').trim();
-    final String profilePhotoUrl = ((profile['profile_photo_url'] as String?) ?? '').trim();
+    final String profilePhotoUrl =
+        ((profile['profile_photo_url'] as String?) ?? '').trim();
     final String city = ((profile['city'] as String?) ?? '').trim();
     final String phone = _phoneFromProfile(profile);
-    final String displayName =
-        fullName.isNotEmpty ? fullName : (username.isNotEmpty ? username : 'Rider');
+    final String displayName = fullName.isNotEmpty
+        ? fullName
+        : (username.isNotEmpty ? username : 'Rider');
     final String handle = username.isNotEmpty ? '@$username' : '@rider';
     setState(() {
       _currentUserName = displayName;
@@ -735,21 +862,21 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
               message: _updateMessage,
             )
           : !_isOnboardingComplete
-              ? OnboardingScreen(onContinue: _completeOnboarding)
-              : !_isLoggedIn
-                  ? app_screens.AuthScreen(onAuthComplete: _completeAuth)
-                  : app_screens.HomeScreen(
-                      isDarkMode: _themeMode == ThemeMode.dark,
-                      onThemeChanged: _toggleTheme,
-                      onLogout: _logout,
-                      accessToken: _accessToken,
-                      onProfileSynced: _applyProfileFromServer,
-                      currentUserName: _currentUserName,
-                      currentUserHandle: _currentUserHandle,
-                      currentUserAvatarUrl: _currentUserAvatarUrl,
-                      currentUserCity: _currentUserCity,
-                      currentUserPhone: _currentUserPhone,
-                    ),
+          ? OnboardingScreen(onContinue: _completeOnboarding)
+          : !_isLoggedIn
+          ? app_screens.AuthScreen(onAuthComplete: _completeAuth)
+          : app_screens.HomeScreen(
+              isDarkMode: _themeMode == ThemeMode.dark,
+              onThemeChanged: _toggleTheme,
+              onLogout: _logout,
+              accessToken: _accessToken,
+              onProfileSynced: _applyProfileFromServer,
+              currentUserName: _currentUserName,
+              currentUserHandle: _currentUserHandle,
+              currentUserAvatarUrl: _currentUserAvatarUrl,
+              currentUserCity: _currentUserCity,
+              currentUserPhone: _currentUserPhone,
+            ),
     );
   }
 }
@@ -768,8 +895,9 @@ class _ForceUpdateRequiredScreen extends StatelessWidget {
     final String resolvedMessage = message.trim().isEmpty
         ? 'Please update the app first to continue.'
         : message.trim();
-    final String versionLabel =
-        requiredVersion.trim().isEmpty ? 'latest version' : requiredVersion.trim();
+    final String versionLabel = requiredVersion.trim().isEmpty
+        ? 'latest version'
+        : requiredVersion.trim();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0B1220),
@@ -791,7 +919,11 @@ class _ForceUpdateRequiredScreen extends StatelessWidget {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.system_update_rounded, color: Color(0xFFE2E8F0), size: 26),
+                      Icon(
+                        Icons.system_update_rounded,
+                        color: Color(0xFFE2E8F0),
+                        size: 26,
+                      ),
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -852,22 +984,34 @@ class _ForceUpdateRequiredScreen extends StatelessWidget {
                         SizedBox(height: 8),
                         Text(
                           '1. Open Google Play Store.',
-                          style: TextStyle(color: Color(0xFFCBD5E1), fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: Color(0xFFCBD5E1),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         SizedBox(height: 4),
                         Text(
                           '2. Search: Ride With Garv.',
-                          style: TextStyle(color: Color(0xFFCBD5E1), fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: Color(0xFFCBD5E1),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         SizedBox(height: 4),
                         Text(
                           '3. Tap Update.',
-                          style: TextStyle(color: Color(0xFFCBD5E1), fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: Color(0xFFCBD5E1),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         SizedBox(height: 4),
                         Text(
                           '4. Open the app again.',
-                          style: TextStyle(color: Color(0xFFCBD5E1), fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: Color(0xFFCBD5E1),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -924,9 +1068,21 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         child: Stack(
           children: [
-            const Positioned(top: -50, right: -36, child: _FloatingBlob(size: 210, color: Color(0x2E1D4ED8))),
-            const Positioned(top: 160, left: -34, child: _FloatingBlob(size: 140, color: Color(0x2414B8A6))),
-            const Positioned(bottom: 90, right: -26, child: _FloatingBlob(size: 110, color: Color(0x14000000))),
+            const Positioned(
+              top: -50,
+              right: -36,
+              child: _FloatingBlob(size: 210, color: Color(0x2E1D4ED8)),
+            ),
+            const Positioned(
+              top: 160,
+              left: -34,
+              child: _FloatingBlob(size: 140, color: Color(0x2414B8A6)),
+            ),
+            const Positioned(
+              bottom: 90,
+              right: -26,
+              child: _FloatingBlob(size: 110, color: Color(0x14000000)),
+            ),
             SafeArea(
               child: Center(
                 child: ConstrainedBox(
@@ -943,7 +1099,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             end: Alignment.bottomRight,
                             colors: [Color(0xFFE8F1FF), Color(0xFFF2F7FF)],
                           ),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.95)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.95),
+                          ),
                           boxShadow: const [
                             BoxShadow(
                               color: Color(0x1A1D4ED8),
@@ -958,7 +1116,10 @@ class _AuthScreenState extends State<AuthScreen> {
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.85),
                                     borderRadius: BorderRadius.circular(999),
@@ -977,7 +1138,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             Text(
                               title,
                               textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(
                                     fontWeight: FontWeight.w900,
                                     color: const Color(0xFF142C55),
                                   ),
@@ -986,9 +1148,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             Text(
                               subtitle,
                               textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: const Color(0xFF41597C),
-                                  ),
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(color: const Color(0xFF41597C)),
                             ),
                           ],
                         ),
@@ -1025,7 +1186,9 @@ class _AuthScreenState extends State<AuthScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(28),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.95)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.95),
+                          ),
                           boxShadow: const [
                             BoxShadow(
                               color: Color(0x17000000),
@@ -1040,21 +1203,30 @@ class _AuthScreenState extends State<AuthScreen> {
                             if (!_isLogin) ...[
                               TextField(
                                 controller: _phoneController,
-                                decoration: _fieldDecoration('Phone number', Icons.phone_rounded),
+                                decoration: _fieldDecoration(
+                                  'Phone number',
+                                  Icons.phone_rounded,
+                                ),
                                 keyboardType: TextInputType.phone,
                               ),
                               const SizedBox(height: 12),
                             ],
                             TextField(
                               controller: _emailController,
-                              decoration: _fieldDecoration('Email', Icons.alternate_email_rounded),
+                              decoration: _fieldDecoration(
+                                'Email',
+                                Icons.alternate_email_rounded,
+                              ),
                               keyboardType: TextInputType.emailAddress,
                             ),
                             const SizedBox(height: 12),
                             TextField(
                               controller: _passwordController,
                               obscureText: true,
-                              decoration: _fieldDecoration('Password', Icons.lock_outline_rounded),
+                              decoration: _fieldDecoration(
+                                'Password',
+                                Icons.lock_outline_rounded,
+                              ),
                             ),
                             // Forgot password — hidden until flow is implemented.
                             // if (_isLogin)
@@ -1089,7 +1261,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                         width: 42,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFEAF1FF),
-                                          borderRadius: BorderRadius.circular(999),
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
                                         ),
                                         child: const Icon(
                                           Icons.add_a_photo_outlined,
@@ -1109,8 +1283,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                                   .labelLarge
                                                   ?.copyWith(
                                                     fontWeight: FontWeight.w700,
-                                                    color:
-                                                        const Color(0xFF22497F),
+                                                    color: const Color(
+                                                      0xFF22497F,
+                                                    ),
                                                   ),
                                             ),
                                             Text(
@@ -1119,8 +1294,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                                   .textTheme
                                                   .bodySmall
                                                   ?.copyWith(
-                                                    color:
-                                                        const Color(0xFF5A6F8C),
+                                                    color: const Color(
+                                                      0xFF5A6F8C,
+                                                    ),
                                                   ),
                                             ),
                                           ],
@@ -1140,14 +1316,18 @@ class _AuthScreenState extends State<AuthScreen> {
                               child: FilledButton(
                                 onPressed: _handlePrimaryAuthAction,
                                 style: FilledButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 15,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                 ),
                                 child: Text(
                                   actionText,
-                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1156,21 +1336,21 @@ class _AuthScreenState extends State<AuthScreen> {
                               children: [
                                 const Expanded(child: Divider()),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
                                   child: Text(
                                     'or continue with',
-                                    style: Theme.of(context).textTheme.bodySmall,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
                                   ),
                                 ),
                                 const Expanded(child: Divider()),
                               ],
                             ),
                             const SizedBox(height: 12),
-                            const Row(
-                              children: [
-                                SizedBox.shrink(),
-                              ],
-                            ),
+                            const Row(children: [SizedBox.shrink()]),
                             Row(
                               children: [
                                 Expanded(
@@ -1206,8 +1386,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             : 'Signup helps us keep the rider community trusted and safe.',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF5A6F8C),
-                            ),
+                          color: const Color(0xFF5A6F8C),
+                        ),
                       ),
                     ],
                   ),
@@ -1241,10 +1421,7 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  void _showComingSoonSheet(
-    BuildContext context, {
-    required String method,
-  }) {
+  void _showComingSoonSheet(BuildContext context, {required String method}) {
     showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -1276,8 +1453,8 @@ class _AuthScreenState extends State<AuthScreen> {
                     child: Text(
                       '$method abhi coming soon hai',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -1286,8 +1463,8 @@ class _AuthScreenState extends State<AuthScreen> {
               Text(
                 'Bhai ye feature hum jaldi live kar rahe hain. Abhi ke liye direct Email + Password se Login ya Signup karo.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF435877),
-                    ),
+                  color: const Color(0xFF435877),
+                ),
               ),
               const SizedBox(height: 14),
               SizedBox(
@@ -1378,9 +1555,7 @@ class _SocialAuthButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 11),
         side: const BorderSide(color: Color(0x331D4ED8)),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       icon: Icon(icon),
       label: Text(label),
@@ -1417,7 +1592,8 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
     _OnboardingData(
       icon: Icons.groups_rounded,
       title: 'Riders helping riders',
-      subtitle: 'Join a trusted community where delivery riders solve real problems together.',
+      subtitle:
+          'Join a trusted community where delivery riders solve real problems together.',
       gradient: [Color(0xFFFFFFFF), Color(0xFFFFF8E8)],
       chips: ['Delhi', 'Noida', 'Gurgaon'],
       avatarColors: [Color(0xFF0B1F3A), Color(0xFF111827), Color(0xFF14B8A6)],
@@ -1427,7 +1603,8 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
     _OnboardingData(
       icon: Icons.campaign_rounded,
       title: 'Post. Discuss. Resolve.',
-      subtitle: 'Share issues with text or image and get practical comments from fellow riders.',
+      subtitle:
+          'Share issues with text or image and get practical comments from fellow riders.',
       gradient: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
       chips: ['Payout', 'Account Block', 'Safety'],
       avatarColors: [Color(0xFF0B1F3A), Color(0xFF111827), Color(0xFF334155)],
@@ -1437,7 +1614,8 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
     _OnboardingData(
       icon: Icons.bolt_rounded,
       title: 'Fast support, clear action',
-      subtitle: 'Use smart forms, track updates, and get support that matters in field life.',
+      subtitle:
+          'Use smart forms, track updates, and get support that matters in field life.',
       gradient: [Color(0xFFFFFFFF), Color(0xFFFFF8E8)],
       chips: ['Help Forms', 'EV Leads', 'Instant Updates'],
       avatarColors: [Color(0xFF14B8A6), Color(0xFF0B1F3A), Color(0xFF111827)],
@@ -1487,7 +1665,9 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
       builder: (context, constraints) {
         final isCompactHeight = constraints.maxHeight < 700;
         final horizontalPadding = constraints.maxWidth < 360 ? 14.0 : 20.0;
-        final maxContentWidth = constraints.maxWidth > 600 ? 560.0 : constraints.maxWidth;
+        final maxContentWidth = constraints.maxWidth > 600
+            ? 560.0
+            : constraints.maxWidth;
 
         return Scaffold(
           body: Container(
@@ -1528,65 +1708,68 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
                           isCompactHeight ? 12 : 20,
                         ),
                         child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Ride With Garv',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: const Color(0xFF0B1F3A),
-                                fontWeight: FontWeight.w900,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Ride With Garv',
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        color: const Color(0xFF0B1F3A),
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                ),
+                                TextButton(
+                                  onPressed: widget.onContinue,
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: const Color(0xFF0B1F3A),
+                                    textStyle: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  child: const Text('Skip'),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: isCompactHeight ? 6 : 8),
+                            Expanded(
+                              child: PageView.builder(
+                                controller: _pageController,
+                                onPageChanged: (value) {
+                                  setState(() {
+                                    _currentPage = value;
+                                  });
+                                },
+                                itemCount: _pages.length,
+                                itemBuilder: (context, index) {
+                                  return AnimatedBuilder(
+                                    animation: _pageController,
+                                    builder: (context, child) {
+                                      final offset = _currentPageOffset(index);
+                                      return _AnimatedOnboardingCard(
+                                        data: _pages[index],
+                                        isActive: index == _currentPage,
+                                        parallaxOffset: offset,
+                                      );
+                                    },
+                                  );
+                                },
                               ),
                             ),
-                            TextButton(
-                              onPressed: widget.onContinue,
-                              style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFF0B1F3A),
-                                textStyle: const TextStyle(fontWeight: FontWeight.w900),
-                              ),
-                              child: const Text('Skip'),
+                            SizedBox(height: isCompactHeight ? 12 : 16),
+                            _BottomGlassPanel(
+                              currentPage: _currentPage,
+                              totalPages: _pages.length,
+                              isLastPage: isLastPage,
+                              buttonPressed: _buttonPressed,
+                              onNext: _goNextOrContinue,
                             ),
                           ],
                         ),
-                        SizedBox(height: isCompactHeight ? 6 : 8),
-                        Expanded(
-                          child: PageView.builder(
-                            controller: _pageController,
-                            onPageChanged: (value) {
-                              setState(() {
-                                _currentPage = value;
-                              });
-                            },
-                            itemCount: _pages.length,
-                            itemBuilder: (context, index) {
-                              return AnimatedBuilder(
-                                animation: _pageController,
-                                builder: (context, child) {
-                                  final offset = _currentPageOffset(index);
-                                  return _AnimatedOnboardingCard(
-                                    data: _pages[index],
-                                    isActive: index == _currentPage,
-                                    parallaxOffset: offset,
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                        SizedBox(height: isCompactHeight ? 12 : 16),
-                        _BottomGlassPanel(
-                          currentPage: _currentPage,
-                          totalPages: _pages.length,
-                          isLastPage: isLastPage,
-                          buttonPressed: _buttonPressed,
-                          onNext: _goNextOrContinue,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
                 ),
               ],
             ),
@@ -1732,15 +1915,23 @@ class _AnimatedOnboardingCard extends StatelessWidget {
                           children: data.chips
                               .map(
                                 (chip) => Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFF8FAFC),
                                     borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: const Color(0x1F000000)),
+                                    border: Border.all(
+                                      color: const Color(0x1F000000),
+                                    ),
                                   ),
                                   child: Text(
                                     chip,
-                                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(
                                           color: const Color(0xFF0B1F3A),
                                           fontWeight: FontWeight.w800,
                                         ),
@@ -1775,10 +1966,11 @@ class _StyledHeadline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final base = fallbackStyle ??
-        Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w900,
-            );
+    final base =
+        fallbackStyle ??
+        Theme.of(
+          context,
+        ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900);
 
     return ShaderMask(
       shaderCallback: (bounds) => const LinearGradient(
@@ -1814,10 +2006,10 @@ class _StyledSubtitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final body = Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: const Color(0xFF5B6B84),
-          height: 1.35,
-          letterSpacing: 0.2,
-        );
+      color: const Color(0xFF5B6B84),
+      height: 1.35,
+      letterSpacing: 0.2,
+    );
     final highlight = body?.copyWith(
       color: const Color(0xFF0B1F3A),
       fontWeight: FontWeight.w900,
@@ -1848,14 +2040,13 @@ class _StyledSubtitle extends StatelessWidget {
         spans.add(TextSpan(text: text.substring(i, nearestIndex), style: body));
       }
       final end = nearestIndex + nearestWord.length;
-      spans.add(TextSpan(text: text.substring(nearestIndex, end), style: highlight));
+      spans.add(
+        TextSpan(text: text.substring(nearestIndex, end), style: highlight),
+      );
       i = end;
     }
 
-    return Text.rich(
-      TextSpan(children: spans),
-      textAlign: TextAlign.center,
-    );
+    return Text.rich(TextSpan(children: spans), textAlign: TextAlign.center);
   }
 }
 
@@ -1894,10 +2085,7 @@ class _OnboardingHeroVisual extends StatelessWidget {
                   alignment: Alignment.center,
                   children: [
                     if (showWebFallback)
-                      _WebSafeHeroFallback(
-                        icon: icon,
-                        size: iconBox + 76,
-                      )
+                      _WebSafeHeroFallback(icon: icon, size: iconBox + 76)
                     else
                       Lottie.asset(
                         lottieAsset,
@@ -1916,11 +2104,11 @@ class _OnboardingHeroVisual extends StatelessWidget {
                           color: Colors.white.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                  child: Icon(
-                    icon,
-                    size: iconSize * 0.58,
-                    color: const Color(0xFF0B1F3A),
-                  ),
+                        child: Icon(
+                          icon,
+                          size: iconSize * 0.58,
+                          color: const Color(0xFF0B1F3A),
+                        ),
                       ),
                     ),
                   ],
@@ -1954,10 +2142,7 @@ class _OnboardingHeroVisual extends StatelessWidget {
 }
 
 class _WebSafeHeroFallback extends StatelessWidget {
-  const _WebSafeHeroFallback({
-    required this.icon,
-    required this.size,
-  });
+  const _WebSafeHeroFallback({required this.icon, required this.size});
 
   final IconData icon;
   final double size;
@@ -1984,11 +2169,7 @@ class _WebSafeHeroFallback extends StatelessWidget {
           border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
         ),
         child: Center(
-          child: Icon(
-            icon,
-            color: const Color(0xFF0B1F3A),
-            size: size * 0.36,
-          ),
+          child: Icon(icon, color: const Color(0xFF0B1F3A), size: size * 0.36),
         ),
       ),
     );
@@ -2081,14 +2262,18 @@ class _BottomGlassPanel extends StatelessWidget {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   textStyle: const TextStyle(fontWeight: FontWeight.w900),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 icon: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 240),
                   transitionBuilder: (child, animation) =>
                       ScaleTransition(scale: animation, child: child),
                   child: Icon(
-                    isLastPage ? Icons.rocket_launch_rounded : Icons.arrow_forward_rounded,
+                    isLastPage
+                        ? Icons.rocket_launch_rounded
+                        : Icons.arrow_forward_rounded,
                     key: ValueKey<bool>(isLastPage),
                   ),
                 ),
@@ -2123,7 +2308,8 @@ class _FloatingBlob extends StatefulWidget {
   State<_FloatingBlob> createState() => _FloatingBlobState();
 }
 
-class _FloatingBlobState extends State<_FloatingBlob> with SingleTickerProviderStateMixin {
+class _FloatingBlobState extends State<_FloatingBlob>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
@@ -2147,10 +2333,7 @@ class _FloatingBlobState extends State<_FloatingBlob> with SingleTickerProviderS
       animation: _controller,
       builder: (context, child) {
         final dy = (_controller.value - 0.5) * 14;
-        return Transform.translate(
-          offset: Offset(0, dy),
-          child: child,
-        );
+        return Transform.translate(offset: Offset(0, dy), child: child);
       },
       child: Container(
         width: widget.size,
@@ -2208,7 +2391,9 @@ class _AnimatedAvatarRow extends StatelessWidget {
                 scale: isActive ? 1.0 : 0.86,
                 child: _AvatarBubble(
                   color: avatarColors[index],
-                  icon: index == 1 ? Icons.delivery_dining_rounded : Icons.person_rounded,
+                  icon: index == 1
+                      ? Icons.delivery_dining_rounded
+                      : Icons.person_rounded,
                   size: avatarSize,
                 ),
               ),
@@ -2239,7 +2424,10 @@ class _AvatarBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 2),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.9),
+          width: 2,
+        ),
         boxShadow: [
           BoxShadow(
             color: color.withValues(alpha: 0.35),
@@ -2278,12 +2466,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const AlertsScreen(),
       const ProfileScreen(),
     ];
-    final titles = [
-      'Community Feed',
-      'Create Post',
-      'Alerts',
-      'Profile',
-    ];
+    final titles = ['Community Feed', 'Create Post', 'Alerts', 'Profile'];
 
     return Scaffold(
       extendBody: true,
@@ -2308,7 +2491,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             titles[_currentIndex],
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(
                                   fontWeight: FontWeight.w900,
                                   color: const Color(0xFF102A56),
                                 ),
@@ -2316,9 +2500,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 3),
                           Text(
                             'Delhi NCR riders solving real work problems',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: const Color(0xFF5D7190),
-                                ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: const Color(0xFF5D7190)),
                           ),
                         ],
                       ),
@@ -2336,9 +2519,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                       child: IconButton(
-                        tooltip: widget.isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme',
-                        onPressed: () => widget.onThemeChanged(!widget.isDarkMode),
-                        icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+                        tooltip: widget.isDarkMode
+                            ? 'Switch to Light Theme'
+                            : 'Switch to Dark Theme',
+                        onPressed: () =>
+                            widget.onThemeChanged(!widget.isDarkMode),
+                        icon: Icon(
+                          widget.isDarkMode
+                              ? Icons.light_mode
+                              : Icons.dark_mode,
+                        ),
                       ),
                     ),
                   ],
@@ -2414,7 +2604,8 @@ class CommunityFeedScreen extends StatelessWidget {
         SizedBox(height: 12),
         _PostCard(
           author: 'Rider, Delhi',
-          problem: 'Facing payout delay from last 3 days. Anyone solved this before?',
+          problem:
+              'Facing payout delay from last 3 days. Anyone solved this before?',
           commentsCount: 8,
           isAnonymous: false,
           city: 'Delhi',
@@ -2424,7 +2615,8 @@ class CommunityFeedScreen extends StatelessWidget {
         SizedBox(height: 12),
         _PostCard(
           author: 'Anonymous Rider',
-          problem: 'Account got blocked after order cancellation issue. Need guidance.',
+          problem:
+              'Account got blocked after order cancellation issue. Need guidance.',
           commentsCount: 5,
           isAnonymous: true,
           city: 'Noida',
@@ -2476,9 +2668,9 @@ class _CommunityOverviewCard extends StatelessWidget {
                 child: Text(
                   'NCR Rider Pulse',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -2487,8 +2679,8 @@ class _CommunityOverviewCard extends StatelessWidget {
           Text(
             'Live community health for Delhi, Noida and Gurgaon riders.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.86),
-                ),
+              color: Colors.white.withValues(alpha: 0.86),
+            ),
           ),
           const SizedBox(height: 14),
           Wrap(
@@ -2523,7 +2715,13 @@ class _MiniStat extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF102A56))),
+          Text(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF102A56),
+            ),
+          ),
           Text(label, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
@@ -2541,7 +2739,10 @@ class _FilterChipsRow extends StatelessWidget {
       runSpacing: 8,
       children: const [
         _PremiumFilterChip(icon: Icons.location_city_rounded, label: 'Delhi'),
-        _PremiumFilterChip(icon: Icons.business_center_rounded, label: 'All companies'),
+        _PremiumFilterChip(
+          icon: Icons.business_center_rounded,
+          label: 'All companies',
+        ),
         _PremiumFilterChip(icon: Icons.translate_rounded, label: 'Hindi'),
         _PremiumFilterChip(icon: Icons.sell_rounded, label: 'Payout'),
       ],
@@ -2610,21 +2811,22 @@ class _DynamicUpdateCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Platform update', style: TextStyle(fontWeight: FontWeight.w800)),
+                Text(
+                  'Platform update',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
                 SizedBox(height: 3),
                 Text('Today 7 PM: payment issue support live session.'),
               ],
             ),
           ),
-          TextButton(
-            onPressed: () {},
-            child: const Text('Join'),
-          ),
+          TextButton(onPressed: () {}, child: const Text('Join')),
         ],
       ),
     );
   }
 }
+
 class _PostCard extends StatelessWidget {
   const _PostCard({
     required this.author,
@@ -2689,21 +2891,23 @@ class _PostCard extends StatelessWidget {
                     children: [
                       Text(
                         author,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       Text(
                         '$company • Latest',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF6B7D99),
-                            ),
+                          color: const Color(0xFF6B7D99),
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEAF2FF),
                     borderRadius: BorderRadius.circular(999),
@@ -2722,9 +2926,9 @@ class _PostCard extends StatelessWidget {
             Text(
               problem,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    height: 1.35,
-                    color: const Color(0xFF243B5A),
-                  ),
+                height: 1.35,
+                color: const Color(0xFF243B5A),
+              ),
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -2732,12 +2936,18 @@ class _PostCard extends StatelessWidget {
               children: tags
                   .map(
                     (tag) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF2F6FF),
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: Text(tag, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      child: Text(
+                        tag,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
                     ),
                   )
                   .toList(),
@@ -2810,7 +3020,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Share your issue', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Share your issue',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 10),
                 const TextField(
                   maxLines: 4,
@@ -2826,9 +3039,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       child: DropdownButtonFormField<String>(
                         initialValue: 'Delhi',
                         items: const [
-                          DropdownMenuItem(value: 'Delhi', child: Text('Delhi')),
-                          DropdownMenuItem(value: 'Noida', child: Text('Noida')),
-                          DropdownMenuItem(value: 'Gurgaon', child: Text('Gurgaon')),
+                          DropdownMenuItem(
+                            value: 'Delhi',
+                            child: Text('Delhi'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Noida',
+                            child: Text('Noida'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Gurgaon',
+                            child: Text('Gurgaon'),
+                          ),
                         ],
                         onChanged: (_) {},
                         decoration: const InputDecoration(labelText: 'City'),
@@ -2839,10 +3061,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       child: DropdownButtonFormField<String>(
                         initialValue: 'Blinkit',
                         items: const [
-                          DropdownMenuItem(value: 'Blinkit', child: Text('Blinkit')),
-                          DropdownMenuItem(value: 'Zepto', child: Text('Zepto')),
-                          DropdownMenuItem(value: 'Swiggy', child: Text('Swiggy')),
-                          DropdownMenuItem(value: 'Other', child: Text('Other')),
+                          DropdownMenuItem(
+                            value: 'Blinkit',
+                            child: Text('Blinkit'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Zepto',
+                            child: Text('Zepto'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Swiggy',
+                            child: Text('Swiggy'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Other',
+                            child: Text('Other'),
+                          ),
                         ],
                         onChanged: (_) {},
                         decoration: const InputDecoration(labelText: 'Company'),
@@ -2969,7 +3203,9 @@ class ProfileScreen extends StatelessWidget {
           child: ListTile(
             leading: Icon(Icons.electric_bike_rounded),
             title: Text('EV Section'),
-            subtitle: Text('Explore 2-3 EV options and raise interest lead form'),
+            subtitle: Text(
+              'Explore 2-3 EV options and raise interest lead form',
+            ),
           ),
         ),
       ],

@@ -57,7 +57,9 @@ class RsaTicketItem {
       technicianPhoneNumber.trim().isNotEmpty;
 
   String get displayStatus {
-    final String historyStatus = latestHistoryStatus.isEmpty ? status : latestHistoryStatus;
+    final String historyStatus = latestHistoryStatus.isEmpty
+        ? status
+        : latestHistoryStatus;
     switch (historyStatus) {
       case 'created':
         return 'Created';
@@ -76,7 +78,9 @@ class RsaTicketItem {
       case 'new':
         return 'New';
       default:
-        return historyStatus.isEmpty ? 'New' : historyStatus.replaceAll('_', ' ');
+        return historyStatus.isEmpty
+            ? 'New'
+            : historyStatus.replaceAll('_', ' ');
     }
   }
 
@@ -98,11 +102,15 @@ class RsaTicketItem {
       }
     }
     return RsaTicketItem(
-      id: json['id'] is int ? json['id'] as int : int.tryParse('${json['id'] ?? '0'}') ?? 0,
+      id: json['id'] is int
+          ? json['id'] as int
+          : int.tryParse('${json['id'] ?? '0'}') ?? 0,
       region: _safeText(json['region']),
       issue: _safeText(json['issue']),
       description: _safeText(json['description']),
-      status: _safeText(json['status']).isEmpty ? 'new' : _safeText(json['status']),
+      status: _safeText(json['status']).isEmpty
+          ? 'new'
+          : _safeText(json['status']),
       createdAt: _safeText(json['created_at']),
       assignedToName: _safeText(json['assigned_to_name']),
       adminNotes: _safeText(json['admin_notes']),
@@ -149,7 +157,10 @@ Future<void> openRsaTicketMap(RsaTicketItem ticket) async {
 
 Future<void> openRsaPaymentLink(RsaTicketItem ticket) async {
   if (!ticket.hasPaymentLink) return;
-  await launchUrlString(ticket.paymentLink, mode: LaunchMode.externalApplication);
+  await launchUrlString(
+    ticket.paymentLink,
+    mode: LaunchMode.externalApplication,
+  );
 }
 
 Future<void> openTechnicianLocation(String rawLocation) async {
@@ -196,7 +207,8 @@ class RsaTicketScreen extends StatefulWidget {
 class _RsaTicketScreenState extends State<RsaTicketScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
-  final TextEditingController _alternatePhoneController = TextEditingController();
+  final TextEditingController _alternatePhoneController =
+      TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
   bool _showGuide = false;
@@ -261,16 +273,22 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
         Uri.parse('${widget.apiBaseUrl}/api/v1/auth/me'),
         headers: _headers,
       );
-      if (profileResponse.statusCode >= 200 && profileResponse.statusCode < 300) {
+      if (profileResponse.statusCode >= 200 &&
+          profileResponse.statusCode < 300) {
         final dynamic decoded = jsonDecode(profileResponse.body);
         final Map<String, dynamic>? root = _safeMap(decoded);
         final Map<String, dynamic>? profile = _safeMap(root?['profile']);
         if (profile != null) {
-          final String phone =
-              _safeText(profile['phone_number'] ?? profile['phone'] ?? profile['mobile_number']);
+          final String phone = _safeText(
+            profile['phone_number'] ??
+                profile['phone'] ??
+                profile['mobile_number'],
+          );
           if (mounted) {
             setState(() {
-              _profileName = _safeText(profile['full_name'] ?? profile['username']);
+              _profileName = _safeText(
+                profile['full_name'] ?? profile['username'],
+              );
               _profileRiderId = _safeText(profile['rider_id']);
               _profilePhone = phone;
               if (phone.isNotEmpty && _phoneController.text.trim().isEmpty) {
@@ -285,7 +303,8 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
         Uri.parse('${widget.apiBaseUrl}/api/v1/vehicle/me'),
         headers: _headers,
       );
-      if (vehicleResponse.statusCode >= 200 && vehicleResponse.statusCode < 300) {
+      if (vehicleResponse.statusCode >= 200 &&
+          vehicleResponse.statusCode < 300) {
         final dynamic decoded = jsonDecode(vehicleResponse.body);
         final Map<String, dynamic>? root = _safeMap(decoded);
         final Map<String, dynamic>? vehicle = _safeMap(root?['vehicle']);
@@ -388,9 +407,13 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
       final Map<String, dynamic>? root = _safeMap(decoded);
       final Map<String, dynamic>? profileRaw = _safeMap(root?['profile']);
       if (profileRaw == null) return;
-      final String phone =
-          _safeText(profileRaw['phone_number'] ?? profileRaw['phone'] ?? profileRaw['mobile_number']);
-      if (phone.isEmpty || !mounted || _phoneController.text.trim().isNotEmpty) return;
+      final String phone = _safeText(
+        profileRaw['phone_number'] ??
+            profileRaw['phone'] ??
+            profileRaw['mobile_number'],
+      );
+      if (phone.isEmpty || !mounted || _phoneController.text.trim().isNotEmpty)
+        return;
       setState(() => _phoneController.text = phone);
     } catch (_) {
       // Keep the field editable if profile lookup fails.
@@ -424,7 +447,9 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
   Map<String, dynamic>? _otpResponseMap(dynamic value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) {
-      return value.map<String, dynamic>((dynamic k, dynamic v) => MapEntry<String, dynamic>('$k', v));
+      return value.map<String, dynamic>(
+        (dynamic k, dynamic v) => MapEntry<String, dynamic>('$k', v),
+      );
     }
     if (value is String) {
       try {
@@ -461,16 +486,32 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
         if (value.isNotEmpty) return value;
       }
     }
-    final String message = ('${map['message'] ?? data?['message'] ?? ''}').trim();
-    if (message.isNotEmpty && !message.contains(' ') && message.length >= 12) return message;
+    final String message = ('${map['message'] ?? data?['message'] ?? ''}')
+        .trim();
+    if (message.isNotEmpty && !message.contains(' ') && message.length >= 12)
+      return message;
     return '';
   }
 
   bool _isOtpSuccess(dynamic response) {
+    final String flatResponse =
+        (response is String
+                ? response
+                : jsonEncode(_otpResponseMap(response) ?? <String, dynamic>{}))
+            .toLowerCase()
+            .trim();
+    if (flatResponse.contains('already verified') ||
+        flatResponse.contains('otp already verified')) {
+      return true;
+    }
     if (response is String) {
       final String raw = response.toLowerCase().trim();
-      final bool positive = raw.contains('success') || raw.contains('verified') || raw.contains('otp verified');
-      final bool negative = raw.contains('fail') ||
+      final bool positive =
+          raw.contains('success') ||
+          raw.contains('verified') ||
+          raw.contains('otp verified');
+      final bool negative =
+          raw.contains('fail') ||
           raw.contains('invalid') ||
           raw.contains('wrong') ||
           raw.contains('expired') ||
@@ -480,14 +521,26 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
     }
     final Map<String, dynamic>? map = _otpResponseMap(response);
     if (map == null) return false;
-    final String status = ('${map['status'] ?? map['statusCode'] ?? ''}').toLowerCase().trim();
-    final String message = ('${map['message'] ?? ''}').toLowerCase().trim();
-    if (map['success'] == true || map['verified'] == true || map['is_verified'] == true) return true;
+    final String status = ('${map['status'] ?? map['statusCode'] ?? ''}')
+        .toLowerCase()
+        .trim();
+    final String message =
+        ('${map['message'] ?? map['detail'] ?? map['error'] ?? ''}')
+            .toLowerCase()
+            .trim();
+    if (map['success'] == true ||
+        map['verified'] == true ||
+        map['is_verified'] == true)
+      return true;
     if (status == 'success' || status == 'ok' || status == '200') return true;
-    if (message.contains('verified') || message.contains('success')) return true;
+    if (message.contains('verified') || message.contains('success'))
+      return true;
     final Map<String, dynamic>? data = _otpResponseMap(map['data']);
     if (data == null) return false;
-    final String dataMessage = ('${data['message'] ?? ''}').toLowerCase().trim();
+    final String dataMessage =
+        ('${data['message'] ?? data['detail'] ?? data['error'] ?? ''}')
+            .toLowerCase()
+            .trim();
     return data['success'] == true ||
         data['verified'] == true ||
         data['is_verified'] == true ||
@@ -496,9 +549,12 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
   }
 
   bool _isOtpExplicitFailure(dynamic response) {
-    final String raw = (response is String ? response : jsonEncode(_otpResponseMap(response) ?? <String, dynamic>{}))
-        .toLowerCase()
-        .trim();
+    final String raw =
+        (response is String
+                ? response
+                : jsonEncode(_otpResponseMap(response) ?? <String, dynamic>{}))
+            .toLowerCase()
+            .trim();
     if (raw.isEmpty) return false;
     const List<String> failWords = <String>[
       'invalid',
@@ -526,14 +582,21 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
         'आज OTP लिमिट खत्म हो गई है। कृपया 24 घंटे बाद फिर कोशिश करें।',
       );
     }
-    if (response is String && response.trim().isNotEmpty) return response.trim();
+    if (response is String && response.trim().isNotEmpty)
+      return response.trim();
     final Map<String, dynamic>? map = _otpResponseMap(response);
-    final String message = ('${map?['message'] ?? map?['detail'] ?? map?['error'] ?? ''}').trim();
+    final String message =
+        ('${map?['message'] ?? map?['detail'] ?? map?['error'] ?? ''}').trim();
     if (message.isNotEmpty) return message;
     final Map<String, dynamic>? data = _otpResponseMap(map?['data']);
-    final String nested = ('${data?['message'] ?? data?['detail'] ?? data?['error'] ?? ''}').trim();
+    final String nested =
+        ('${data?['message'] ?? data?['detail'] ?? data?['error'] ?? ''}')
+            .trim();
     if (nested.isNotEmpty) return nested;
-    return _tr('OTP verification failed. Please check and retry.', 'OTP वेरिफिकेशन फेल हुआ। कृपया OTP चेक करके फिर कोशिश करें।');
+    return _tr(
+      'OTP verification failed. Please check and retry.',
+      'OTP वेरिफिकेशन फेल हुआ। कृपया OTP चेक करके फिर कोशिश करें।',
+    );
   }
 
   Future<Map<String, String>?> _fetchOtpRuntimeConfig() async {
@@ -591,7 +654,9 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
 
   void _showRsaSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _sendRsaOtp() async {
@@ -602,7 +667,10 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
         SnackBar(
           behavior: SnackBarBehavior.floating,
           content: Text(
-            _tr('Please enter a valid 10-digit mobile number.', 'कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें।'),
+            _tr(
+              'Please enter a valid 10-digit mobile number.',
+              'कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें।',
+            ),
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
@@ -615,7 +683,12 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
     try {
       await _initOtpSdkIfPossible();
       if (!_otpSdkInitialized) {
-        _showRsaSnack(_tr('OTP service is not configured right now.', 'OTP सर्विस अभी कॉन्फिगर नहीं है।'));
+        _showRsaSnack(
+          _tr(
+            'OTP service is not configured right now.',
+            'OTP सर्विस अभी कॉन्फिगर नहीं है।',
+          ),
+        );
         return;
       }
       final dynamic response = await OTPWidget.sendOTP(<String, dynamic>{
@@ -636,7 +709,9 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
       });
       _showRsaSnack(_tr('OTP sent successfully.', 'OTP भेज दिया गया है।'));
     } catch (_) {
-      _showRsaSnack(_tr('Could not send OTP right now.', 'अभी OTP नहीं भेज पाए।'));
+      _showRsaSnack(
+        _tr('Could not send OTP right now.', 'अभी OTP नहीं भेज पाए।'),
+      );
     } finally {
       if (mounted) {
         setState(() => _isSendingOtp = false);
@@ -658,9 +733,19 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
       });
       final String nextReqId = _extractOtpReqId(response);
       if (nextReqId.isNotEmpty) _otpReqId = nextReqId;
-      _showRsaSnack(_tr('OTP resend request sent.', 'OTP फिर से भेजने की request भेज दी गई है।'));
+      _showRsaSnack(
+        _tr(
+          'OTP resend request sent.',
+          'OTP फिर से भेजने की request भेज दी गई है।',
+        ),
+      );
     } catch (_) {
-      _showRsaSnack(_tr('Could not resend OTP. Please try again.', 'OTP फिर से नहीं भेज पाए। कृपया फिर कोशिश करें।'));
+      _showRsaSnack(
+        _tr(
+          'Could not resend OTP. Please try again.',
+          'OTP फिर से नहीं भेज पाए। कृपया फिर कोशिश करें।',
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isResendingOtp = false);
@@ -677,7 +762,9 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
       return;
     }
     if (otp.length < 4) {
-      _showRsaSnack(_tr('Please enter a valid OTP.', 'कृपया सही OTP दर्ज करें।'));
+      _showRsaSnack(
+        _tr('Please enter a valid OTP.', 'कृपया सही OTP दर्ज करें।'),
+      );
       return;
     }
     if (_isOtpBusy) return;
@@ -705,12 +792,22 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
         _selectedTicketTab = 1;
       });
       _loadRsaTickets();
-      _showRsaSnack(_tr('Mobile number verified.', 'मोबाइल नंबर वेरिफाई हो गया।'));
+      _showRsaSnack(
+        _tr('Mobile number verified.', 'मोबाइल नंबर वेरिफाई हो गया।'),
+      );
     } catch (error) {
-      final String message = error.toString().replaceFirst('Exception: ', '').trim();
-      _showRsaSnack(message.isEmpty
-          ? _tr('Could not verify OTP right now.', 'अभी OTP वेरिफाई नहीं कर पाए।')
-          : message);
+      final String message = error
+          .toString()
+          .replaceFirst('Exception: ', '')
+          .trim();
+      _showRsaSnack(
+        message.isEmpty
+            ? _tr(
+                'Could not verify OTP right now.',
+                'अभी OTP वेरिफाई नहीं कर पाए।',
+              )
+            : message,
+      );
     } finally {
       if (mounted) {
         setState(() => _isVerifyingOtp = false);
@@ -760,7 +857,8 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
         if (!mounted) return;
         setState(() {
           _gpsCaptured = false;
-          _gpsError = 'Location permission is blocked. Enable it from app settings.';
+          _gpsError =
+              'Location permission is blocked. Enable it from app settings.';
         });
         return;
       }
@@ -810,42 +908,74 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
     final String callingPhone = _alternatePhoneController.text.trim();
     final String description = _descriptionController.text.trim();
     final String primaryPhone =
-        (_verifiedPhone.isEmpty ? _phoneController.text : _verifiedPhone).trim();
-    final String alternatePhoneForApi = callingPhone.isEmpty ? primaryPhone : callingPhone;
+        (_verifiedPhone.isEmpty ? _phoneController.text : _verifiedPhone)
+            .trim();
+    final String alternatePhoneForApi = callingPhone.isEmpty
+        ? primaryPhone
+        : callingPhone;
 
     if (primaryPhone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Please verify your registered mobile number first.', 'कृपया पहले अपना रजिस्टर्ड मोबाइल नंबर वेरिफाई करें।'))),
+        SnackBar(
+          content: Text(
+            _tr(
+              'Please verify your registered mobile number first.',
+              'कृपया पहले अपना रजिस्टर्ड मोबाइल नंबर वेरिफाई करें।',
+            ),
+          ),
+        ),
       );
       return;
     }
     if (callingPhone.isNotEmpty && callingPhone.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Please enter a valid 10-digit alternative mobile number.', 'कृपया सही 10 अंकों का वैकल्पिक मोबाइल नंबर दर्ज करें।'))),
+        SnackBar(
+          content: Text(
+            _tr(
+              'Please enter a valid 10-digit alternative mobile number.',
+              'कृपया सही 10 अंकों का वैकल्पिक मोबाइल नंबर दर्ज करें।',
+            ),
+          ),
+        ),
       );
       return;
     }
     if (_selectedRegion == 'Region chune') {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Please select region.', 'कृपया क्षेत्र चुनें।'))),
+        SnackBar(
+          content: Text(_tr('Please select region.', 'कृपया क्षेत्र चुनें।')),
+        ),
       );
       return;
     }
     if (_selectedIssue == 'Samasya chune') {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Please select issue.', 'कृपया समस्या चुनें।'))),
+        SnackBar(
+          content: Text(_tr('Please select issue.', 'कृपया समस्या चुनें।')),
+        ),
       );
       return;
     }
     if (description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Please describe the issue.', 'कृपया समस्या का विवरण लिखें।'))),
+        SnackBar(
+          content: Text(
+            _tr('Please describe the issue.', 'कृपया समस्या का विवरण लिखें।'),
+          ),
+        ),
       );
       return;
     }
     if (!_gpsCaptured || _gpsLatitude == null || _gpsLongitude == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Please capture live GPS location first.', 'कृपया पहले लाइव GPS लोकेशन कैप्चर करें।'))),
+        SnackBar(
+          content: Text(
+            _tr(
+              'Please capture live GPS location first.',
+              'कृपया पहले लाइव GPS लोकेशन कैप्चर करें।',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -867,9 +997,7 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
           'description': description,
           'gps_latitude': _gpsLatitude,
           'gps_longitude': _gpsLongitude,
-          'metadata': <String, dynamic>{
-            'source': 'flutter_app',
-          },
+          'metadata': <String, dynamic>{'source': 'flutter_app'},
         }),
       );
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -902,7 +1030,10 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
         SnackBar(
           behavior: SnackBarBehavior.floating,
           content: Text(
-            _tr('RSA ticket submitted successfully.', 'RSA टिकट सफलतापूर्वक सबमिट हो गया।'),
+            _tr(
+              'RSA ticket submitted successfully.',
+              'RSA टिकट सफलतापूर्वक सबमिट हो गया।',
+            ),
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
@@ -910,7 +1041,9 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     } finally {
       if (mounted) {
@@ -922,11 +1055,21 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color pageBg = isDark ? const Color(0xFF050B16) : const Color(0xFFFFFFFF);
-    final Color cardBgSoft = isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF);
-    final Color border = isDark ? const Color(0x263B82F6) : const Color(0x1F000000);
-    final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
-    final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
+    final Color pageBg = isDark
+        ? const Color(0xFF050B16)
+        : const Color(0xFFFFFFFF);
+    final Color cardBgSoft = isDark
+        ? const Color(0xFF0B1220)
+        : const Color(0xFFFFFFFF);
+    final Color border = isDark
+        ? const Color(0x263B82F6)
+        : const Color(0x1F000000);
+    final Color textPrimary = isDark
+        ? const Color(0xFFE2E8F0)
+        : const Color(0xFF0B1F3A);
+    final Color textSecondary = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF5B6B84);
 
     return Scaffold(
       backgroundColor: pageBg,
@@ -940,7 +1083,11 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
         children: [
           _RsaTicketHero(isHindi: _isHindi),
           const SizedBox(height: 16),
-          _RsaStepProgress(isDark: isDark, currentStep: _currentStep, isHindi: _isHindi),
+          _RsaStepProgress(
+            isDark: isDark,
+            currentStep: _currentStep,
+            isHindi: _isHindi,
+          ),
           const SizedBox(height: 18),
           _GuideCard(
             isDark: isDark,
@@ -974,7 +1121,9 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
             _RsaProfileSummaryCard(
               isDark: isDark,
               isHindi: _isHindi,
-              phone: _verifiedPhone.isEmpty ? _phoneController.text.trim() : _verifiedPhone,
+              phone: _verifiedPhone.isEmpty
+                  ? _phoneController.text.trim()
+                  : _verifiedPhone,
               name: _profileName,
               riderId: _profileRiderId,
               vehicleCompany: _vehicleCompany,
@@ -982,7 +1131,9 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
               vehicleNumber: _vehicleNumber,
               hasVehicleDetails: _hasVehicleDetails,
               totalTickets: _tickets.length,
-              onAddVehicle: widget.onAddVehicle == null ? null : _openAddVehicleDetails,
+              onAddVehicle: widget.onAddVehicle == null
+                  ? null
+                  : _openAddVehicleDetails,
             ),
             const SizedBox(height: 16),
             _RsaTicketTabs(
@@ -997,15 +1148,24 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
             ),
             const SizedBox(height: 14),
             if (_currentStep == 3 && _selectedTicketTab == 1)
-              _RsaSuccessCard(isDark: isDark, ticketId: _submittedTicketId, isHindi: _isHindi)
+              _RsaSuccessCard(
+                isDark: isDark,
+                ticketId: _submittedTicketId,
+                isHindi: _isHindi,
+              )
             else if (_selectedTicketTab == 0)
               _RsaTicketListPanel(
                 isDark: isDark,
                 isHindi: _isHindi,
                 loading: _loadingTickets,
                 error: _ticketsError,
-                tickets: _tickets.where((RsaTicketItem item) => item.isActive).toList(),
-                emptyMessage: _tr('No active RSA tickets right now.', 'अभी कोई एक्टिव RSA टिकट नहीं है।'),
+                tickets: _tickets
+                    .where((RsaTicketItem item) => item.isActive)
+                    .toList(),
+                emptyMessage: _tr(
+                  'No active RSA tickets right now.',
+                  'अभी कोई एक्टिव RSA टिकट नहीं है।',
+                ),
                 onRefresh: _loadRsaTickets,
               )
             else if (_selectedTicketTab == 1)
@@ -1013,7 +1173,9 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
                 _VehicleRequiredPanel(
                   isDark: isDark,
                   isHindi: _isHindi,
-                  onAddVehicle: widget.onAddVehicle == null ? null : _openAddVehicleDetails,
+                  onAddVehicle: widget.onAddVehicle == null
+                      ? null
+                      : _openAddVehicleDetails,
                 )
               else
                 _NewTicketCard(
@@ -1029,8 +1191,10 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
                   gpsLongitude: _gpsLongitude,
                   gpsError: _gpsError,
                   submitting: _submittingTicket,
-                  onRegionChanged: (String value) => setState(() => _selectedRegion = value),
-                  onIssueChanged: (String value) => setState(() => _selectedIssue = value),
+                  onRegionChanged: (String value) =>
+                      setState(() => _selectedRegion = value),
+                  onIssueChanged: (String value) =>
+                      setState(() => _selectedIssue = value),
                   onCaptureGps: _captureLiveGps,
                   onContinue: _submitRsaTicket,
                 )
@@ -1041,7 +1205,10 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
                 loading: _loadingTickets,
                 error: _ticketsError,
                 tickets: _tickets,
-                emptyMessage: _tr('RSA ticket history will appear here.', 'RSA टिकट हिस्ट्री यहां दिखेगी।'),
+                emptyMessage: _tr(
+                  'RSA ticket history will appear here.',
+                  'RSA टिकट हिस्ट्री यहां दिखेगी।',
+                ),
                 onRefresh: _loadRsaTickets,
               ),
           ],
@@ -1131,19 +1298,30 @@ class _RiderVerificationCard extends StatelessWidget {
             ),
             decoration: InputDecoration(
               counterText: '',
-              hintText: isHindi ? '10 अंकों का मोबाइल नंबर' : '10-digit mobile number',
+              hintText: isHindi
+                  ? '10 अंकों का मोबाइल नंबर'
+                  : '10-digit mobile number',
               helperText: loadingProfilePhone
-                  ? (isHindi ? 'आपका प्रोफाइल मोबाइल नंबर लोड हो रहा है...' : 'Fetching your profile mobile number...')
+                  ? (isHindi
+                        ? 'आपका प्रोफाइल मोबाइल नंबर लोड हो रहा है...'
+                        : 'Fetching your profile mobile number...')
                   : (hasPrefilledPhone
-                      ? (isHindi ? 'यह आपके प्रोफाइल से भरा गया है। चाहें तो बदल सकते हैं।' : 'Auto-filled from your profile. You can edit it.')
-                      : null),
-              helperStyle: TextStyle(color: textSecondary, fontWeight: FontWeight.w600),
+                        ? (isHindi
+                              ? 'यह आपके प्रोफाइल से भरा गया है। चाहें तो बदल सकते हैं।'
+                              : 'Auto-filled from your profile. You can edit it.')
+                        : null),
+              helperStyle: TextStyle(
+                color: textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
               hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.7)),
               filled: true,
               fillColor: cardBgSoft,
               prefixIcon: Icon(
                 Icons.phone_iphone_rounded,
-                color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0B1F3A),
+                color: isDark
+                    ? const Color(0xFF60A5FA)
+                    : const Color(0xFF0B1F3A),
               ),
               border: _inputBorder(border),
               enabledBorder: _inputBorder(border),
@@ -1179,23 +1357,36 @@ class _RiderVerificationCard extends StatelessWidget {
                 helperText: isHindi
                     ? 'OTP verify hone ke baad hi अगला step खुलेगा।'
                     : 'Next step unlocks only after OTP verification.',
-                helperStyle: TextStyle(color: textSecondary, fontWeight: FontWeight.w600),
-                hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.7), letterSpacing: 0),
+                helperStyle: TextStyle(
+                  color: textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+                hintStyle: TextStyle(
+                  color: textSecondary.withValues(alpha: 0.7),
+                  letterSpacing: 0,
+                ),
                 filled: true,
                 fillColor: cardBgSoft,
                 prefixIcon: Icon(
                   Icons.lock_clock_rounded,
-                  color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0B1F3A),
+                  color: isDark
+                      ? const Color(0xFF60A5FA)
+                      : const Color(0xFF0B1F3A),
                 ),
                 border: _inputBorder(border),
                 enabledBorder: _inputBorder(border),
-                focusedBorder: _inputBorder(const Color(0xFF0B1F3A), width: 1.4),
+                focusedBorder: _inputBorder(
+                  const Color(0xFF0B1F3A),
+                  width: 1.4,
+                ),
               ),
             ),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton.icon(
-                onPressed: isSendingOtp || isVerifyingOtp || isResendingOtp ? null : onResendOtp,
+                onPressed: isSendingOtp || isVerifyingOtp || isResendingOtp
+                    ? null
+                    : onResendOtp,
                 icon: isResendingOtp
                     ? const SizedBox(
                         width: 14,
@@ -1223,15 +1414,17 @@ class _RiderVerificationCard extends StatelessWidget {
                         color: Color(0xFF172033),
                       ),
                     )
-                  : Icon(otpSent ? Icons.verified_user_rounded : Icons.sms_rounded),
+                  : Icon(
+                      otpSent ? Icons.verified_user_rounded : Icons.sms_rounded,
+                    ),
               label: Text(
                 isSendingOtp
                     ? (isHindi ? 'OTP भेज रहे हैं...' : 'Sending OTP...')
                     : isVerifyingOtp
-                        ? (isHindi ? 'OTP verify हो रहा है...' : 'Verifying OTP...')
-                        : otpSent
-                            ? (isHindi ? 'OTP Verify करें' : 'Verify OTP')
-                            : (isHindi ? 'OTP भेजें' : 'Send OTP'),
+                    ? (isHindi ? 'OTP verify हो रहा है...' : 'Verifying OTP...')
+                    : otpSent
+                    ? (isHindi ? 'OTP Verify करें' : 'Verify OTP')
+                    : (isHindi ? 'OTP भेजें' : 'Send OTP'),
               ),
               style: _primaryButtonStyle(),
             ),
@@ -1271,14 +1464,29 @@ class _RsaProfileSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
-    final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
-    final String displayName = name.isEmpty ? (isHindi ? 'राइडर' : 'Rider') : name;
-    final String initial = displayName.trim().isEmpty ? 'R' : displayName.trim()[0].toUpperCase();
-    final String displayPhone = phone.isNotEmpty ? phone : (isHindi ? 'फोन उपलब्ध नहीं' : 'Phone not available');
-    final String displayRiderId = riderId.isNotEmpty ? riderId : (isHindi ? 'राइडर आईडी सेट नहीं' : 'Rider ID not set');
-    final bool missingVehicleDetails = !hasVehicleDetails ||
-        (vehicleCompany.trim().isEmpty && vehicleModel.trim().isEmpty && vehicleNumber.trim().isEmpty);
+    final Color textPrimary = isDark
+        ? const Color(0xFFE2E8F0)
+        : const Color(0xFF0B1F3A);
+    final Color textSecondary = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF5B6B84);
+    final String displayName = name.isEmpty
+        ? (isHindi ? 'राइडर' : 'Rider')
+        : name;
+    final String initial = displayName.trim().isEmpty
+        ? 'R'
+        : displayName.trim()[0].toUpperCase();
+    final String displayPhone = phone.isNotEmpty
+        ? phone
+        : (isHindi ? 'फोन उपलब्ध नहीं' : 'Phone not available');
+    final String displayRiderId = riderId.isNotEmpty
+        ? riderId
+        : (isHindi ? 'राइडर आईडी सेट नहीं' : 'Rider ID not set');
+    final bool missingVehicleDetails =
+        !hasVehicleDetails ||
+        (vehicleCompany.trim().isEmpty &&
+            vehicleModel.trim().isEmpty &&
+            vehicleNumber.trim().isEmpty);
     return _RsaSurface(
       isDark: isDark,
       child: Column(
@@ -1323,7 +1531,10 @@ class _RsaProfileSummaryCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981),
                   borderRadius: BorderRadius.circular(999),
@@ -1346,15 +1557,21 @@ class _RsaProfileSummaryCard extends StatelessWidget {
               final List<Widget> tiles = [
                 _ProfileInfoTile(
                   label: isHindi ? 'कंपनी' : 'Company',
-                  value: vehicleCompany.isEmpty ? (isHindi ? 'जोड़ा नहीं' : 'Not added') : vehicleCompany,
+                  value: vehicleCompany.isEmpty
+                      ? (isHindi ? 'जोड़ा नहीं' : 'Not added')
+                      : vehicleCompany,
                 ),
                 _ProfileInfoTile(
                   label: isHindi ? 'वाहन मॉडल' : 'Vehicle model',
-                  value: vehicleModel.isEmpty ? (isHindi ? 'जोड़ा नहीं' : 'Not added') : vehicleModel,
+                  value: vehicleModel.isEmpty
+                      ? (isHindi ? 'जोड़ा नहीं' : 'Not added')
+                      : vehicleModel,
                 ),
                 _ProfileInfoTile(
                   label: isHindi ? 'वाहन नंबर' : 'Vehicle no.',
-                  value: vehicleNumber.isEmpty ? (isHindi ? 'जोड़ा नहीं' : 'Not added') : vehicleNumber,
+                  value: vehicleNumber.isEmpty
+                      ? (isHindi ? 'जोड़ा नहीं' : 'Not added')
+                      : vehicleNumber,
                 ),
               ];
               if (oneColumn) {
@@ -1387,7 +1604,9 @@ class _RsaProfileSummaryCard extends StatelessWidget {
                 color: isDark ? const Color(0xFF0B1220) : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: isDark ? const Color(0x334B5563) : const Color(0x1F000000),
+                  color: isDark
+                      ? const Color(0x334B5563)
+                      : const Color(0x1F000000),
                 ),
               ),
               child: Column(
@@ -1395,11 +1614,17 @@ class _RsaProfileSummaryCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.two_wheeler_rounded, color: Color(0xFF0B1F3A), size: 20),
+                      const Icon(
+                        Icons.two_wheeler_rounded,
+                        color: Color(0xFF0B1F3A),
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          isHindi ? 'वाहन की जानकारी जोड़ें' : 'Add vehicle details',
+                          isHindi
+                              ? 'वाहन की जानकारी जोड़ें'
+                              : 'Add vehicle details',
                           style: TextStyle(
                             color: textPrimary,
                             fontWeight: FontWeight.w900,
@@ -1433,7 +1658,9 @@ class _RsaProfileSummaryCard extends StatelessWidget {
                         backgroundColor: const Color(0xFF0B1F3A),
                         foregroundColor: Colors.white,
                         textStyle: const TextStyle(fontWeight: FontWeight.w900),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -1446,20 +1673,15 @@ class _RsaProfileSummaryCard extends StatelessWidget {
             builder: (BuildContext context, BoxConstraints constraints) {
               final bool oneColumn = constraints.maxWidth < 360;
               final List<Widget> bottomTiles = [
-                _ProfileInfoTile(label: isHindi ? 'कुल टिकट' : 'Total tickets', value: '$totalTickets'),
+                _ProfileInfoTile(
+                  label: isHindi ? 'कुल टिकट' : 'Total tickets',
+                  value: '$totalTickets',
+                ),
               ];
               if (oneColumn) {
-                return Column(
-                  children: [
-                    bottomTiles[0],
-                  ],
-                );
+                return Column(children: [bottomTiles[0]]);
               }
-              return Row(
-                children: [
-                  Expanded(child: bottomTiles[0]),
-                ],
-              );
+              return Row(children: [Expanded(child: bottomTiles[0])]);
             },
           ),
         ],
@@ -1515,7 +1737,9 @@ class _ProfileInfoTile extends StatelessWidget {
             style: TextStyle(
               color: highlight
                   ? const Color(0xFF0B1F3A)
-                  : (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A)),
+                  : (isDark
+                        ? const Color(0xFFE2E8F0)
+                        : const Color(0xFF0B1F3A)),
               fontWeight: FontWeight.w900,
               fontSize: 12,
             ),
@@ -1561,7 +1785,9 @@ class _RsaTicketTabs extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: selectedIndex == i ? const Color(0xFF0B1F3A) : Colors.transparent,
+                      color: selectedIndex == i
+                          ? const Color(0xFF0B1F3A)
+                          : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -1614,8 +1840,12 @@ class _VehicleRequiredPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
-    final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
+    final Color textPrimary = isDark
+        ? const Color(0xFFE2E8F0)
+        : const Color(0xFF0B1F3A);
+    final Color textSecondary = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF5B6B84);
 
     return _RsaSurface(
       isDark: isDark,
@@ -1627,7 +1857,10 @@ class _VehicleRequiredPanel extends StatelessWidget {
               const CircleAvatar(
                 radius: 20,
                 backgroundColor: Color(0xFFF8FAFC),
-                child: Icon(Icons.two_wheeler_rounded, color: Color(0xFF0B1F3A)),
+                child: Icon(
+                  Icons.two_wheeler_rounded,
+                  color: Color(0xFF0B1F3A),
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1665,8 +1898,13 @@ class _VehicleRequiredPanel extends StatelessWidget {
                   minimumSize: const Size.fromHeight(50),
                   backgroundColor: const Color(0xFF0B1F3A),
                   foregroundColor: Colors.white,
-                  textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ),
@@ -1717,7 +1955,9 @@ class _NewTicketCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color fieldBg = isDark ? const Color(0xFF0B1220) : Colors.white;
-    final Color border = isDark ? const Color(0x263B82F6) : const Color(0x1F000000);
+    final Color border = isDark
+        ? const Color(0x263B82F6)
+        : const Color(0x1F000000);
 
     InputDecoration decoration(
       String label,
@@ -1731,7 +1971,9 @@ class _NewTicketCard extends StatelessWidget {
         prefixIcon: showIcon
             ? Icon(
                 icon,
-                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
+                color: isDark
+                    ? const Color(0xFFE2E8F0)
+                    : const Color(0xFF0B1F3A),
               )
             : null,
         filled: true,
@@ -1751,7 +1993,9 @@ class _NewTicketCard extends StatelessWidget {
             isDark: isDark,
             icon: Icons.assignment_rounded,
             title: isHindi ? 'नया टिकट' : 'New Ticket',
-            subtitle: isHindi ? 'RSA रिक्वेस्ट के लिए जानकारी भरें' : 'Fill details to raise RSA request',
+            subtitle: isHindi
+                ? 'RSA रिक्वेस्ट के लिए जानकारी भरें'
+                : 'Fill details to raise RSA request',
           ),
           const SizedBox(height: 16),
           TextField(
@@ -1761,7 +2005,9 @@ class _NewTicketCard extends StatelessWidget {
             maxLength: 10,
             decoration: decoration(
               isHindi ? 'वैकल्पिक नंबर' : 'Alternative number',
-              isHindi ? '10 अंकों का वैकल्पिक नंबर (वैकल्पिक)' : '10-digit alternative number (optional)',
+              isHindi
+                  ? '10 अंकों का वैकल्पिक नंबर (वैकल्पिक)'
+                  : '10-digit alternative number (optional)',
               Icons.phone_in_talk_rounded,
             ).copyWith(counterText: ''),
           ),
@@ -1773,11 +2019,20 @@ class _NewTicketCard extends StatelessWidget {
                   value: selectedRegion,
                   isExpanded: true,
                   items: <DropdownMenuItem<String>>[
-                    DropdownMenuItem(value: 'Region chune', child: Text(isHindi ? 'क्षेत्र चुनें' : 'Region chune')),
-                    DropdownMenuItem(value: 'Delhi NCR', child: Text('Delhi NCR')),
+                    DropdownMenuItem(
+                      value: 'Region chune',
+                      child: Text(isHindi ? 'क्षेत्र चुनें' : 'Region chune'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Delhi NCR',
+                      child: Text('Delhi NCR'),
+                    ),
                     DropdownMenuItem(value: 'Noida', child: Text('Noida')),
                     DropdownMenuItem(value: 'Gurgaon', child: Text('Gurgaon')),
-                    DropdownMenuItem(value: 'Ghaziabad', child: Text('Ghaziabad')),
+                    DropdownMenuItem(
+                      value: 'Ghaziabad',
+                      child: Text('Ghaziabad'),
+                    ),
                   ],
                   onChanged: (String? value) {
                     if (value != null) onRegionChanged(value);
@@ -1796,11 +2051,23 @@ class _NewTicketCard extends StatelessWidget {
                   value: selectedIssue,
                   isExpanded: true,
                   items: <DropdownMenuItem<String>>[
-                    DropdownMenuItem(value: 'Samasya chune', child: Text(isHindi ? 'समस्या चुनें' : 'Samasya chune')),
-                    DropdownMenuItem(value: 'Battery issue', child: Text('Battery issue')),
-                    DropdownMenuItem(value: 'Puncture', child: Text('Puncture')),
+                    DropdownMenuItem(
+                      value: 'Samasya chune',
+                      child: Text(isHindi ? 'समस्या चुनें' : 'Samasya chune'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Battery issue',
+                      child: Text('Battery issue'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Puncture',
+                      child: Text('Puncture'),
+                    ),
                     DropdownMenuItem(value: 'Towing', child: Text('Towing')),
-                    DropdownMenuItem(value: 'Accident help', child: Text('Accident help')),
+                    DropdownMenuItem(
+                      value: 'Accident help',
+                      child: Text('Accident help'),
+                    ),
                     DropdownMenuItem(value: 'Other', child: Text('Other')),
                   ],
                   onChanged: (String? value) {
@@ -1822,7 +2089,9 @@ class _NewTicketCard extends StatelessWidget {
             maxLines: 3,
             decoration: decoration(
               isHindi ? 'विवरण *' : 'Description *',
-              isHindi ? 'समस्या का संक्षिप्त विवरण लिखें...' : 'Briefly describe the problem...',
+              isHindi
+                  ? 'समस्या का संक्षिप्त विवरण लिखें...'
+                  : 'Briefly describe the problem...',
               Icons.notes_rounded,
               showIcon: false,
             ),
@@ -1851,21 +2120,34 @@ class _NewTicketCard extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                  : Icon(gpsCaptured ? Icons.check_circle_rounded : Icons.satellite_alt_rounded),
+                  : Icon(
+                      gpsCaptured
+                          ? Icons.check_circle_rounded
+                          : Icons.satellite_alt_rounded,
+                    ),
               label: Text(
                 detectingGps
-                    ? (isHindi ? 'लाइव लोकेशन पता की जा रही है...' : 'Detecting live location...')
+                    ? (isHindi
+                          ? 'लाइव लोकेशन पता की जा रही है...'
+                          : 'Detecting live location...')
                     : (gpsCaptured
-                        ? (isHindi ? 'GPS लोकेशन कैप्चर हो गई' : 'GPS Location Captured')
-                        : (isHindi ? 'GPS लोकेशन कैप्चर करें' : 'Capture GPS Location')),
+                          ? (isHindi
+                                ? 'GPS लोकेशन कैप्चर हो गई'
+                                : 'GPS Location Captured')
+                          : (isHindi
+                                ? 'GPS लोकेशन कैप्चर करें'
+                                : 'Capture GPS Location')),
               ),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
-                backgroundColor:
-                    gpsCaptured ? const Color(0xFF10B981) : const Color(0xFF083C5A),
+                backgroundColor: gpsCaptured
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFF083C5A),
                 foregroundColor: Colors.white,
                 textStyle: const TextStyle(fontWeight: FontWeight.w900),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ),
@@ -1874,7 +2156,9 @@ class _NewTicketCard extends StatelessWidget {
             Text(
               'Lat: ${gpsLatitude!.toStringAsFixed(5)}, Lng: ${gpsLongitude!.toStringAsFixed(5)}',
               style: TextStyle(
-                color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF047857),
+                color: isDark
+                    ? const Color(0xFF86EFAC)
+                    : const Color(0xFF047857),
                 fontWeight: FontWeight.w800,
                 fontSize: 12,
               ),
@@ -1910,8 +2194,10 @@ class _NewTicketCard extends StatelessWidget {
                 submitting
                     ? (isHindi ? 'सबमिट हो रहा है...' : 'Submitting...')
                     : (gpsCaptured
-                        ? (isHindi ? 'आगे बढ़ें' : 'Continue')
-                        : (isHindi ? 'पहले लोकेशन कैप्चर करें' : 'Capture Location First')),
+                          ? (isHindi ? 'आगे बढ़ें' : 'Continue')
+                          : (isHindi
+                                ? 'पहले लोकेशन कैप्चर करें'
+                                : 'Capture Location First')),
               ),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(54),
@@ -1919,8 +2205,13 @@ class _NewTicketCard extends StatelessWidget {
                 disabledBackgroundColor: const Color(0xFF94A3B8),
                 foregroundColor: Colors.white,
                 disabledForegroundColor: Colors.white.withValues(alpha: 0.78),
-                textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ),
@@ -1953,7 +2244,9 @@ class _SimpleTicketPanel extends StatelessWidget {
             child: Text(
               message,
               style: TextStyle(
-                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
+                color: isDark
+                    ? const Color(0xFFE2E8F0)
+                    : const Color(0xFF0B1F3A),
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -1977,8 +2270,12 @@ class _RsaSuccessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
-    final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
+    final Color textPrimary = isDark
+        ? const Color(0xFFE2E8F0)
+        : const Color(0xFF0B1F3A);
+    final Color textSecondary = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF5B6B84);
 
     return _RsaSurface(
       isDark: isDark,
@@ -1987,11 +2284,7 @@ class _RsaSuccessCard extends StatelessWidget {
           const CircleAvatar(
             radius: 30,
             backgroundColor: Color(0xFF10B981),
-            child: Icon(
-              Icons.check_rounded,
-              color: Colors.white,
-              size: 34,
-            ),
+            child: Icon(Icons.check_rounded, color: Colors.white, size: 34),
           ),
           const SizedBox(height: 12),
           Text(
@@ -2007,11 +2300,11 @@ class _RsaSuccessCard extends StatelessWidget {
           Text(
             ticketId == null
                 ? (isHindi
-                    ? 'आपकी रिक्वेस्ट दर्ज हो गई है। हमारी सपोर्ट टीम जल्द संपर्क करेगी।'
-                    : 'Your request has been captured. Our support team will contact you shortly.')
+                      ? 'आपकी रिक्वेस्ट दर्ज हो गई है। हमारी सपोर्ट टीम जल्द संपर्क करेगी।'
+                      : 'Your request has been captured. Our support team will contact you shortly.')
                 : (isHindi
-                    ? 'टिकट #$ticketId दर्ज हो गया है। हमारी सपोर्ट टीम जल्द संपर्क करेगी।'
-                    : 'Ticket #$ticketId has been captured. Our support team will contact you shortly.'),
+                      ? 'टिकट #$ticketId दर्ज हो गया है। हमारी सपोर्ट टीम जल्द संपर्क करेगी।'
+                      : 'Ticket #$ticketId has been captured. Our support team will contact you shortly.'),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: textSecondary,
@@ -2046,8 +2339,12 @@ class _RsaTicketListPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
-    final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
+    final Color textPrimary = isDark
+        ? const Color(0xFFE2E8F0)
+        : const Color(0xFF0B1F3A);
+    final Color textSecondary = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF5B6B84);
     return _RsaSurface(
       isDark: isDark,
       child: Column(
@@ -2055,7 +2352,10 @@ class _RsaTicketListPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.confirmation_number_rounded, color: const Color(0xFF0B1F3A)),
+              Icon(
+                Icons.confirmation_number_rounded,
+                color: const Color(0xFF0B1F3A),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -2106,7 +2406,11 @@ class _RsaTicketListPanel extends StatelessWidget {
             Column(
               children: [
                 for (int i = 0; i < tickets.length; i++) ...[
-                  _RsaTicketTile(ticket: tickets[i], isDark: isDark, isHindi: isHindi),
+                  _RsaTicketTile(
+                    ticket: tickets[i],
+                    isDark: isDark,
+                    isHindi: isHindi,
+                  ),
                   if (i != tickets.length - 1) const SizedBox(height: 10),
                 ],
               ],
@@ -2166,8 +2470,12 @@ class _RsaTicketTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
-    final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
+    final Color textPrimary = isDark
+        ? const Color(0xFFE2E8F0)
+        : const Color(0xFF0B1F3A);
+    final Color textSecondary = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF5B6B84);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -2200,7 +2508,9 @@ class _RsaTicketTile extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: _statusColor.withValues(alpha: 0.13),
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: _statusColor.withValues(alpha: 0.28)),
+                  border: Border.all(
+                    color: _statusColor.withValues(alpha: 0.28),
+                  ),
                 ),
                 child: Text(
                   _statusLabel,
@@ -2270,7 +2580,8 @@ class _RsaTicketTile extends StatelessWidget {
                   fontSize: 12,
                 ),
               ),
-            if (ticket.technicianLocation.isNotEmpty || ticket.technicianPhoneNumber.isNotEmpty) ...[
+            if (ticket.technicianLocation.isNotEmpty ||
+                ticket.technicianPhoneNumber.isNotEmpty) ...[
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -2278,13 +2589,18 @@ class _RsaTicketTile extends StatelessWidget {
                 children: [
                   if (ticket.technicianLocation.isNotEmpty)
                     OutlinedButton.icon(
-                      onPressed: () => openTechnicianLocation(ticket.technicianLocation),
-                      icon: const Icon(Icons.location_searching_rounded, size: 17),
+                      onPressed: () =>
+                          openTechnicianLocation(ticket.technicianLocation),
+                      icon: const Icon(
+                        Icons.location_searching_rounded,
+                        size: 17,
+                      ),
                       label: const Text('Track Technician'),
                     ),
                   if (ticket.technicianPhoneNumber.isNotEmpty)
                     FilledButton.tonalIcon(
-                      onPressed: () => callTechnician(ticket.technicianPhoneNumber),
+                      onPressed: () =>
+                          callTechnician(ticket.technicianPhoneNumber),
                       icon: const Icon(Icons.call_rounded, size: 17),
                       label: const Text('Call Technician'),
                     ),
@@ -2319,7 +2635,9 @@ class _RsaTicketTile extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () => openRsaTicketMap(ticket),
                 icon: const Icon(Icons.map_rounded, size: 17),
-                label: Text(isHindi ? 'मैप्स में लोकेशन खोलें' : 'Open location on Maps'),
+                label: Text(
+                  isHindi ? 'मैप्स में लोकेशन खोलें' : 'Open location on Maps',
+                ),
               ),
             ),
           ],
@@ -2330,10 +2648,7 @@ class _RsaTicketTile extends StatelessWidget {
 }
 
 class _RsaSurface extends StatelessWidget {
-  const _RsaSurface({
-    required this.isDark,
-    required this.child,
-  });
+  const _RsaSurface({required this.isDark, required this.child});
 
   final bool isDark;
   final Widget child;
@@ -2376,13 +2691,19 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
-    final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
+    final Color textPrimary = isDark
+        ? const Color(0xFFE2E8F0)
+        : const Color(0xFF0B1F3A);
+    final Color textSecondary = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF5B6B84);
     return Row(
       children: [
         CircleAvatar(
           radius: 18,
-          backgroundColor: isDark ? const Color(0xFF3B2711) : const Color(0xFFFFE9B5),
+          backgroundColor: isDark
+              ? const Color(0xFF3B2711)
+              : const Color(0xFFFFE9B5),
           child: Icon(
             icon,
             size: 19,
@@ -2469,7 +2790,9 @@ class _RsaTicketHero extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  isHindi ? 'तेज राइडर मदद - EV सपोर्ट - दिल्ली NCR' : 'Tez rider help - EV support - Delhi NCR',
+                  isHindi
+                      ? 'तेज राइडर मदद - EV सपोर्ट - दिल्ली NCR'
+                      : 'Tez rider help - EV support - Delhi NCR',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.78),
                     fontWeight: FontWeight.w700,
@@ -2512,8 +2835,9 @@ class _RsaStepProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> labels =
-        isHindi ? <String>['वेरिफाई', 'प्रोफाइल', 'टिकट', 'पूरा'] : <String>['Verify', 'Profile', 'Ticket', 'Done'];
+    final List<String> labels = isHindi
+        ? <String>['वेरिफाई', 'प्रोफाइल', 'टिकट', 'पूरा']
+        : <String>['Verify', 'Profile', 'Ticket', 'Done'];
     return Row(
       children: [
         for (int i = 0; i < labels.length; i++) ...[
@@ -2530,7 +2854,9 @@ class _RsaStepProgress extends StatelessWidget {
                 height: 2,
                 color: i < currentStep
                     ? const Color(0xFF10B981)
-                    : (isDark ? const Color(0xFF1E293B) : const Color(0xFFFFE0A3)),
+                    : (isDark
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFFFE0A3)),
               ),
             ),
         ],
@@ -2559,9 +2885,11 @@ class _StepDot extends StatelessWidget {
     final Color bg = completed
         ? const Color(0xFF10B981)
         : active
-            ? const Color(0xFF0B1F3A)
-            : (isDark ? const Color(0xFF15243A) : const Color(0xFFF8FAFC));
-    final Color fg = (completed || active) ? Colors.white : const Color(0xFF64748B);
+        ? const Color(0xFF0B1F3A)
+        : (isDark ? const Color(0xFF15243A) : const Color(0xFFF8FAFC));
+    final Color fg = (completed || active)
+        ? Colors.white
+        : const Color(0xFF64748B);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -2586,9 +2914,11 @@ class _StepDot extends StatelessWidget {
             color: completed
                 ? const Color(0xFF10B981)
                 : active
-                    ? (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A))
-                    : const Color(0xFF64748B),
-            fontWeight: (active || completed) ? FontWeight.w900 : FontWeight.w700,
+                ? (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A))
+                : const Color(0xFF64748B),
+            fontWeight: (active || completed)
+                ? FontWeight.w900
+                : FontWeight.w700,
             fontSize: 11,
           ),
         ),
@@ -2612,8 +2942,12 @@ class _GuideCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
-    final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
+    final Color textPrimary = isDark
+        ? const Color(0xFFE2E8F0)
+        : const Color(0xFF0B1F3A);
+    final Color textSecondary = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF5B6B84);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -2643,14 +2977,18 @@ class _GuideCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  expanded ? (isHindi ? 'छुपाएं' : 'Hide') : (isHindi ? 'दिखाएं' : 'Show'),
+                  expanded
+                      ? (isHindi ? 'छुपाएं' : 'Hide')
+                      : (isHindi ? 'दिखाएं' : 'Show'),
                   style: const TextStyle(
                     color: Color(0xFF0B1F3A),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 Icon(
-                  expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                  expanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
                   color: const Color(0xFF0B1F3A),
                 ),
               ],
@@ -2658,7 +2996,9 @@ class _GuideCard extends StatelessWidget {
           ),
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 220),
-            crossFadeState: expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             firstChild: const SizedBox.shrink(),
             secondChild: Padding(
               padding: const EdgeInsets.only(top: 12),

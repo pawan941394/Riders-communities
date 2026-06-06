@@ -77,13 +77,15 @@ class _AuthScreenState extends State<AuthScreen> {
         : (_isLogin ? 'Welcome back rider' : 'Join Ride With Garv');
     final subtitle = _useOtpFlow
         ? (_otpNeedsSignup
-            ? 'OTP verified hai, ab signup details fill karo.'
-            : 'Phone number daalo, OTP verify karo, aur direct login.')
+              ? 'OTP verified hai, ab signup details fill karo.'
+              : 'Phone number daalo, OTP verify karo, aur direct login.')
         : (_isLogin
-            ? 'Login to continue helping and getting help.'
-            : 'Create your account to start posting in your city community.');
+              ? 'Login to continue helping and getting help.'
+              : 'Create your account to start posting in your city community.');
     final actionText = _useOtpFlow
-        ? (_otpNeedsSignup ? 'Complete signup' : (_otpSent ? 'Verify OTP' : 'Send OTP'))
+        ? (_otpNeedsSignup
+              ? 'Complete signup'
+              : (_otpSent ? 'Verify OTP' : 'Send OTP'))
         : (_isLogin ? 'Login' : 'Create account');
 
     return Scaffold(
@@ -97,9 +99,21 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         child: Stack(
           children: [
-            const Positioned(top: -50, right: -36, child: FloatingBlob(size: 210, color: Color(0x11000000))),
-            const Positioned(top: 160, left: -34, child: FloatingBlob(size: 140, color: Color(0x1A0B1F3A))),
-            const Positioned(bottom: 90, right: -26, child: FloatingBlob(size: 110, color: Color(0x0F000000))),
+            const Positioned(
+              top: -50,
+              right: -36,
+              child: FloatingBlob(size: 210, color: Color(0x11000000)),
+            ),
+            const Positioned(
+              top: 160,
+              left: -34,
+              child: FloatingBlob(size: 140, color: Color(0x1A0B1F3A)),
+            ),
+            const Positioned(
+              bottom: 90,
+              right: -26,
+              child: FloatingBlob(size: 110, color: Color(0x0F000000)),
+            ),
             SafeArea(
               child: Center(
                 child: ConstrainedBox(
@@ -131,7 +145,10 @@ class _AuthScreenState extends State<AuthScreen> {
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.85),
                                     borderRadius: BorderRadius.circular(999),
@@ -150,7 +167,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             Text(
                               title,
                               textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(
                                     fontWeight: FontWeight.w900,
                                     color: Colors.white,
                                   ),
@@ -159,9 +177,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             Text(
                               subtitle,
                               textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: const Color(0xFFE2E8F0),
-                                  ),
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(color: const Color(0xFFE2E8F0)),
                             ),
                           ],
                         ),
@@ -215,52 +232,73 @@ class _AuthScreenState extends State<AuthScreen> {
                           children: [
                             TextField(
                               controller: _phoneController,
-                              decoration: _fieldDecoration('Phone number', Icons.phone_rounded).copyWith(
-                                prefixText: '+91 ',
-                                counterText: '',
-                              ),
+                              decoration: _fieldDecoration(
+                                'Phone number',
+                                Icons.phone_rounded,
+                              ).copyWith(prefixText: '+91 ', counterText: ''),
                               keyboardType: TextInputType.phone,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
                               maxLength: 10,
                             ),
                             const SizedBox(height: 12),
                             if (_useOtpFlow && _otpSent) ...[
                               TextField(
                                 controller: _otpController,
-                                decoration: _fieldDecoration('OTP', Icons.lock_clock_rounded),
+                                decoration: _fieldDecoration(
+                                  'OTP',
+                                  Icons.lock_clock_rounded,
+                                ),
                                 keyboardType: TextInputType.number,
                               ),
                               const SizedBox(height: 12),
                             ],
-                            if ((_useOtpFlow && !_isLogin && _otpNeedsSignup) || (!_useOtpFlow && !_isLogin)) ...[
+                            if ((_useOtpFlow && !_isLogin && _otpNeedsSignup) ||
+                                (!_useOtpFlow && !_isLogin)) ...[
                               TextField(
                                 controller: _fullNameController,
-                                decoration: _fieldDecoration('Full name', Icons.badge_outlined),
+                                decoration: _fieldDecoration(
+                                  'Full name',
+                                  Icons.badge_outlined,
+                                ),
                                 keyboardType: TextInputType.name,
                               ),
                               const SizedBox(height: 12),
                               TextField(
                                 controller: _emailController,
-                                decoration: _fieldDecoration('Email', Icons.alternate_email_rounded),
+                                decoration: _fieldDecoration(
+                                  'Email',
+                                  Icons.alternate_email_rounded,
+                                ),
                                 keyboardType: TextInputType.emailAddress,
                               ),
                               const SizedBox(height: 12),
                               if (_useOtpFlow) ...[
                                 TextField(
                                   controller: _riderCompanyController,
-                                  decoration: _fieldDecoration('Company (optional)', Icons.business_rounded),
+                                  decoration: _fieldDecoration(
+                                    'Company (optional)',
+                                    Icons.business_rounded,
+                                  ),
                                   keyboardType: TextInputType.text,
                                 ),
                                 const SizedBox(height: 12),
                                 TextField(
                                   controller: _riderIdController,
-                                  decoration: _fieldDecoration('Rider ID (optional)', Icons.badge_rounded),
+                                  decoration: _fieldDecoration(
+                                    'Rider ID (optional)',
+                                    Icons.badge_rounded,
+                                  ),
                                   keyboardType: TextInputType.text,
                                 ),
                                 const SizedBox(height: 12),
                                 TextField(
                                   controller: _cityController,
-                                  decoration: _fieldDecoration('City (optional)', Icons.location_city_rounded),
+                                  decoration: _fieldDecoration(
+                                    'City (optional)',
+                                    Icons.location_city_rounded,
+                                  ),
                                   keyboardType: TextInputType.text,
                                 ),
                                 const SizedBox(height: 12),
@@ -271,7 +309,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                   'Referral code (optional)',
                                   Icons.card_giftcard_rounded,
                                 ),
-                                textCapitalization: TextCapitalization.characters,
+                                textCapitalization:
+                                    TextCapitalization.characters,
                               ),
                               const SizedBox(height: 12),
                             ],
@@ -279,7 +318,10 @@ class _AuthScreenState extends State<AuthScreen> {
                               TextField(
                                 controller: _passwordController,
                                 obscureText: true,
-                                decoration: _fieldDecoration('Password', Icons.lock_outline_rounded),
+                                decoration: _fieldDecoration(
+                                  'Password',
+                                  Icons.lock_outline_rounded,
+                                ),
                               ),
                             // Forgot password — hidden until flow is implemented.
                             // if (_isLogin)
@@ -314,7 +356,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                         width: 42,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF8FAFC),
-                                          borderRadius: BorderRadius.circular(999),
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
                                         ),
                                         child: const Icon(
                                           Icons.add_a_photo_outlined,
@@ -334,20 +378,23 @@ class _AuthScreenState extends State<AuthScreen> {
                                                   .labelLarge
                                                   ?.copyWith(
                                                     fontWeight: FontWeight.w700,
-                                                    color:
-                                                        const Color(0xFF0B1F3A),
+                                                    color: const Color(
+                                                      0xFF0B1F3A,
+                                                    ),
                                                   ),
                                             ),
                                             Text(
-                                              _profileImagePath != null || _profileImageBytes != null
+                                              _profileImagePath != null ||
+                                                      _profileImageBytes != null
                                                   ? 'Image selected'
                                                   : 'Tap to upload image',
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .bodySmall
                                                   ?.copyWith(
-                                                    color:
-                                                        const Color(0xFF5B6B84),
+                                                    color: const Color(
+                                                      0xFF5B6B84,
+                                                    ),
                                                   ),
                                             ),
                                           ],
@@ -371,7 +418,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                 style: FilledButton.styleFrom(
                                   backgroundColor: const Color(0xFF0B1F3A),
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 15,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
                                   ),
@@ -385,7 +434,12 @@ class _AuthScreenState extends State<AuthScreen> {
                                           color: Color(0xFF172033),
                                         ),
                                       )
-                                    : Text(actionText, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                    : Text(
+                                        actionText,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -393,15 +447,23 @@ class _AuthScreenState extends State<AuthScreen> {
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton.icon(
-                                  onPressed: _isOtpBusy ? null : _handleResendOtp,
+                                  onPressed: _isOtpBusy
+                                      ? null
+                                      : _handleResendOtp,
                                   icon: _isResendingOtp
                                       ? const SizedBox(
                                           width: 14,
                                           height: 14,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
                                         )
                                       : const Icon(Icons.refresh_rounded),
-                                  label: Text(_isResendingOtp ? 'Resending...' : 'Resend OTP'),
+                                  label: Text(
+                                    _isResendingOtp
+                                        ? 'Resending...'
+                                        : 'Resend OTP',
+                                  ),
                                 ),
                               ),
                             if (!_useOtpFlow) ...[
@@ -409,10 +471,14 @@ class _AuthScreenState extends State<AuthScreen> {
                                 children: [
                                   const Expanded(child: Divider()),
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
                                     child: Text(
                                       'or continue with',
-                                      style: Theme.of(context).textTheme.bodySmall,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
                                     ),
                                   ),
                                   const Expanded(child: Divider()),
@@ -453,12 +519,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         _useOtpFlow
                             ? 'Phone number daalo, OTP verify karo. Naya user hoga to signup fields auto aa jayenge.'
                             : (_isLogin
-                                ? 'Use the email and password for your account.'
-                                : 'Signup helps us keep the rider community trusted and safe.'),
+                                  ? 'Use the email and password for your account.'
+                                  : 'Signup helps us keep the rider community trusted and safe.'),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF5B6B84),
-                            ),
+                          color: const Color(0xFF5B6B84),
+                        ),
                       ),
                     ],
                   ),
@@ -535,10 +601,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (widgetId.isEmpty || authToken.isEmpty) {
         return null;
       }
-      return <String, String>{
-        'widget_id': widgetId,
-        'auth_token': authToken,
-      };
+      return <String, String>{'widget_id': widgetId, 'auth_token': authToken};
     } catch (_) {
       return null;
     }
@@ -615,7 +678,9 @@ class _AuthScreenState extends State<AuthScreen> {
         }
       }
       final String messageAsId = ('${map['message'] ?? ''}').trim();
-      if (messageAsId.isNotEmpty && !messageAsId.contains(' ') && messageAsId.length >= 12) {
+      if (messageAsId.isNotEmpty &&
+          !messageAsId.contains(' ') &&
+          messageAsId.length >= 12) {
         return messageAsId;
       }
       final Map<String, dynamic>? data = _asJsonMap(map['data']);
@@ -638,12 +703,25 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   bool _isOtpSuccess(dynamic response) {
+    final String flatResponse =
+        (response is String
+                ? response
+                : jsonEncode(_asJsonMap(response) ?? <String, dynamic>{}))
+            .toLowerCase()
+            .trim();
+    if (flatResponse.contains('already verified') ||
+        flatResponse.contains('otp already verified')) {
+      return true;
+    }
     if (response is String) {
       final String raw = response.toLowerCase().trim();
       if (raw.isEmpty) return false;
       final bool hasPositive =
-          raw.contains('success') || raw.contains('verified') || raw.contains('otp verified');
-      final bool hasNegative = raw.contains('fail') ||
+          raw.contains('success') ||
+          raw.contains('verified') ||
+          raw.contains('otp verified');
+      final bool hasNegative =
+          raw.contains('fail') ||
           raw.contains('invalid') ||
           raw.contains('wrong') ||
           raw.contains('expired') ||
@@ -654,23 +732,35 @@ class _AuthScreenState extends State<AuthScreen> {
 
     final Map<String, dynamic>? map = _asJsonMap(response);
     if (map != null) {
-      final String status = ('${map['status'] ?? map['statusCode'] ?? ''}').toLowerCase().trim();
-      final String message = ('${map['message'] ?? ''}').toLowerCase().trim();
+      final String status = ('${map['status'] ?? map['statusCode'] ?? ''}')
+          .toLowerCase()
+          .trim();
+      final String message =
+          ('${map['message'] ?? map['detail'] ?? map['error'] ?? ''}')
+              .toLowerCase()
+              .trim();
       final dynamic success = map['success'];
-      final dynamic verified = map['verified'] ?? map['is_verified'] ?? map['isVerified'];
+      final dynamic verified =
+          map['verified'] ?? map['is_verified'] ?? map['isVerified'];
       if (success == true) return true;
       if (verified == true) return true;
       if (status == 'success' || status == 'ok' || status == '200') return true;
-      if (message.contains('verified') || message.contains('success')) return true;
+      if (message.contains('verified') || message.contains('success'))
+        return true;
       final dynamic dataRaw = map['data'];
       final Map<String, dynamic>? data = _asJsonMap(dataRaw);
       if (data != null) {
         final dynamic dataSuccess = data['success'];
-        final dynamic dataVerified = data['verified'] ?? data['is_verified'] ?? data['isVerified'];
+        final dynamic dataVerified =
+            data['verified'] ?? data['is_verified'] ?? data['isVerified'];
         if (dataSuccess == true) return true;
         if (dataVerified == true) return true;
-        final String dataMessage = ('${data['message'] ?? ''}').toLowerCase().trim();
-        if (dataMessage.contains('verified') || dataMessage.contains('success')) return true;
+        final String dataMessage =
+            ('${data['message'] ?? data['detail'] ?? data['error'] ?? ''}')
+                .toLowerCase()
+                .trim();
+        if (dataMessage.contains('verified') || dataMessage.contains('success'))
+          return true;
       }
     }
     return false;
@@ -716,11 +806,14 @@ class _AuthScreenState extends State<AuthScreen> {
     }
     final Map<String, dynamic>? map = _asJsonMap(response);
     if (map != null) {
-      final String msg = ('${map['message'] ?? map['detail'] ?? map['error'] ?? ''}').trim();
+      final String msg =
+          ('${map['message'] ?? map['detail'] ?? map['error'] ?? ''}').trim();
       if (msg.isNotEmpty) return msg;
       final Map<String, dynamic>? data = _asJsonMap(map['data']);
       if (data != null) {
-        final String nested = ('${data['message'] ?? data['detail'] ?? data['error'] ?? ''}').trim();
+        final String nested =
+            ('${data['message'] ?? data['detail'] ?? data['error'] ?? ''}')
+                .trim();
         if (nested.isNotEmpty) return nested;
       }
     }
@@ -730,7 +823,9 @@ class _AuthScreenState extends State<AuthScreen> {
   Map<String, dynamic>? _asJsonMap(dynamic value) {
     if (value is Map<String, dynamic>) return value;
     if (value is Map) {
-      return value.map<String, dynamic>((dynamic k, dynamic v) => MapEntry<String, dynamic>('$k', v));
+      return value.map<String, dynamic>(
+        (dynamic k, dynamic v) => MapEntry<String, dynamic>('$k', v),
+      );
     }
     if (value is String) {
       try {
@@ -746,7 +841,10 @@ class _AuthScreenState extends State<AuthScreen> {
     return null;
   }
 
-  Future<Map<String, dynamic>> _postJson(String path, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> _postJson(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
     final http.Response response = await http.post(
       Uri.parse('$_apiBaseUrl$path'),
       headers: <String, String>{
@@ -758,10 +856,7 @@ class _AuthScreenState extends State<AuthScreen> {
     final Map<String, dynamic> data = response.body.isNotEmpty
         ? (jsonDecode(response.body) as Map<String, dynamic>)
         : <String, dynamic>{};
-    return <String, dynamic>{
-      'status': response.statusCode,
-      'data': data,
-    };
+    return <String, dynamic>{'status': response.statusCode, 'data': data};
   }
 
   Future<void> _handleSendOtp() async {
@@ -775,7 +870,9 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       await _initOtpSdkIfPossible();
       if (!_otpSdkInitialized) {
-        _showErrorModal('OTP config not available. Please check server OTP env setup.');
+        _showErrorModal(
+          'OTP config not available. Please check server OTP env setup.',
+        );
         return;
       }
 
@@ -791,7 +888,8 @@ class _AuthScreenState extends State<AuthScreen> {
         return;
       }
       final bool userExists = (precheckData['user_exists'] as bool?) ?? false;
-      _otpNeedsSignup = (precheckData['signup_required'] as bool?) ?? !userExists;
+      _otpNeedsSignup =
+          (precheckData['signup_required'] as bool?) ?? !userExists;
 
       final String identifier = _toSendOtpIdentifier(phone);
       final dynamic otpSendResponse = await OTPWidget.sendOTP(<String, dynamic>{
@@ -801,9 +899,12 @@ class _AuthScreenState extends State<AuthScreen> {
       if (reqId.isEmpty) {
         final Map<String, dynamic>? parsed = _asJsonMap(otpSendResponse);
         final String msg = ('${parsed?['message'] ?? ''}').trim();
-        final String flat = ('${msg.isNotEmpty ? msg : otpSendResponse}').toLowerCase();
+        final String flat = ('${msg.isNotEmpty ? msg : otpSendResponse}')
+            .toLowerCase();
         if (flat.contains('ipblocked') || flat.contains('ip blocked')) {
-          _showErrorModal('Aaj OTP limit exceed ho gayi hai. 24 hours baad phir try karein.');
+          _showErrorModal(
+            'Aaj OTP limit exceed ho gayi hai. 24 hours baad phir try karein.',
+          );
           return;
         }
         _showErrorModal(
@@ -818,7 +919,9 @@ class _AuthScreenState extends State<AuthScreen> {
         _otpSent = true;
         _otpVerified = false;
       });
-      _showSnack('OTP sent successfully. SMS aane me 20-60 sec lag sakte hain.');
+      _showSnack(
+        'OTP sent successfully. SMS aane me 20-60 sec lag sakte hain.',
+      );
     } catch (_) {
       _showErrorModal('Could not send OTP right now.');
     } finally {
@@ -872,10 +975,9 @@ class _AuthScreenState extends State<AuthScreen> {
     if (_isOtpBusy) return;
     setState(() => _isVerifyingOtp = true);
     try {
-      final dynamic otpVerifyResponse = await OTPWidget.verifyOTP(<String, dynamic>{
-        'reqId': _otpReqId,
-        'otp': otp,
-      });
+      final dynamic otpVerifyResponse = await OTPWidget.verifyOTP(
+        <String, dynamic>{'reqId': _otpReqId, 'otp': otp},
+      );
       final bool explicitFailure = _isOtpExplicitFailure(otpVerifyResponse);
       final bool parsedSuccess = _isOtpSuccess(otpVerifyResponse);
       if (explicitFailure && !parsedSuccess) {
@@ -893,7 +995,8 @@ class _AuthScreenState extends State<AuthScreen> {
         },
       );
       final int status = (complete['status'] as int?) ?? 500;
-      final Map<String, dynamic> data = (complete['data'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+      final Map<String, dynamic> data =
+          (complete['data'] as Map<String, dynamic>?) ?? <String, dynamic>{};
       if (status < 200 || status >= 300) {
         _showErrorModal(_extractErrorMessage(data));
         return;
@@ -915,15 +1018,22 @@ class _AuthScreenState extends State<AuthScreen> {
         return;
       }
       final Map<String, dynamic> profile =
-          (data['profile'] is Map<String, dynamic>) ? data['profile'] as Map<String, dynamic> : <String, dynamic>{};
+          (data['profile'] is Map<String, dynamic>)
+          ? data['profile'] as Map<String, dynamic>
+          : <String, dynamic>{};
       widget.onAuthComplete(<String, dynamic>{
         'access_token': token,
         'profile': profile,
         'phone_number': phone,
       });
     } catch (error) {
-      final String msg = error.toString().replaceFirst('Exception: ', '').trim();
-      _showErrorModal(msg.isEmpty ? 'Could not verify OTP right now.' : 'Verify error: $msg');
+      final String msg = error
+          .toString()
+          .replaceFirst('Exception: ', '')
+          .trim();
+      _showErrorModal(
+        msg.isEmpty ? 'Could not verify OTP right now.' : 'Verify error: $msg',
+      );
     } finally {
       if (mounted) {
         setState(() => _isVerifyingOtp = false);
@@ -935,7 +1045,9 @@ class _AuthScreenState extends State<AuthScreen> {
     final String phone = _normalizeLocalPhone(_phoneController.text.trim());
     final String fullName = _fullNameController.text.trim();
     final String email = _emailController.text.trim();
-    final String referralCode = _referralCodeController.text.trim().toUpperCase();
+    final String referralCode = _referralCodeController.text
+        .trim()
+        .toUpperCase();
     if (!_otpVerified) {
       _showErrorModal('Please verify OTP first.');
       return;
@@ -951,24 +1063,28 @@ class _AuthScreenState extends State<AuthScreen> {
     if (_isSubmitting) return;
     setState(() => _isSubmitting = true);
     try {
-      final Map<String, dynamic> res = await _postJson(
-        '/api/v1/auth/otp/register',
-        <String, dynamic>{
-          'phone_number': phone,
-          'full_name': fullName,
-          'email': email.isEmpty ? null : email,
-          'rider_id': _riderIdController.text.trim().isEmpty ? null : _riderIdController.text.trim(),
-          'rider_company':
-              _riderCompanyController.text.trim().isEmpty ? null : _riderCompanyController.text.trim(),
-          'city': _cityController.text.trim().isEmpty ? null : _cityController.text.trim(),
-          'preferred_language': 'en',
-          'referral_code': referralCode.isEmpty ? null : referralCode,
-          'otp_verified': true,
-          'verification_ref': _otpReqId,
-        },
-      );
+      final Map<String, dynamic> res =
+          await _postJson('/api/v1/auth/otp/register', <String, dynamic>{
+            'phone_number': phone,
+            'full_name': fullName,
+            'email': email.isEmpty ? null : email,
+            'rider_id': _riderIdController.text.trim().isEmpty
+                ? null
+                : _riderIdController.text.trim(),
+            'rider_company': _riderCompanyController.text.trim().isEmpty
+                ? null
+                : _riderCompanyController.text.trim(),
+            'city': _cityController.text.trim().isEmpty
+                ? null
+                : _cityController.text.trim(),
+            'preferred_language': 'en',
+            'referral_code': referralCode.isEmpty ? null : referralCode,
+            'otp_verified': true,
+            'verification_ref': _otpReqId,
+          });
       final int status = (res['status'] as int?) ?? 500;
-      final Map<String, dynamic> data = (res['data'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+      final Map<String, dynamic> data =
+          (res['data'] as Map<String, dynamic>?) ?? <String, dynamic>{};
       if (status < 200 || status >= 300) {
         _showErrorModal(_extractErrorMessage(data));
         return;
@@ -979,7 +1095,9 @@ class _AuthScreenState extends State<AuthScreen> {
         return;
       }
       final Map<String, dynamic> profile =
-          (data['profile'] is Map<String, dynamic>) ? data['profile'] as Map<String, dynamic> : <String, dynamic>{};
+          (data['profile'] is Map<String, dynamic>)
+          ? data['profile'] as Map<String, dynamic>
+          : <String, dynamic>{};
       widget.onAuthComplete(<String, dynamic>{
         'access_token': token,
         'profile': profile,
@@ -994,10 +1112,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  void _showComingSoonSheet(
-    BuildContext context, {
-    required String method,
-  }) {
+  void _showComingSoonSheet(BuildContext context, {required String method}) {
     showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -1029,8 +1144,8 @@ class _AuthScreenState extends State<AuthScreen> {
                     child: Text(
                       '$method abhi coming soon hai',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -1039,8 +1154,8 @@ class _AuthScreenState extends State<AuthScreen> {
               Text(
                 'Bhai ye feature hum jaldi live kar rahe hain. Abhi ke liye direct Phone + Password se login ya signup karo.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF5B6B84),
-                    ),
+                  color: const Color(0xFF5B6B84),
+                ),
               ),
               const SizedBox(height: 14),
               SizedBox(
@@ -1079,7 +1194,9 @@ class _AuthScreenState extends State<AuthScreen> {
     final String email = _emailController.text.trim();
     final String password = _passwordController.text.trim();
     final String phone = _phoneController.text.trim();
-    final String referralCode = _referralCodeController.text.trim().toUpperCase();
+    final String referralCode = _referralCodeController.text
+        .trim()
+        .toUpperCase();
 
     final String? validationError = _validateAuthInputs(
       isLogin: _isLogin,
@@ -1097,7 +1214,9 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _isSubmitting = true);
 
     final Uri url = Uri.parse(
-      _isLogin ? '$_apiBaseUrl/api/v1/auth/login' : '$_apiBaseUrl/api/v1/auth/signup',
+      _isLogin
+          ? '$_apiBaseUrl/api/v1/auth/login'
+          : '$_apiBaseUrl/api/v1/auth/signup',
     );
 
     try {
@@ -1109,10 +1228,7 @@ class _AuthScreenState extends State<AuthScreen> {
             'Content-Type': 'application/json',
             'X-API-Key': _apiAccessKey,
           },
-          body: jsonEncode({
-            'phone_number': phone,
-            'password': password,
-          }),
+          body: jsonEncode({'phone_number': phone, 'password': password}),
         );
       } else {
         final request = http.MultipartRequest('POST', url)
@@ -1136,7 +1252,10 @@ class _AuthScreenState extends State<AuthScreen> {
           );
         } else if (_profileImagePath != null) {
           request.files.add(
-            await http.MultipartFile.fromPath('profile_photo', _profileImagePath!),
+            await http.MultipartFile.fromPath(
+              'profile_photo',
+              _profileImagePath!,
+            ),
           );
         }
 
@@ -1155,7 +1274,9 @@ class _AuthScreenState extends State<AuthScreen> {
           return;
         }
         final Map<String, dynamic> profile =
-            (data['profile'] is Map<String, dynamic>) ? data['profile'] as Map<String, dynamic> : {};
+            (data['profile'] is Map<String, dynamic>)
+            ? data['profile'] as Map<String, dynamic>
+            : {};
         _showSnack(
           (data['message'] as String?) ??
               (_isLogin ? 'Login successful.' : 'Signup successful.'),
@@ -1186,7 +1307,9 @@ class _AuthScreenState extends State<AuthScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
           title: Row(
             children: const [
               Icon(Icons.error_outline_rounded, color: Color(0xFFB91C1C)),
@@ -1211,7 +1334,9 @@ class _AuthScreenState extends State<AuthScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? const Color(0xFFB91C1C) : const Color(0xFF0B1F3A),
+        backgroundColor: isError
+            ? const Color(0xFFB91C1C)
+            : const Color(0xFF0B1F3A),
       ),
     );
   }
@@ -1230,7 +1355,10 @@ class _AuthScreenState extends State<AuthScreen> {
           final String fieldName = loc.last
               .toString()
               .replaceAll('_', ' ')
-              .replaceAllMapped(RegExp(r'(^| )([a-z])'), (m) => m.group(0)!.toUpperCase());
+              .replaceAllMapped(
+                RegExp(r'(^| )([a-z])'),
+                (m) => m.group(0)!.toUpperCase(),
+              );
           return '$fieldName: $msg';
         }
         if (msg is String && msg.isNotEmpty) {
@@ -1250,11 +1378,14 @@ class _AuthScreenState extends State<AuthScreen> {
     required bool hasProfilePhoto,
   }) {
     if (isLogin && phone.isEmpty) return 'Phone number is required.';
-    if (isLogin && phone.length < 10) return 'Phone number must be at least 10 digits.';
+    if (isLogin && phone.length < 10)
+      return 'Phone number must be at least 10 digits.';
     if (!isLogin && fullName.isEmpty) return 'Full name is required.';
-    if (!isLogin && fullName.length < 2) return 'Full name must be at least 2 characters.';
+    if (!isLogin && fullName.length < 2)
+      return 'Full name must be at least 2 characters.';
     if (!isLogin && phone.isEmpty) return 'Phone number is required.';
-    if (!isLogin && phone.length < 10) return 'Phone number must be at least 10 digits.';
+    if (!isLogin && phone.length < 10)
+      return 'Phone number must be at least 10 digits.';
     if (!isLogin && !hasProfilePhoto) return 'Profile photo is required.';
     if (!isLogin && email.isEmpty) return 'Email is required.';
     if (!isLogin && !email.contains('@')) return 'Please enter a valid email.';
@@ -1359,9 +1490,7 @@ class _SocialAuthButton extends StatelessWidget {
         side: const BorderSide(color: Color(0x1F000000)),
         foregroundColor: const Color(0xFF0B1F3A),
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       icon: Icon(icon),
       label: Text(label),
