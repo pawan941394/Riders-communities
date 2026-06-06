@@ -66,3 +66,25 @@ class WalletWithdrawalRequestAdmin(admin.ModelAdmin):
         "updated_at",
     )
 
+    def has_module_permission(self, request):
+        return bool(request.user and request.user.is_active and request.user.is_staff)
+
+    def has_view_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and request.user.is_staff)
+
+    def has_change_permission(self, request, obj=None):
+        return bool(request.user and request.user.is_active and request.user.is_staff)
+
+    def has_add_permission(self, request):
+        return False
+
+    def get_model_perms(self, request):
+        if not self.has_module_permission(request):
+            return {}
+        return {
+            "add": False,
+            "change": True,
+            "delete": False,
+            "view": True,
+        }
+
