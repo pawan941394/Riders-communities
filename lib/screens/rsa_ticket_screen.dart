@@ -923,8 +923,8 @@ class _RsaTicketScreenState extends State<RsaTicketScreen> {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color pageBg = isDark ? const Color(0xFF050B16) : const Color(0xFFFFFFFF);
-    final Color cardBgSoft = isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFBF1);
-    final Color border = isDark ? const Color(0x263B82F6) : const Color(0x40F4B400);
+    final Color cardBgSoft = isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF);
+    final Color border = isDark ? const Color(0x263B82F6) : const Color(0x1F000000);
     final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
     final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
 
@@ -1147,7 +1147,7 @@ class _RiderVerificationCard extends StatelessWidget {
               ),
               border: _inputBorder(border),
               enabledBorder: _inputBorder(border),
-              focusedBorder: _inputBorder(const Color(0xFFF59E0B), width: 1.4),
+              focusedBorder: _inputBorder(const Color(0xFF0B1F3A), width: 1.4),
             ),
           ),
           if (otpSent) ...[
@@ -1189,7 +1189,7 @@ class _RiderVerificationCard extends StatelessWidget {
                 ),
                 border: _inputBorder(border),
                 enabledBorder: _inputBorder(border),
-                focusedBorder: _inputBorder(const Color(0xFFF59E0B), width: 1.4),
+                focusedBorder: _inputBorder(const Color(0xFF0B1F3A), width: 1.4),
               ),
             ),
             Align(
@@ -1384,10 +1384,10 @@ class _RsaProfileSummaryCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFBF1),
+                color: isDark ? const Color(0xFF0B1220) : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: isDark ? const Color(0x334B5563) : const Color(0x40F4B400),
+                  color: isDark ? const Color(0x334B5563) : const Color(0x1F000000),
                 ),
               ),
               child: Column(
@@ -1395,7 +1395,7 @@ class _RsaProfileSummaryCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.two_wheeler_rounded, color: Color(0xFFF59E0B), size: 20),
+                      const Icon(Icons.two_wheeler_rounded, color: Color(0xFF0B1F3A), size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -1430,8 +1430,8 @@ class _RsaProfileSummaryCard extends StatelessWidget {
                       label: Text(isHindi ? 'वाहन जोड़ें' : 'Add vehicle'),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(44),
-                        backgroundColor: const Color(0xFFF59E0B),
-                        foregroundColor: const Color(0xFF172033),
+                        backgroundColor: const Color(0xFF0B1F3A),
+                        foregroundColor: Colors.white,
                         textStyle: const TextStyle(fontWeight: FontWeight.w900),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -1486,10 +1486,10 @@ class _ProfileInfoTile extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFBF1),
+        color: isDark ? const Color(0xFF0B1220) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0x1F64748B) : const Color(0x26F4B400),
+          color: isDark ? const Color(0x1F64748B) : const Color(0x1F000000),
         ),
       ),
       child: Column(
@@ -1514,7 +1514,7 @@ class _ProfileInfoTile extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: highlight
-                  ? const Color(0xFFF59E0B)
+                  ? const Color(0xFF0B1F3A)
                   : (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A)),
               fontWeight: FontWeight.w900,
               fontSize: 12,
@@ -1561,7 +1561,7 @@ class _RsaTicketTabs extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: selectedIndex == i ? const Color(0xFFF59E0B) : Colors.transparent,
+                      color: selectedIndex == i ? const Color(0xFF0B1F3A) : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -1573,7 +1573,7 @@ class _RsaTicketTabs extends StatelessWidget {
                       icons[i],
                       size: 15,
                       color: selectedIndex == i
-                          ? const Color(0xFFF59E0B)
+                          ? const Color(0xFF0B1F3A)
                           : const Color(0xFF64748B),
                     ),
                     const SizedBox(width: 5),
@@ -1584,7 +1584,7 @@ class _RsaTicketTabs extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: selectedIndex == i
-                              ? const Color(0xFFF59E0B)
+                              ? const Color(0xFF0B1F3A)
                               : const Color(0xFF64748B),
                           fontWeight: FontWeight.w900,
                           fontSize: 12,
@@ -1626,8 +1626,8 @@ class _VehicleRequiredPanel extends StatelessWidget {
             children: [
               const CircleAvatar(
                 radius: 20,
-                backgroundColor: Color(0xFFFFF3CD),
-                child: Icon(Icons.two_wheeler_rounded, color: Color(0xFFF59E0B)),
+                backgroundColor: Color(0xFFF8FAFC),
+                child: Icon(Icons.two_wheeler_rounded, color: Color(0xFF0B1F3A)),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1663,8 +1663,8 @@ class _VehicleRequiredPanel extends StatelessWidget {
                 label: Text(isHindi ? 'वाहन जोड़ें' : 'Add vehicle'),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
-                  backgroundColor: const Color(0xFFF59E0B),
-                  foregroundColor: const Color(0xFF172033),
+                  backgroundColor: const Color(0xFF0B1F3A),
+                  foregroundColor: Colors.white,
                   textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
@@ -1716,8 +1716,8 @@ class _NewTicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color fieldBg = isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFBF1);
-    final Color border = isDark ? const Color(0x263B82F6) : const Color(0x40F4B400);
+    final Color fieldBg = isDark ? const Color(0xFF0B1220) : Colors.white;
+    final Color border = isDark ? const Color(0x263B82F6) : const Color(0x1F000000);
 
     InputDecoration decoration(
       String label,
@@ -1731,14 +1731,14 @@ class _NewTicketCard extends StatelessWidget {
         prefixIcon: showIcon
             ? Icon(
                 icon,
-                color: isDark ? const Color(0xFFFFD166) : const Color(0xFFB45309),
+                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
               )
             : null,
         filled: true,
         fillColor: fieldBg,
         border: _inputBorder(border),
         enabledBorder: _inputBorder(border),
-        focusedBorder: _inputBorder(const Color(0xFFF59E0B), width: 1.4),
+        focusedBorder: _inputBorder(const Color(0xFF0B1F3A), width: 1.4),
       );
     }
 
@@ -1915,9 +1915,9 @@ class _NewTicketCard extends StatelessWidget {
               ),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(54),
-                backgroundColor: const Color(0xFFF59E0B),
-                disabledBackgroundColor: const Color(0xFFB45309),
-                foregroundColor: const Color(0xFF172033),
+                backgroundColor: const Color(0xFF0B1F3A),
+                disabledBackgroundColor: const Color(0xFF94A3B8),
+                foregroundColor: Colors.white,
                 disabledForegroundColor: Colors.white.withValues(alpha: 0.78),
                 textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -1947,7 +1947,7 @@ class _SimpleTicketPanel extends StatelessWidget {
       isDark: isDark,
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFFF59E0B)),
+          Icon(icon, color: const Color(0xFF0B1F3A)),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -2055,7 +2055,7 @@ class _RsaTicketListPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.confirmation_number_rounded, color: const Color(0xFFF59E0B)),
+              Icon(Icons.confirmation_number_rounded, color: const Color(0xFF0B1F3A)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -2151,7 +2151,7 @@ class _RsaTicketTile extends StatelessWidget {
         return const Color(0xFFEF4444);
       case 'assigned':
       case 'in_progress':
-        return const Color(0xFFF59E0B);
+        return const Color(0xFF0B1F3A);
       default:
         return const Color(0xFF2563EB);
     }
@@ -2172,10 +2172,10 @@ class _RsaTicketTile extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFBF1),
+        color: isDark ? const Color(0xFF0B1220) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0x1F64748B) : const Color(0x26F4B400),
+          color: isDark ? const Color(0x1F64748B) : const Color(0x1F000000),
         ),
       ),
       child: Column(
@@ -2346,11 +2346,11 @@ class _RsaSurface extends StatelessWidget {
         color: isDark ? const Color(0xFF101827) : Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isDark ? const Color(0x263B82F6) : const Color(0x40F4B400),
+          color: isDark ? const Color(0x263B82F6) : const Color(0x1F000000),
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? const Color(0x33000000) : const Color(0x1AF4B400),
+            color: isDark ? const Color(0x33000000) : const Color(0x14000000),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -2386,7 +2386,7 @@ class _SectionTitle extends StatelessWidget {
           child: Icon(
             icon,
             size: 19,
-            color: isDark ? const Color(0xFFFFD166) : const Color(0xFFB45309),
+            color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
           ),
         ),
         const SizedBox(width: 10),
@@ -2433,7 +2433,7 @@ class _RsaTicketHero extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF071426), Color(0xFF0B1F3A), Color(0xFFB45309)],
+          colors: [Color(0xFF071426), Color(0xFF0B1F3A), Color(0xFF111827)],
         ),
         boxShadow: const [
           BoxShadow(
@@ -2489,7 +2489,7 @@ class _RsaTicketHero extends StatelessWidget {
             ),
             child: const Icon(
               Icons.health_and_safety_rounded,
-              color: Color(0xFFFFD166),
+              color: Colors.white,
               size: 36,
             ),
           ),
@@ -2559,9 +2559,9 @@ class _StepDot extends StatelessWidget {
     final Color bg = completed
         ? const Color(0xFF10B981)
         : active
-            ? const Color(0xFFF59E0B)
-            : (isDark ? const Color(0xFF15243A) : const Color(0xFFFFE9B5));
-    final Color fg = (completed || active) ? const Color(0xFF172033) : const Color(0xFF64748B);
+            ? const Color(0xFF0B1F3A)
+            : (isDark ? const Color(0xFF15243A) : const Color(0xFFF8FAFC));
+    final Color fg = (completed || active) ? Colors.white : const Color(0xFF64748B);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -2586,7 +2586,7 @@ class _StepDot extends StatelessWidget {
             color: completed
                 ? const Color(0xFF10B981)
                 : active
-                    ? (isDark ? const Color(0xFFFFD166) : const Color(0xFF0B1F3A))
+                    ? (isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A))
                     : const Color(0xFF64748B),
             fontWeight: (active || completed) ? FontWeight.w900 : FontWeight.w700,
             fontSize: 11,
@@ -2617,10 +2617,10 @@ class _GuideCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF111827) : const Color(0xFFFFFBF1),
+        color: isDark ? const Color(0xFF111827) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark ? const Color(0x334B5563) : const Color(0x40F4B400),
+          color: isDark ? const Color(0x334B5563) : const Color(0x1F000000),
         ),
       ),
       child: Column(
@@ -2645,13 +2645,13 @@ class _GuideCard extends StatelessWidget {
                 Text(
                   expanded ? (isHindi ? 'छुपाएं' : 'Hide') : (isHindi ? 'दिखाएं' : 'Show'),
                   style: const TextStyle(
-                    color: Color(0xFFF59E0B),
+                    color: Color(0xFF0B1F3A),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 Icon(
                   expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                  color: const Color(0xFFF59E0B),
+                  color: const Color(0xFF0B1F3A),
                 ),
               ],
             ),
@@ -2691,8 +2691,8 @@ OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
 ButtonStyle _primaryButtonStyle() {
   return FilledButton.styleFrom(
     minimumSize: const Size.fromHeight(54),
-    backgroundColor: const Color(0xFFF59E0B),
-    foregroundColor: const Color(0xFF172033),
+    backgroundColor: const Color(0xFF0B1F3A),
+    foregroundColor: Colors.white,
     textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
   );

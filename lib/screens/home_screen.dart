@@ -1,4 +1,4 @@
-import 'dart:async' show Timer, unawaited;
+﻿import 'dart:async' show Timer, unawaited;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -351,10 +351,10 @@ class _HomeScreenState extends State<HomeScreen> {
               end: Alignment.bottomRight,
               colors: isDark
                   ? const [Color(0xF11E293B), Color(0xED0F172A)]
-                  : const [Color(0xF2FFF7DE), Color(0xE8FFF2C2)],
+                  : const [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
             ),
             border: Border.all(
-              color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
+              color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
             ),
             boxShadow: const [
               BoxShadow(
@@ -440,11 +440,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   end: Alignment.bottomRight,
                   colors: isDark
                       ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-                      : [const Color(0xFFFFF3D1), const Color(0xFFFFB300)], // Premium golden yellow theme!
+                      : [const Color(0xFFFFFFFF), const Color(0xFFFFFFFF)],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: isDark ? Colors.black38 : const Color(0xFFFFB300).withValues(alpha: 0.25),
+                    color: isDark ? Colors.black38 : Colors.black.withValues(alpha: 0.08),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -650,7 +650,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14),
                   secondary: Icon(
                     widget.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                    color: widget.isDarkMode ? const Color(0xFFF59E0B) : const Color(0xFF64748B),
+                    color: widget.isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF64748B),
                   ),
                   title: Text(
                     widget.isDarkMode ? _tr('Dark theme', 'डार्क थीम') : _tr('Light theme', 'लाइट थीम'),
@@ -703,8 +703,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ? (isDark ? Colors.white : const Color(0xFF0B1F3A))
         : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155));
     final List<Color> selectedGradient = isDark
-        ? [const Color(0xFFD97706), const Color(0xFFB45309)]
-        : [const Color(0xFFFFF3D1), const Color(0xFFFFD54F)];
+        ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+        : [const Color(0xFFFFFFFF), const Color(0xFFFFFFFF)];
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -869,7 +869,7 @@ class _HomeScreenState extends State<HomeScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           title: Row(
             children: [
-              const Icon(Icons.notifications_active_rounded, color: Color(0xFFB45309)),
+              const Icon(Icons.notifications_active_rounded, color: Color(0xFF0B1F3A)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1098,7 +1098,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           gradient: const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                            colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
                           ),
                         ),
                         child: const Icon(Icons.notifications_rounded, color: Color(0xFF0B1F3A), size: 18),
@@ -1179,7 +1179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ? (isDark ? const Color(0xFF111827) : const Color(0xFFFFFFFF))
                                         : (isDark ? const Color(0xFF1E293B) : const Color(0xFFFFF5D8)),
                                     border: Border.all(
-                                      color: isDark ? const Color(0x335B6B88) : const Color(0x33F4B400),
+                                      color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
                                     ),
                                     boxShadow: const [
                                       BoxShadow(
@@ -1306,10 +1306,17 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: isSelected
-                ? const LinearGradient(
-                    colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                ? LinearGradient(
+                    colors: isDark
+                        ? const [Color(0xFF1E293B), Color(0xFF0F172A)]
+                        : const [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
+                  )
+                : null,
+            border: isSelected
+                ? Border.all(
+                    color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
                   )
                 : null,
             color: isSelected
@@ -1334,7 +1341,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 3,
                 width: isSelected ? (compact ? 20 : 26) : 0,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.92),
+                  color: isDark ? Colors.white.withValues(alpha: 0.92) : const Color(0xFF0B1F3A),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -2039,7 +2046,7 @@ class _CommunityFeedFilters extends StatelessWidget {
                 colors: [Color(0xEE1F2937), Color(0xE6141F2F)],
               )
             : null,
-        border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x33F4B400)),
+        border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x120F172A),
@@ -2087,7 +2094,7 @@ class _CommunityFeedFilters extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? const Color(0xFF93C5FD) : const Color(0xFFB45309),
+                    color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF0B1F3A),
                   ),
                 ),
               ),
@@ -2098,7 +2105,7 @@ class _CommunityFeedFilters extends StatelessWidget {
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF111827) : const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x44F4B400)),
+              border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000)),
             ),
             child: TextField(
               controller: searchController,
@@ -2258,13 +2265,12 @@ class _WalletReferralBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // Theme alignment: Yellow/Gold/Amber color palette
-    final Color primaryYellow = const Color(0xFFF4B400); // Main Theme Yellow
-    final Color deepAmber = const Color(0xFFB45309);    // Accent Amber
+    final Color primaryNeutral = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
+    final Color deepNeutral = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155);
     
-    final Color cardBorder = isDark ? const Color(0x44F4B400) : const Color(0x33B45309);
-    final Color cardBackground1 = isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFDF5);
-    final Color cardBackground2 = isDark ? const Color(0xFF0F172A) : const Color(0xFFFFF8E7);
+    final Color cardBorder = isDark ? const Color(0x335B6B88) : const Color(0x1F000000);
+    final Color cardBackground1 = isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFFFF);
+    final Color cardBackground2 = isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFFFF);
     
     final Color textColor = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0B1F3A);
     final Color subtextColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
@@ -2281,7 +2287,7 @@ class _WalletReferralBanner extends StatelessWidget {
         border: Border.all(color: cardBorder, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: isDark ? const Color(0x33000000) : const Color(0x11B45309),
+            color: isDark ? const Color(0x33000000) : const Color(0x11000000),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -2300,7 +2306,7 @@ class _WalletReferralBanner extends StatelessWidget {
                 height: 140,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: primaryYellow.withValues(alpha: isDark ? 0.06 : 0.08),
+                  color: primaryNeutral.withValues(alpha: isDark ? 0.04 : 0.05),
                 ),
               ),
             ),
@@ -2312,7 +2318,7 @@ class _WalletReferralBanner extends StatelessWidget {
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: deepAmber.withValues(alpha: isDark ? 0.04 : 0.06),
+                  color: deepNeutral.withValues(alpha: isDark ? 0.04 : 0.05),
                 ),
               ),
             ),
@@ -2336,11 +2342,11 @@ class _WalletReferralBanner extends StatelessWidget {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(6),
                               gradient: const LinearGradient(
-                                colors: [Color(0xFFFCD34D), Color(0xFFD97706)],
+                                colors: [Color(0xFFFFFFFF), Color(0xFFE5E7EB)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
-                              border: Border.all(color: const Color(0xFF78350F), width: 1),
+                              border: Border.all(color: const Color(0x1F000000), width: 1),
                             ),
                             child: Stack(
                               children: [
@@ -2349,7 +2355,7 @@ class _WalletReferralBanner extends StatelessWidget {
                                   child: Container(
                                     width: 18,
                                     height: 1,
-                                    color: const Color(0xFF78350F).withValues(alpha: 0.5),
+                                    color: const Color(0xFF334155).withValues(alpha: 0.5),
                                   ),
                                 ),
                                 Align(
@@ -2357,7 +2363,7 @@ class _WalletReferralBanner extends StatelessWidget {
                                   child: Container(
                                     width: 1,
                                     height: 14,
-                                    color: const Color(0xFF78350F).withValues(alpha: 0.5),
+                                    color: const Color(0xFF334155).withValues(alpha: 0.5),
                                     margin: const EdgeInsets.only(left: 12),
                                   ),
                                 ),
@@ -2366,7 +2372,7 @@ class _WalletReferralBanner extends StatelessWidget {
                                   child: Container(
                                     width: 1,
                                     height: 14,
-                                    color: const Color(0xFF78350F).withValues(alpha: 0.5),
+                                    color: const Color(0xFF334155).withValues(alpha: 0.5),
                                     margin: const EdgeInsets.only(right: 12),
                                   ),
                                 ),
@@ -2380,7 +2386,7 @@ class _WalletReferralBanner extends StatelessWidget {
                             child: Icon(
                               Icons.wifi_rounded,
                               size: 16,
-                              color: isDark ? primaryYellow.withValues(alpha: 0.6) : deepAmber.withValues(alpha: 0.6),
+                              color: isDark ? primaryNeutral.withValues(alpha: 0.6) : deepNeutral.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -2390,9 +2396,9 @@ class _WalletReferralBanner extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: primaryYellow.withValues(alpha: 0.15),
+                          color: primaryNeutral.withValues(alpha: isDark ? 0.12 : 0.06),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: primaryYellow.withValues(alpha: 0.4), width: 1),
+                          border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000), width: 1),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -2400,7 +2406,7 @@ class _WalletReferralBanner extends StatelessWidget {
                             Icon(
                               Icons.workspace_premium_rounded,
                               size: 14,
-                              color: isDark ? primaryYellow : deepAmber,
+                              color: primaryNeutral,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -2409,7 +2415,7 @@ class _WalletReferralBanner extends StatelessWidget {
                                 fontSize: 10,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 0.8,
-                                color: isDark ? primaryYellow : deepAmber,
+                                color: primaryNeutral,
                               ),
                             ),
                           ],
@@ -2448,7 +2454,7 @@ class _WalletReferralBanner extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w900,
-                            color: isDark ? primaryYellow : textColor,
+                            color: textColor,
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -2477,10 +2483,10 @@ class _WalletReferralBanner extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFBF1),
+                                color: isDark ? const Color(0xFF0F172A) : Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isDark ? const Color(0x22FFFFFF) : const Color(0xFFFDE68A),
+                                  color: isDark ? const Color(0x22FFFFFF) : const Color(0x1F000000),
                                   width: 1,
                                 ),
                               ),
@@ -2489,7 +2495,7 @@ class _WalletReferralBanner extends StatelessWidget {
                                   Icon(
                                     Icons.key_rounded,
                                     size: 14,
-                                    color: isDark ? primaryYellow : deepAmber,
+                                    color: primaryNeutral,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
@@ -2507,7 +2513,7 @@ class _WalletReferralBanner extends StatelessWidget {
                                   Icon(
                                     Icons.copy_rounded,
                                     size: 15,
-                                    color: isDark ? primaryYellow : deepAmber,
+                                    color: primaryNeutral,
                                   ),
                                 ],
                               ),
@@ -2521,8 +2527,8 @@ class _WalletReferralBanner extends StatelessWidget {
                         ElevatedButton.icon(
                           onPressed: onOpenRefer,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryYellow,
-                            foregroundColor: const Color(0xFF0B1F3A),
+                            backgroundColor: const Color(0xFF0B1F3A),
+                            foregroundColor: Colors.white,
                             elevation: 0,
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -2563,8 +2569,7 @@ class _CreatePostEntryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color primaryYellow = const Color(0xFFF4B400);
-    final Color deepAmber = const Color(0xFFB45309);
+    final Color primaryNeutral = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
     
     return Material(
       color: Colors.transparent,
@@ -2577,7 +2582,7 @@ class _CreatePostEntryCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
             border: Border.all(
-              color: isDark ? const Color(0x335B6B88) : primaryYellow.withValues(alpha: 0.3),
+              color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
               width: 1.2,
             ),
             boxShadow: [
@@ -2598,20 +2603,20 @@ class _CreatePostEntryCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [
-                      primaryYellow.withValues(alpha: 0.2),
-                      primaryYellow.withValues(alpha: 0.05),
+                      primaryNeutral.withValues(alpha: isDark ? 0.16 : 0.08),
+                      primaryNeutral.withValues(alpha: isDark ? 0.06 : 0.03),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   border: Border.all(
-                    color: primaryYellow.withValues(alpha: 0.4),
+                    color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
                     width: 1,
                   ),
                 ),
                 child: Icon(
                   Icons.edit_note_rounded,
-                  color: isDark ? primaryYellow : deepAmber,
+                  color: primaryNeutral,
                   size: 26,
                 ),
               ),
@@ -2648,11 +2653,11 @@ class _CreatePostEntryCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: primaryYellow,
+                  color: const Color(0xFF0B1F3A),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: primaryYellow.withValues(alpha: 0.3),
+                      color: const Color(0xFF0B1F3A).withValues(alpha: 0.18),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -2664,7 +2669,7 @@ class _CreatePostEntryCard extends StatelessWidget {
                     const Icon(
                       Icons.add_circle_outline_rounded,
                       size: 16,
-                      color: Color(0xFF0B1F3A),
+                      color: Colors.white,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -2713,7 +2718,7 @@ class _FilterDropdownChip extends StatelessWidget {
               : const [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
         ),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x44F4B400), width: 1.0),
+        border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000), width: 1.0),
         boxShadow: [
           BoxShadow(
             color: isDark ? const Color(0x33000000) : const Color(0x120F172A),
@@ -2773,7 +2778,7 @@ class _DynamicUpdateCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1F2937) : const Color(0xFFFFF7E8),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? const Color(0x33F59E0B) : const Color(0x1FF97316)),
+        border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000)),
       ),
       child: Row(
         children: [
@@ -2785,7 +2790,7 @@ class _DynamicUpdateCard extends StatelessWidget {
             ),
             child: Icon(
               Icons.campaign_rounded,
-              color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFB45309),
+              color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
             ),
           ),
           const SizedBox(width: 12),
@@ -3036,7 +3041,7 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final List<Color> avatarColors = widget.isAnonymous
         ? const [Color(0xFF64748B), Color(0xFF334155)]
-        : const [Color(0xFF0B1F3A), Color(0xFFFFC928)];
+        : const [Color(0xFF0B1F3A), Color(0xFF111827)];
     final String visibleProblem = _translated ? (_translatedText ?? widget.problem) : widget.problem;
     final bool hasLongContent = _isLongPostText(visibleProblem);
     final String displayAuthor = _cleanAuthorDisplay(widget.author, widget.city);
@@ -3051,7 +3056,7 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1F2937) : Colors.white,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x26FFB300)),
+            border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000)),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x0D0F172A),
@@ -3189,7 +3194,7 @@ class _PremiumPostCardState extends State<_PremiumPostCard> {
                 ),
 
                 const SizedBox(height: 14),
-                const Divider(height: 1, color: Color(0x22FFB300)),
+                const Divider(height: 1, color: Color(0x14000000)),
                 const SizedBox(height: 12),
 
                 // Responsive action row
@@ -3987,7 +3992,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
     IconData? icon,
     String? hint,
   }) {
-    final Color border = isDark ? const Color(0x335B6B88) : const Color(0x33FFB300);
+    final Color border = isDark ? const Color(0x335B6B88) : const Color(0x1F000000);
     return InputDecoration(
       labelText: label,
       hintText: hint,
@@ -4669,7 +4674,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                 end: Alignment.bottomRight,
                 colors: isDark
                     ? const [Color(0xFF1F2937), Color(0xFF0F172A)]
-                    : const [Color(0xFF0B1F3A), Color(0xFFB45309)],
+                    : const [Color(0xFF0B1F3A), Color(0xFF111827)],
               ),
               boxShadow: const [
                 BoxShadow(
@@ -4710,31 +4715,6 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
             ),
           ),
           const SizedBox(height: 10),
-          Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x180F172A),
-                  blurRadius: 18,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            child: AspectRatio(
-              aspectRatio: 1.55,
-              child: Image.asset(
-                'assets/images/onboarding_rider_hero.png',
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
           AnimatedContainer(
             duration: const Duration(milliseconds: 280),
             curve: Curves.easeOutCubic,
@@ -4746,10 +4726,10 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                 end: Alignment.bottomRight,
                 colors: isDark
                     ? const [Color(0xFF1F2937), Color(0xFF111827)]
-                    : const [Color(0xFFFFFFFF), Color(0xFFFFF8E8)],
+                    : const [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
               ),
               border: Border.all(
-                color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
+                color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
               ),
               boxShadow: const [
                 BoxShadow(
@@ -4787,10 +4767,10 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                     width: double.infinity,
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFF3D1),
+                      color: isDark ? const Color(0xFF0F172A) : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
+                        color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
                       ),
                     ),
                     child: Row(
@@ -4798,7 +4778,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                         Icon(
                           Icons.lock_rounded,
                           size: 18,
-                          color: isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
+                          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -4997,10 +4977,10 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF111827) : const Color(0xFFFFF3D1),
+                                color: isDark ? const Color(0xFF111827) : Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
+                                  color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
                                 ),
                               ),
                               child: Column(
@@ -5010,7 +4990,7 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                                     children: [
                                       Icon(
                                         Icons.two_wheeler_rounded,
-                                        color: isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
+                                        color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
                                       ),
                                       const SizedBox(width: 8),
                                       Expanded(
@@ -5117,8 +5097,8 @@ class _RiderOnboardingDetailsScreenState extends State<RiderOnboardingDetailsScr
                                 ),
                                 style: FilledButton.styleFrom(
                                   padding: EdgeInsets.symmetric(vertical: compact ? 12 : 14),
-                                  backgroundColor: _detailsLocked ? const Color(0xFFF4B400) : const Color(0xFF0B1F3A),
-                                  foregroundColor: _detailsLocked ? const Color(0xFF0B1F3A) : Colors.white,
+                                  backgroundColor: const Color(0xFF0B1F3A),
+                                  foregroundColor: Colors.white,
                                 ),
                               ),
                             ),
@@ -5712,7 +5692,7 @@ class EvScreen extends StatefulWidget {
 class _EvScreenState extends State<EvScreen> {
   static const List<List<Color>> _evTileGradients = <List<Color>>[
     <Color>[Color(0xFF4F46E5), Color(0xFF7C3AED)], // Indigo to Purple
-    <Color>[Color(0xFFEA580C), Color(0xFFF59E0B)], // Orange to Amber
+    <Color>[Color(0xFF0B1F3A), Color(0xFF111827)], // Neutral dark
     <Color>[Color(0xFF0D9488), Color(0xFF10B981)], // Teal to Emerald
     <Color>[Color(0xFF2563EB), Color(0xFF06B6D4)], // Blue to Cyan
   ];
@@ -5807,13 +5787,13 @@ class _EvScreenState extends State<EvScreen> {
                 colors: [
                   Color(0xFF0F172A), // Slate 900
                   Color(0xFF1E3A8A), // Indigo Blue
-                  Color(0xFFEA580C), // Electric Orange
+                  Color(0xFF111827), // Neutral dark
                 ],
                 stops: [0.0, 0.55, 1.0],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFEA580C).withValues(alpha: 0.25),
+                  color: const Color(0xFF0B1F3A).withValues(alpha: 0.18),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -5882,7 +5862,7 @@ class _EvScreenState extends State<EvScreen> {
                           children: [
                             const Icon(
                               Icons.bolt_rounded,
-                              color: Color(0xFFF59E0B),
+                              color: Colors.white,
                               size: 14,
                             ),
                             const SizedBox(width: 4),
@@ -5992,8 +5972,8 @@ class _EvScreenState extends State<EvScreen> {
                         title: _tr('Buy EV', 'ईवी खरीदें'),
                         subtitle: _tr('Best offers', 'बेस्ट ऑफर्स'),
                         icon: Icons.electric_bike_rounded,
-                        colorA: const Color(0xFFEA580C), // Premium Orange
-                        colorB: const Color(0xFFF59E0B), // Premium Amber
+                        colorA: const Color(0xFF0B1F3A),
+                        colorB: const Color(0xFF111827),
                         onTap: () => _openBuyEv(context),
                       ),
                     ),
@@ -7386,7 +7366,7 @@ class _EvActionDetailScreenState extends State<_EvActionDetailScreen> {
       required String label,
       bool alignWithHint = false,
     }) {
-      final Color border = isDark ? const Color(0x335B6B88) : const Color(0x33FFB300);
+      final Color border = isDark ? const Color(0x335B6B88) : const Color(0x1F000000);
       return InputDecoration(
         labelText: label,
         alignLabelWithHint: alignWithHint,
@@ -7421,7 +7401,7 @@ class _EvActionDetailScreenState extends State<_EvActionDetailScreen> {
                 end: Alignment.bottomRight,
                 colors: isDark
                     ? const [Color(0xFF1F2937), Color(0xFF0F172A)]
-                    : const [Color(0xFF0B1F3A), Color(0xFFB45309)],
+                    : const [Color(0xFF0B1F3A), Color(0xFF111827)],
               ),
             ),
             child: Row(
@@ -7612,11 +7592,11 @@ class _HelpScreenState extends State<HelpScreen> {
                 end: Alignment.bottomRight,
                 colors: isDark
                     ? const <Color>[Color(0xFF1F2937), Color(0xFF0F172A)]
-                    : const <Color>[Color(0xFF0B1F3A), Color(0xFFB45309)],
+                    : const <Color>[Color(0xFF0B1F3A), Color(0xFF111827)],
               ),
               boxShadow: <BoxShadow>[
                 BoxShadow(
-                  color: isDark ? const Color(0x33000000) : const Color(0x33B45309),
+                  color: isDark ? const Color(0x33000000) : const Color(0x1A000000),
                   blurRadius: 18,
                   offset: Offset(0, 8),
                 ),
@@ -7763,7 +7743,7 @@ class _HelpActionTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             color: isDark ? const Color(0xFF1F2937) : Colors.white.withValues(alpha: 0.88),
             border: Border.all(
-              color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
+              color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
             ),
             boxShadow: [
               BoxShadow(
@@ -7777,10 +7757,10 @@ class _HelpActionTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 19,
-                backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFE9B5),
+                backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                 child: Icon(
                   icon,
-                  color: isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
+                  color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
                   size: 20,
                 ),
               ),

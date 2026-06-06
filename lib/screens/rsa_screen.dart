@@ -143,7 +143,7 @@ class _RsaScreenState extends State<RsaScreen> {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color pageBg = isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF);
-    final Color panelBorder = isDark ? const Color(0x334B5563) : const Color(0x40F4B400);
+    final Color panelBorder = isDark ? const Color(0x334B5563) : const Color(0x1F000000);
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool compact = screenWidth < 390;
     final double heroHeight = compact ? 740 : 680;
@@ -242,7 +242,7 @@ class _RsaScreenState extends State<RsaScreen> {
                         'RSA',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Color(0xFFFFD166),
+                          color: Colors.white,
                           fontWeight: FontWeight.w900,
                           fontSize: 48,
                           height: 1,
@@ -340,8 +340,8 @@ class _RsaScreenState extends State<RsaScreen> {
                         label: Text(_tr('Raise RSA Ticket Now', 'अभी RSA टिकट बनाएं')),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(56),
-                          backgroundColor: const Color(0xFFF59E0B),
-                          foregroundColor: const Color(0xFF1F2937),
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF0B1F3A),
                           textStyle: const TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 19,
@@ -446,7 +446,7 @@ class _RsaFeatureChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: const Color(0xFFFCD34D), size: compact ? 13 : 14),
+          Icon(icon, color: Colors.white, size: compact ? 13 : 14),
           const SizedBox(width: 5),
           Text(
             label,
@@ -481,8 +481,8 @@ class _RsaLandingHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color bg = isDark ? const Color(0xFF111827) : const Color(0xFFFFFBF1);
-    final Color border = isDark ? const Color(0x334B5563) : const Color(0x40F4B400);
+    final Color bg = isDark ? const Color(0xFF111827) : Colors.white;
+    final Color border = isDark ? const Color(0x334B5563) : const Color(0x1F000000);
     final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
     final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
 
@@ -505,7 +505,7 @@ class _RsaLandingHistoryCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.history_rounded, color: const Color(0xFFF59E0B)),
+              Icon(Icons.history_rounded, color: const Color(0xFF0B1F3A)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -599,7 +599,7 @@ class _RsaLandingHistoryTile extends StatelessWidget {
         return const Color(0xFFEF4444);
       case 'assigned':
       case 'in_progress':
-        return const Color(0xFFF59E0B);
+        return const Color(0xFF0B1F3A);
       default:
         return const Color(0xFF2563EB);
     }
@@ -615,7 +615,7 @@ class _RsaLandingHistoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color tileBg = isDark ? const Color(0xFF0B1220) : Colors.white;
-    final Color border = isDark ? const Color(0x1F64748B) : const Color(0x26F4B400);
+    final Color border = isDark ? const Color(0x1F64748B) : const Color(0x1F000000);
     final Color textPrimary = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
     final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF5B6B84);
 

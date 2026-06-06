@@ -326,7 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ? const [Color(0xFF1F2937), Color(0xFF111827)]
                     : const [Color(0xFFFFFFFF), Color(0xFFFFF8E8)],
               ),
-              border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300)),
+              border: Border.all(color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000)),
               boxShadow: const [
                 BoxShadow(
                   color: Color(0x140F172A),
@@ -349,7 +349,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         shape: BoxShape.circle,
                         color: isDark
                             ? const Color(0x223B82F6)
-                            : const Color(0x26F59E0B),
+                            : const Color(0x14000000),
                       ),
                     ),
                   ),
@@ -363,7 +363,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         shape: BoxShape.circle,
                         color: isDark
                             ? const Color(0x1E14B8A6)
-                            : const Color(0x1FFCD34D),
+                            : const Color(0x0F000000),
                       ),
                     ),
                   ),
@@ -375,7 +375,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           end: Alignment.bottomRight,
                           colors: isDark
                               ? const [Color(0x0FFFFFFF), Color(0x05000000)]
-                              : const [Color(0x12FFFFFF), Color(0x08FFB300)],
+                              : const [Color(0x12FFFFFF), Color(0x08000000)],
                         ),
                       ),
                     ),

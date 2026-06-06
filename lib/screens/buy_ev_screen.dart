@@ -114,7 +114,7 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
     final String q = _search.text;
     const Color lightPageBg = Color(0xFFFFFFFF);
     const Color lightCardBg = Color(0xFFFFFFFF);
-    const Color lightBorder = Color(0x33F4B400);
+    const Color lightBorder = Color(0x1F000000);
     const Color navy = Color(0xFF0B1F3A);
 
     return Scaffold(
@@ -233,7 +233,7 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                           gradient: const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [Color(0xFF0B1F3A), Color(0xFF1E3A66), Color(0xFFF4B400)],
+                            colors: [Color(0xFF0B1F3A), Color(0xFF1E3A66), Color(0xFF111827)],
                           ),
                           boxShadow: const [
                             BoxShadow(
@@ -346,7 +346,7 @@ class _BuyEvScreenState extends State<BuyEvScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF334155) : const Color(0x33F4B400),
+                          color: isDark ? const Color(0xFF334155) : const Color(0x1F000000),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -440,7 +440,7 @@ class _BuyPartnerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color cardBg = isDark ? const Color(0xFF1F2937) : const Color(0xFFFFFFFF);
-    final Color border = isDark ? const Color(0x335B6B88) : const Color(0x33F4B400);
+    final Color border = isDark ? const Color(0x335B6B88) : const Color(0x1F000000);
     final Color textPrimary = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF102A56);
     final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
@@ -564,7 +564,7 @@ class _BuyPartnerCard extends StatelessWidget {
                         Icon(
                           Icons.arrow_forward_rounded,
                           size: 14,
-                          color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFFF4B400),
+                          color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF0B1F3A),
                         ),
                       ],
                     ),
@@ -691,13 +691,13 @@ class _BuyInfoPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: highlight
-            ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFFFF2CC))
-            : (isDark ? const Color(0xFF334155) : const Color(0xFFFFFBF1)),
+            ? (isDark ? const Color(0xFF064E3B) : const Color(0xFFF8FAFC))
+            : (isDark ? const Color(0xFF334155) : Colors.white),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: highlight
               ? (isDark ? const Color(0xFF34D399) : const Color(0xFFEDC766))
-              : (isDark ? Colors.transparent : const Color(0x33F4B400)),
+              : (isDark ? Colors.transparent : const Color(0x1F000000)),
         ),
       ),
       child: Row(

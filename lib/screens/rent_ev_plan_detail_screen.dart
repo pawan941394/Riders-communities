@@ -112,8 +112,8 @@ class _RentEvPlanDetailScreenState extends State<RentEvPlanDetailScreen> {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color cardBg = isDark ? const Color(0xFF1F2937) : Colors.white;
-    final Color border = isDark ? const Color(0x335B6B88) : const Color(0x33FFB300);
-    final Color themeAccent = isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309);
+    final Color border = isDark ? const Color(0x335B6B88) : const Color(0x1F000000);
+    final Color themeAccent = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0B1220) : const Color(0xFFFFFFFF),
@@ -222,11 +222,11 @@ class _RentEvPlanDetailScreenState extends State<RentEvPlanDetailScreen> {
                     end: Alignment.bottomRight,
                     colors: isDark
                         ? const [Color(0xFF1F2937), Color(0xFF0F172A)]
-                        : const [Color(0xFF0B1F3A), Color(0xFFB45309)],
+                        : const [Color(0xFF0B1F3A), Color(0xFF111827)],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: isDark ? const Color(0x33000000) : const Color(0x33B45309),
+                      color: isDark ? const Color(0x33000000) : const Color(0x1A000000),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -368,7 +368,7 @@ class _RentEvPlanDetailScreenState extends State<RentEvPlanDetailScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: (isDark ? const Color(0xFF374151) : const Color(0xFFFFF3D1)),
+                        color: (isDark ? const Color(0xFF374151) : const Color(0xFFF8FAFC)),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -376,7 +376,7 @@ class _RentEvPlanDetailScreenState extends State<RentEvPlanDetailScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
-                          color: isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
+                          color: themeAccent,
                         ),
                       ),
                     ),

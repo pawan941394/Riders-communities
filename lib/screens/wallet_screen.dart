@@ -240,7 +240,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     : const [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
               ),
               border: Border.all(
-                color: isDark ? const Color(0x335B6B88) : const Color(0x33F4B400),
+                color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
               ),
               boxShadow: const [
                 BoxShadow(
@@ -275,13 +275,13 @@ class _WalletScreenState extends State<WalletScreen> {
                       style: FilledButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFFFF3D1),
+                        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                       ),
                       child: Text(
                         _tr('Withdraw', 'निकालें'),
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
-                          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFFB45309),
+                          color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
                         ),
                       ),
                     ),
@@ -313,7 +313,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.stars_rounded, color: Color(0xFFF59E0B)),
+                        const Icon(Icons.stars_rounded, color: Color(0xFF0B1F3A)),
                         const SizedBox(width: 8),
                         Text(
                           _tr('Credits: ${_formatCurrency(_walletBalanceCredits)}', 'क्रेडिट्स: ${_formatCurrency(_walletBalanceCredits)}'),
@@ -349,23 +349,23 @@ class _WalletScreenState extends State<WalletScreen> {
                                 : _tr('Apply referral code', 'रेफरल कोड लागू करें'),
                             isDense: true,
                             filled: true,
-                            fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFFBF1),
+                            fillColor: isDark ? const Color(0xFF0F172A) : Colors.white,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: isDark ? const Color(0x33475569) : const Color(0x44F4B400),
+                                color: isDark ? const Color(0x33475569) : const Color(0x1F000000),
                               ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: isDark ? const Color(0x33475569) : const Color(0x44F4B400),
+                                color: isDark ? const Color(0x33475569) : const Color(0x1F000000),
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: const BorderSide(
-                                color: Color(0xFFF59E0B),
+                                color: Color(0xFF0B1F3A),
                                 width: 1.4,
                               ),
                             ),
@@ -376,8 +376,8 @@ class _WalletScreenState extends State<WalletScreen> {
                       FilledButton(
                         onPressed: (_applyingReferral || _hasRedeemedReferral) ? null : _applyReferralCode,
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFF59E0B),
-                          foregroundColor: const Color(0xFF172033),
+                          backgroundColor: const Color(0xFF0B1F3A),
+                          foregroundColor: Colors.white,
                         ),
                         child: _applyingReferral
                             ? const SizedBox(
@@ -431,7 +431,7 @@ class _WalletScreenState extends State<WalletScreen> {
                           color: isDark ? const Color(0xFF0F172A) : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isDark ? const Color(0x33475569) : const Color(0x33F4B400),
+                            color: isDark ? const Color(0x33475569) : const Color(0x1F000000),
                           ),
                         ),
                         child: Row(

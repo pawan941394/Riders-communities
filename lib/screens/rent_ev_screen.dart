@@ -231,11 +231,11 @@ class _RentEvScreenState extends State<RentEvScreen> {
                             end: Alignment.bottomRight,
                             colors: isDark
                                 ? const [Color(0xFF1F2937), Color(0xFF0F172A), Color(0xFF111827)]
-                                : const [Color(0xFF0B1F3A), Color(0xFF1E3A5F), Color(0xFFB45309)],
+                                : const [Color(0xFF0B1F3A), Color(0xFF1E3A5F), Color(0xFF111827)],
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: isDark ? const Color(0x33000000) : const Color(0x33B45309),
+                              color: isDark ? const Color(0x33000000) : const Color(0x1A000000),
                               blurRadius: 24,
                               offset: Offset(0, 12),
                             ),
@@ -305,13 +305,13 @@ class _RentEvScreenState extends State<RentEvScreen> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
-                              color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
+                              color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
-                              color: isDark ? const Color(0x335B6B88) : const Color(0x33FFB300),
+                              color: isDark ? const Color(0x335B6B88) : const Color(0x1F000000),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -438,7 +438,7 @@ class _PartnerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color cardBg = isDark ? const Color(0xFF1F2937) : Colors.white;
-    final Color border = isDark ? const Color(0x335B6B88) : const Color(0x33FFB300);
+    final Color border = isDark ? const Color(0x335B6B88) : const Color(0x1F000000);
     final Color textPrimary = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF102A56);
     final Color textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
@@ -704,12 +704,12 @@ class _InfoPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: highlight
-            ? (isDark ? const Color(0xFF1E3A5F) : const Color(0xFFFFF3D1))
+            ? (isDark ? const Color(0xFF1E3A5F) : const Color(0xFFF8FAFC))
             : (isDark ? const Color(0xFF334155) : const Color(0xFFF8FAFC)),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: highlight
-              ? (isDark ? const Color(0xFF3B82F6) : const Color(0x33FFB300))
+              ? (isDark ? const Color(0xFF3B82F6) : const Color(0x1F000000))
               : Colors.transparent,
         ),
       ),
@@ -719,7 +719,7 @@ class _InfoPill extends StatelessWidget {
           Icon(
             icon,
             size: 15,
-            color: isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309),
+            color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0B1F3A),
           ),
           const SizedBox(width: 6),
           Text(

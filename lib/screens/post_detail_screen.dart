@@ -749,7 +749,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final List<Color> avatarColors = _anonymous
         ? const [Color(0xFF64748B), Color(0xFF334155)]
-        : const [Color(0xFF0B1F3A), Color(0xFFFFC928)];
+        : const [Color(0xFF0B1F3A), Color(0xFF111827)];
 
     return Scaffold(
       backgroundColor: isDark
@@ -939,7 +939,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         .toList(),
                   ),
                   const SizedBox(height: 16),
-                  const Divider(height: 1, color: Color(0x22FFB300)),
+                  const Divider(height: 1, color: Color(0x14000000)),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -1130,7 +1130,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           border: Border.all(
                             color: isDark
                                 ? const Color(0x4047B5FF)
-                                : const Color(0x55FFB300),
+                                : const Color(0x1F000000),
                           ),
                         ),
                         child: Text(
@@ -1717,7 +1717,7 @@ class _ThreadedReplyRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color rail = isDark
         ? const Color(0xFF14B8A6)
-        : const Color(0xFFFFC928);
+        : const Color(0xFF0B1F3A);
     final Color replyBg = isDark ? const Color(0xFF111827) : const Color(0xFFFFFFFF);
     final Color borderCol = isDark
         ? const Color(0x285B6B88)

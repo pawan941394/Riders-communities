@@ -112,10 +112,10 @@ class _BuyEvPlanDetailScreenState extends State<BuyEvPlanDetailScreen> {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color cardBg = isDark ? const Color(0xFF1F2937) : const Color(0xFFFFFFFF);
-    final Color border = isDark ? const Color(0x335B6B88) : const Color(0x33F4B400);
+    final Color border = isDark ? const Color(0x335B6B88) : const Color(0x1F000000);
     const Color lightPageBg = Color(0xFFFFFFFF);
     const Color navy = Color(0xFF0B1F3A);
-    const Color amber = Color(0xFFF4B400);
+    const Color amber = Color(0xFF0B1F3A);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0B1220) : lightPageBg,
@@ -401,7 +401,7 @@ class _BuyEvPlanDetailScreenState extends State<BuyEvPlanDetailScreen> {
                         color: (isDark ? const Color(0xFF374151) : const Color(0xFFFFF2CC)),
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(
-                          color: isDark ? Colors.transparent : const Color(0x66F4B400),
+                          color: isDark ? Colors.transparent : const Color(0x1F000000),
                         ),
                       ),
                       child: Text(
@@ -484,7 +484,7 @@ class _BuySummaryChip extends StatelessWidget {
         color: isDark ? const Color(0xFF374151) : const Color(0xFFFFF2CC),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: isDark ? const Color(0xFF4B5563) : const Color(0x66F4B400),
+          color: isDark ? const Color(0xFF4B5563) : const Color(0x1F000000),
         ),
       ),
       child: Row(
@@ -568,7 +568,7 @@ class _BuyPricingRow extends StatelessWidget {
             color: isDark ? const Color(0xFF374151) : const Color(0xFFFFF2CC),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark ? Colors.transparent : const Color(0x66F4B400),
+              color: isDark ? Colors.transparent : const Color(0x1F000000),
             ),
           ),
           child: Icon(icon, size: 22, color: isDark ? accent : const Color(0xFF0B1F3A)),

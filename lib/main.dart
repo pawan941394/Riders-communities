@@ -44,6 +44,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
   bool _isSessionLoading = true;
   bool _isCheckingVersion = false;
   Timer? _versionCheckTimer;
+  Timer? _sessionExpiryTimer;
   bool _forceUpdateRequired = false;
   String _requiredVersion = '';
   String _updateMessage = '';
@@ -89,6 +90,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _versionCheckTimer?.cancel();
+    _sessionExpiryTimer?.cancel();
     _tokenRefreshSub?.cancel();
     _foregroundMessageSub?.cancel();
     _messageOpenedAppSub?.cancel();
@@ -99,6 +101,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_checkVersionAndApply());
+      _logoutIfAccessTokenExpired();
     }
   }
 
@@ -158,6 +161,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     final prefs = await SharedPreferences.getInstance();
     final savedTheme = prefs.getString(_kThemeMode) ?? 'light';
     final accessToken = prefs.getString(_kAccessToken) ?? '';
+    final bool tokenExpired = _isAccessTokenExpired(accessToken);
     final (bool forceUpdate, String requiredVersion, String updateMessage) =
         await _fetchVersionGate();
 
@@ -165,7 +169,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     setState(() {
       _themeMode = savedTheme == 'dark' ? ThemeMode.dark : ThemeMode.light;
       _isOnboardingComplete = prefs.getBool(_kOnboardingDone) ?? false;
-      _isLoggedIn = (prefs.getBool(_kLoggedIn) ?? false) && accessToken.isNotEmpty;
+      _isLoggedIn = (prefs.getBool(_kLoggedIn) ?? false) && accessToken.isNotEmpty && !tokenExpired;
       _forceUpdateRequired = forceUpdate;
       _requiredVersion = requiredVersion;
       _updateMessage = updateMessage;
@@ -174,9 +178,22 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       _currentUserAvatarUrl = prefs.getString(_kUserAvatarUrl) ?? '';
       _currentUserCity = prefs.getString(_kUserCity) ?? '';
       _currentUserPhone = prefs.getString(_kUserPhone) ?? '';
-      _accessToken = accessToken;
+      _accessToken = tokenExpired ? '' : accessToken;
       _isSessionLoading = false;
     });
+    if (tokenExpired) {
+      unawaited(_persistSession(
+        isLoggedIn: false,
+        accessToken: '',
+        userName: 'Rider',
+        userHandle: '@rider',
+        userAvatarUrl: '',
+        userCity: '',
+        userPhone: '',
+      ));
+    } else {
+      _scheduleSessionExpiryLogout(accessToken);
+    }
     if (_isLoggedIn && _fcmToken.isNotEmpty) {
       unawaited(_syncPushTokenToServer(_fcmToken));
     }
@@ -230,6 +247,54 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
         .trim();
   }
 
+  Map<String, dynamic>? _decodeJwtPayload(String token) {
+    final List<String> parts = token.trim().split('.');
+    if (parts.length < 2) return null;
+    try {
+      final String normalized = base64Url.normalize(parts[1]);
+      final String decoded = utf8.decode(base64Url.decode(normalized));
+      final dynamic payload = jsonDecode(decoded);
+      return payload is Map<String, dynamic> ? payload : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  DateTime? _accessTokenExpiry(String token) {
+    final Map<String, dynamic>? payload = _decodeJwtPayload(token);
+    final dynamic exp = payload?['exp'];
+    final int? seconds = exp is int ? exp : int.tryParse('$exp');
+    if (seconds == null || seconds <= 0) return null;
+    return DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true).toLocal();
+  }
+
+  bool _isAccessTokenExpired(String token) {
+    if (token.trim().isEmpty) return false;
+    final DateTime? expiresAt = _accessTokenExpiry(token);
+    if (expiresAt == null) return false;
+    return DateTime.now().isAfter(expiresAt.subtract(const Duration(seconds: 30)));
+  }
+
+  void _scheduleSessionExpiryLogout(String token) {
+    _sessionExpiryTimer?.cancel();
+    final DateTime? expiresAt = _accessTokenExpiry(token);
+    if (expiresAt == null) return;
+    final Duration delay = expiresAt.difference(DateTime.now());
+    if (delay <= Duration.zero) {
+      _logoutForExpiredSession();
+      return;
+    }
+    _sessionExpiryTimer = Timer(delay + const Duration(seconds: 1), _logoutForExpiredSession);
+  }
+
+  void _logoutIfAccessTokenExpired() {
+    if (_isLoggedIn && _isAccessTokenExpired(_accessToken)) {
+      _logoutForExpiredSession();
+    } else if (_isLoggedIn) {
+      _scheduleSessionExpiryLogout(_accessToken);
+    }
+  }
+
   void _toggleTheme(bool isDark) {
     final nextMode = isDark ? ThemeMode.dark : ThemeMode.light;
     setState(() {
@@ -280,10 +345,12 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
     if (_fcmToken.isNotEmpty) {
       unawaited(_syncPushTokenToServer(_fcmToken));
     }
+    _scheduleSessionExpiryLogout(accessToken);
     _drainPendingNotificationNavigation();
   }
 
   void _logout() {
+    _sessionExpiryTimer?.cancel();
     setState(() {
       _isLoggedIn = false;
       _accessToken = '';
@@ -301,6 +368,17 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
       userAvatarUrl: '',
       userCity: '',
       userPhone: '',
+    );
+  }
+
+  void _logoutForExpiredSession() {
+    if (!_isLoggedIn && _accessToken.isEmpty) return;
+    _logout();
+    _scaffoldMessengerKey.currentState?.showSnackBar(
+      const SnackBar(
+        content: Text('Session expired. Please login again.'),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -425,7 +503,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
         importance: Importance.max,
         priority: Priority.high,
         icon: 'ic_stat_ridewithgarv',
-        color: const Color(0xFFFFC928),
+        color: const Color(0xFF0B1F3A),
       ),
       iOS: const DarwinNotificationDetails(
         presentAlert: true,
@@ -636,7 +714,7 @@ class _RidersCommunityAppState extends State<RidersCommunityApp>
         colorScheme: const ColorScheme.light(
           primary: Color(0xFF0B1F3A),
           onPrimary: Colors.white,
-          secondary: Color(0xFFFFC928),
+          secondary: Color(0xFFFFFFFF),
           onSecondary: Color(0xFF0B1F3A),
           surface: Color(0xFFFFFFFF),
           onSurface: Color(0xFF0B1F3A),
@@ -713,7 +791,7 @@ class _ForceUpdateRequiredScreen extends StatelessWidget {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.system_update_rounded, color: Color(0xFFFACC15), size: 26),
+                      Icon(Icons.system_update_rounded, color: Color(0xFFE2E8F0), size: 26),
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -848,7 +926,7 @@ class _AuthScreenState extends State<AuthScreen> {
           children: [
             const Positioned(top: -50, right: -36, child: _FloatingBlob(size: 210, color: Color(0x2E1D4ED8))),
             const Positioned(top: 160, left: -34, child: _FloatingBlob(size: 140, color: Color(0x2414B8A6))),
-            const Positioned(bottom: 90, right: -26, child: _FloatingBlob(size: 110, color: Color(0x24F97316))),
+            const Positioned(bottom: 90, right: -26, child: _FloatingBlob(size: 110, color: Color(0x14000000))),
             SafeArea(
               child: Center(
                 child: ConstrainedBox(
@@ -1342,7 +1420,7 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
       subtitle: 'Join a trusted community where delivery riders solve real problems together.',
       gradient: [Color(0xFFFFFFFF), Color(0xFFFFF8E8)],
       chips: ['Delhi', 'Noida', 'Gurgaon'],
-      avatarColors: [Color(0xFF0B1F3A), Color(0xFFF59E0B), Color(0xFF14B8A6)],
+      avatarColors: [Color(0xFF0B1F3A), Color(0xFF111827), Color(0xFF14B8A6)],
       lottieAsset: 'assets/lottie/community.json',
       imageAsset: 'assets/images/prelogin_onboarding_hero.png',
     ),
@@ -1350,9 +1428,9 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
       icon: Icons.campaign_rounded,
       title: 'Post. Discuss. Resolve.',
       subtitle: 'Share issues with text or image and get practical comments from fellow riders.',
-      gradient: [Color(0xFFFFFFFF), Color(0xFFFFF3D1)],
+      gradient: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
       chips: ['Payout', 'Account Block', 'Safety'],
-      avatarColors: [Color(0xFF0B1F3A), Color(0xFFB45309), Color(0xFFF59E0B)],
+      avatarColors: [Color(0xFF0B1F3A), Color(0xFF111827), Color(0xFF334155)],
       lottieAsset: 'assets/lottie/discuss.json',
       imageAsset: 'assets/images/prelogin_discuss_hero.png',
     ),
@@ -1362,7 +1440,7 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
       subtitle: 'Use smart forms, track updates, and get support that matters in field life.',
       gradient: [Color(0xFFFFFFFF), Color(0xFFFFF8E8)],
       chips: ['Help Forms', 'EV Leads', 'Instant Updates'],
-      avatarColors: [Color(0xFF14B8A6), Color(0xFF0B1F3A), Color(0xFFF59E0B)],
+      avatarColors: [Color(0xFF14B8A6), Color(0xFF0B1F3A), Color(0xFF111827)],
       lottieAsset: 'assets/lottie/support.json',
       imageAsset: 'assets/images/prelogin_support_hero.png',
     ),
@@ -1425,7 +1503,7 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
                 const Positioned(
                   top: -42,
                   left: -34,
-                  child: _FloatingBlob(size: 180, color: Color(0x22F59E0B)),
+                  child: _FloatingBlob(size: 180, color: Color(0x11000000)),
                 ),
                 const Positioned(
                   top: 140,
@@ -1435,7 +1513,7 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
                 const Positioned(
                   bottom: 118,
                   left: -28,
-                  child: _FloatingBlob(size: 116, color: Color(0x1AF4B400)),
+                  child: _FloatingBlob(size: 116, color: Color(0x0F000000)),
                 ),
                 SafeArea(
                   child: Align(
@@ -1464,7 +1542,7 @@ class _PremiumOnboardingFlowState extends State<_PremiumOnboardingFlow> {
                             TextButton(
                               onPressed: widget.onContinue,
                               style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFFB45309),
+                                foregroundColor: const Color(0xFF0B1F3A),
                                 textStyle: const TextStyle(fontWeight: FontWeight.w900),
                               ),
                               child: const Text('Skip'),
@@ -1583,7 +1661,7 @@ class _AnimatedOnboardingCard extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: data.gradient,
                 ),
-                border: Border.all(color: const Color(0x33F4B400)),
+                border: Border.all(color: const Color(0x1F000000)),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x180F172A),
@@ -1656,9 +1734,9 @@ class _AnimatedOnboardingCard extends StatelessWidget {
                                 (chip) => Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF3D1),
+                                    color: const Color(0xFFF8FAFC),
                                     borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: const Color(0x33F4B400)),
+                                    border: Border.all(color: const Color(0x1F000000)),
                                   ),
                                   child: Text(
                                     chip,
@@ -1706,7 +1784,7 @@ class _StyledHeadline extends StatelessWidget {
       shaderCallback: (bounds) => const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF0B1F3A), Color(0xFFB45309)],
+        colors: [Color(0xFF0B1F3A), Color(0xFF111827)],
       ).createShader(bounds),
       child: Text(
         text,
@@ -1852,7 +1930,7 @@ class _OnboardingHeroVisual extends StatelessWidget {
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: const Color(0x33F4B400)),
+                  border: Border.all(color: const Color(0x1F000000)),
                   boxShadow: const [
                     BoxShadow(
                       color: Color(0x220F172A),
@@ -1901,7 +1979,7 @@ class _WebSafeHeroFallback extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0x1FF59E0B), Color(0x1A0B1F3A)],
+            colors: [Color(0x11000000), Color(0x1A0B1F3A)],
           ),
           border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
         ),
@@ -1937,9 +2015,9 @@ class _BottomGlassPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBF1).withValues(alpha: 0.94),
+        color: Colors.white.withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0x44F4B400)),
+        border: Border.all(color: const Color(0x1F000000)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x180F172A),
@@ -1964,7 +2042,7 @@ class _BottomGlassPanel extends StatelessWidget {
                 Text(
                   'Almost done',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: const Color(0xFFB45309),
+                    color: const Color(0xFF0B1F3A),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -1982,7 +2060,7 @@ class _BottomGlassPanel extends StatelessWidget {
                 width: selected ? 28 : 8,
                 decoration: BoxDecoration(
                   color: selected
-                      ? const Color(0xFFF59E0B)
+                      ? const Color(0xFF0B1F3A)
                       : const Color(0xFFEAD7A8),
                   borderRadius: BorderRadius.circular(999),
                 ),
@@ -1999,8 +2077,8 @@ class _BottomGlassPanel extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: onNext,
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFF59E0B),
-                  foregroundColor: const Color(0xFF172033),
+                  backgroundColor: const Color(0xFF0B1F3A),
+                  foregroundColor: Colors.white,
                   elevation: 0,
                   textStyle: const TextStyle(fontWeight: FontWeight.w900),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -2515,7 +2593,7 @@ class _DynamicUpdateCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF7E8),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0x1FF97316)),
+        border: Border.all(color: const Color(0x1F000000)),
       ),
       child: Row(
         children: [
@@ -2525,7 +2603,7 @@ class _DynamicUpdateCard extends StatelessWidget {
               color: const Color(0xFFFFE8C7),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.campaign_rounded, color: Color(0xFFB45309)),
+            child: const Icon(Icons.campaign_rounded, color: Color(0xFF0B1F3A)),
           ),
           const SizedBox(width: 12),
           const Expanded(
