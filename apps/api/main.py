@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+
 from apps.contact.api import router as contact_router
 from apps.ev.api import router as ev_router
 from apps.language.api import router as language_router
@@ -20,7 +22,6 @@ from apps.update.api import router as update_router
 from apps.vehicle.api import router as vehicle_router
 from apps.wallet.api import router as wallet_router
 
-load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 API_ACCESS_KEY = os.getenv("FASTAPI_X_API_KEY", "dev-rider-api-key")
 
 router = APIRouter()

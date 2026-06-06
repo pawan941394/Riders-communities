@@ -32,9 +32,19 @@ from apps.rider_auth.models import RiderProfile
 
 router = APIRouter(prefix="/auth", tags=["Rider Auth"])
 User = get_user_model()
-JWT_SECRET = os.getenv("FASTAPI_JWT_SECRET", "dev-rider-jwt-secret")
 JWT_ALGORITHM = "HS256"
-JWT_EXP_MINUTES = int(os.getenv("FASTAPI_JWT_EXP_MINUTES", "10080"))
+
+
+def _jwt_secret() -> str:
+    return os.getenv("FASTAPI_JWT_SECRET", "dev-rider-jwt-secret")
+
+
+def _jwt_exp_minutes() -> int:
+    try:
+        minutes = int(os.getenv("FASTAPI_JWT_EXP_MINUTES", "43200"))
+    except (TypeError, ValueError):
+        minutes = 43200
+    return max(minutes, 1)
 
 
 def current_user_dep(
@@ -47,7 +57,7 @@ def current_user_dep(
         )
     token = authorization.removeprefix("Bearer ").strip()
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, _jwt_secret(), algorithms=[JWT_ALGORITHM])
     except jwt.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -200,9 +210,9 @@ def _create_access_token(user_id: int, phone_number: str) -> str:
         "sub": str(user_id),
         "phone_number": phone_number,
         "iat": int(now.timestamp()),
-        "exp": int((now + timedelta(minutes=JWT_EXP_MINUTES)).timestamp()),
+        "exp": int((now + timedelta(minutes=_jwt_exp_minutes())).timestamp()),
     }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return jwt.encode(payload, _jwt_secret(), algorithm=JWT_ALGORITHM)
 
 
 def _digits_only(value: str) -> str:
