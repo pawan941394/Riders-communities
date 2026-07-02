@@ -3,9 +3,9 @@
 <div align="center">
 
 ![Riders Communities Banner](https://img.shields.io/badge/Riders-Communities-0A66C2?style=for-the-badge&logo=apachekafka&logoColor=white)
-![Built With Flutter](https://img.shields.io/badge/Flutter-Mobile_App-02569B?style=for-the-badge&logo=flutter&logoColor=white)
-![Backend](https://img.shields.io/badge/Backend-Django_%2B_FastAPI-092E20?style=for-the-badge&logo=django&logoColor=white)
-![Website](https://img.shields.io/badge/Website-Available-FF6F00?style=for-the-badge&logo=googlechrome&logoColor=white)
+[![Built With Flutter](https://img.shields.io/badge/Flutter-Mobile_App-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://github.com/pawan941394/Riders-communities/tree/mobile_app)
+[![Backend](https://img.shields.io/badge/Backend-Django_%2B_FastAPI-092E20?style=for-the-badge&logo=django&logoColor=white)](https://github.com/pawan941394/Riders-communities/tree/master)
+[![Website](https://img.shields.io/badge/Website-Available-FF6F00?style=for-the-badge&logo=googlechrome&logoColor=white)](https://github.com/pawan941394/Riders-communities/tree/website)
 
 **A rider-first community platform for delivery workers to share real problems, get peer support, and access structured help.**
 
