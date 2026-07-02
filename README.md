@@ -1,51 +1,72 @@
-# Riders Communities
+# 🏍️ Riders Communities
 
-A rider-first community app for delivery workers to share real problems, get peer support, and access structured help.
+<div align="center">
 
-## Vision
+![Riders Communities Banner](https://img.shields.io/badge/Riders-Communities-0A66C2?style=for-the-badge&logo=apachekafka&logoColor=white)
+![Built With Flutter](https://img.shields.io/badge/Flutter-Mobile_App-02569B?style=for-the-badge&logo=flutter&logoColor=white)
+![Backend](https://img.shields.io/badge/Backend-Django_%2B_FastAPI-092E20?style=for-the-badge&logo=django&logoColor=white)
+![Website](https://img.shields.io/badge/Website-Available-FF6F00?style=for-the-badge&logo=googlechrome&logoColor=white)
+
+**A rider-first community platform for delivery workers to share real problems, get peer support, and access structured help.**
+
+</div>
+
+---
+
+## ✨ Vision
 
 Build a trusted digital community where delivery riders can post work-life issues, receive useful responses quickly, and discover practical support resources.
 
-## Launch Scope (V1)
+---
 
-- Rider-only community (login required)
-- Text + image posts (1 image max)
-- Comments + replies
-- Optional anonymous posting (off by default)
-- Feed filters: city, company, language, tags
-- Search across posts, comments, and tags
-- Common problem forms:
+## 🚀 Launch Scope (V1)
+
+- 🔐 Rider-only community (login required)
+- 📝 Text + image posts (1 image max)
+- 💬 Comments + replies
+- 🕶️ Optional anonymous posting (off by default)
+- 🎯 Feed filters: city, company, language, tags
+- 🔎 Search across posts, comments, and tags
+- 🧩 Common problem forms:
   - Payment/Earnings
   - Account Blocked/Suspended
   - Safety/Accident
-- EV section with lead form
-- Push + in-app notifications
-- Report + block controls
+- ⚡ EV section with lead form
+- 🔔 Push + in-app notifications
+- 🛡️ Report + block controls
 
-## Target Launch Region
+---
+
+## 📍 Target Launch Region
 
 - Delhi
 - Gurgaon
 - Noida
 
-## Product KPIs (First 60 Days)
+---
+
+## 📊 Product KPIs (First 60 Days)
 
 - Weekly Active Riders (WAR)
 - Percentage of posts getting at least one helpful comment within 24 hours
 
-## Tech Stack
+---
 
-- Frontend: Flutter (Android-first for V1)
-- Backend:
+## 🛠️ Tech Stack
+
+- **Frontend:** Flutter (Android-first for V1)
+- **Backend:**
   - Django (auth authority, admin, moderation, migrations)
   - FastAPI (community APIs, feed, search, performance endpoints)
-- Database:
+- **Database:**
   - Development: SQLite
   - Production: PostgreSQL
-- Notifications: FCM
-- Analytics: Firebase Analytics + backend event logs
+- **Notifications:** FCM
+- **Analytics:** Firebase Analytics + backend event logs
 
-## Architecture Notes
+---
+
+## 🧠 Architecture Notes
 
 - API versioning from day one: `/api/v1/...`
 - Django issues auth tokens; FastAPI validates them
@@ -53,56 +74,35 @@ Build a trusted digital community where delivery riders can post work-life issue
 - Weekly manual backups planned for DB + uploads
 - Dynamic backend-controlled cards supported (updates/announcements now, ads later)
 
-## Project Branches
+---
 
-- Backend code is available in the `master` branch.
-- Mobile app code is available in the `mobile_app` branch.
-- Website code is available in the `website` branch.
+## 🌿 Project Branches
 
-## Project Docs
+### 1) Backend Branch
+- 🔗 **Open Branch:** [master](https://github.com/pawan941394/Riders-communities/tree/master)
+- 📦 **Download ZIP:** [Download Backend](https://github.com/pawan941394/Riders-communities/archive/refs/heads/master.zip)
+
+### 2) Mobile App Branch
+- 🔗 **Open Branch:** [mobile_app](https://github.com/pawan941394/Riders-communities/tree/mobile_app)
+- 📦 **Download ZIP:** [Download Mobile App](https://github.com/pawan941394/Riders-communities/archive/refs/heads/mobile_app.zip)
+
+### 3) Website Branch
+- 🔗 **Open Branch:** [website](https://github.com/pawan941394/Riders-communities/tree/website)
+- 📦 **Download ZIP:** [Download Website](https://github.com/pawan941394/Riders-communities/archive/refs/heads/website.zip)
+
+---
+
+## 📚 Project Docs
 
 - Product requirements and execution plan: [`rider-community-app-prd.md`](./rider-community-app-prd.md)
 
-## 4-Week Execution Plan
+---
 
-### Week 1
-- Foundation setup (Flutter + Django + FastAPI)
-- Auth flows
-- Core user/profile models
-- Admin skeleton
+## 🤝 Collaboration / Purchase
 
-### Week 2
-- Community posting and feed
-- Comments/replies/helpful marking
-- Anonymous posting rules
-- Filters and tag system
+If anyone wants to **collaborate** on this project or wants to **buy this project**, feel free to connect with me:
 
-### Week 3
-- Full search (posts/comments/tags)
-- Safety controls (report/block/critical handling)
-- Notifications
-- Default problem forms
+- 💼 LinkedIn: [Pawan Kumar](https://www.linkedin.com/in/pawan941394/)
+- ▶️ YouTube: [Pawan Kumar Channel](https://www.youtube.com/@Pawankumar-py4tk)
 
-### Week 4
-- EV lead flow
-- Dynamic cards delivery
-- Analytics wiring
-- Bug bash and launch readiness (close all P0/P1)
-
-## Current Status
-
-- [x] PRD finalized
-- [ ] App scaffolding started
-- [ ] Backend services initialized
-- [ ] CI/CD setup
-- [ ] V1 launched
-
-## Contribution (Initial)
-
-This repository currently tracks product planning and will soon include implementation code.  
-Development process will follow:
-
-1. Finalize scope from PRD
-2. Build MVP in weekly milestones
-3. Track bugs by priority (P0/P1/P2)
-4. Launch only when all P0/P1 are resolved
+I’m open to partnerships, development collaboration, and project handover discussions.
