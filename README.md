@@ -53,6 +53,12 @@ Build a trusted digital community where delivery riders can post work-life issue
 - Weekly manual backups planned for DB + uploads
 - Dynamic backend-controlled cards supported (updates/announcements now, ads later)
 
+## Project Branches
+
+- Backend code is available in the `master` branch.
+- Mobile app code is available in the `mobile_app` branch.
+- Website code is available in the `website` branch.
+
 ## Project Docs
 
 - Product requirements and execution plan: [`rider-community-app-prd.md`](./rider-community-app-prd.md)
